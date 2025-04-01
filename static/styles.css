@@ -1,10 +1,22 @@
 body {
     font-family: Arial, sans-serif;
     margin: 20px;
-    background-color: #f8f9fa;
+    background-color: #f5f6fa;
 }
 h1 {
     text-align: center;
+}
+.nav-links {
+    text-align: center;
+    margin-bottom: 10px;
+}
+.back-link {
+    color: #0077cc;
+    text-decoration: none;
+}
+.datum-form {
+    text-align: center;
+    margin-bottom: 20px;
 }
 .chart-container {
     max-width: 900px;
@@ -26,7 +38,32 @@ th, td {
     border: 1px solid #ccc;
     text-align: center;
 }
-p {
+.icon-scroll {
+    overflow-x: auto;
+    width: 100%;
+}
+.icon-row {
+    display: flex;
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    padding: 5px;
+    margin: 0 auto 20px auto;
+    width: fit-content;
+}
+.icon-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 50px;
+    margin: 0 4px;
+}
+.icon-label {
+    font-size: 0.8em;
+    margin-top: 3px;
+    color: #444;
+}
+.summary {
     text-align: center;
     font-weight: bold;
+    margin-bottom: 40px;
 }

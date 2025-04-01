@@ -38,7 +38,7 @@ def get_electricity_prices(date):
 
 def calculate_averages(weatherdata, electricity_prices):
     avg_temp = round(sum(d['temperature'] for d in weatherdata if d['temperature'] is not None) / len(weatherdata), 1) if weatherdata else None
-    avg_wind = round(sum(d['wind_speed'] for d in weatherdata if d['wind_speed'] is not None) / len(weatherdata), 1) if weatherdata else None
+    avg_wind = round(sum(d['vind'] for d in weatherdata if d['vind'] is not None) / len(weatherdata), 1) if weatherdata else None
     avg_price = round(sum(p['price'] for p in electricity_prices if p['price'] is not None) / len(electricity_prices), 3) if electricity_prices else None
     return avg_temp, avg_wind, avg_price
 
