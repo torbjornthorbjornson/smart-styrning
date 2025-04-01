@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="container mt-4">
+    <h2 class="text-center mb-4">⚡ Elpris och ☁️ Väder</h2>
+
+    <form method="get" action="/elprisvader" class="text-center mb-4">
+        <label for="datum">Välj datum:</label>
+        <input type="date" id="datum" name="datum" value="{{ selected_date }}">
+        <input type="submit" value="Visa" class="btn btn-primary btn-sm">
+    </form>
+
+    <h4 class="mb-3">📊 Väderdata ({{ selected_date }})</h4>
+    <table class="table table-bordered table-striped">
+        <thead>
+            <tr>
+                <th>Tidpunkt</th>
+                <th>Temperatur (°C)</th>
+                <th>Vind (m/s)</th>
+                <th>Symbol</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for rad in weatherdata %}
+                <tr>
+                    <td>{{ rad.timestamp }}</td>
+                    <td>{{ rad.temperature }}</td>
+                    <td>{{ rad.vind }}</td>
+                    <td>{{ rad.symbol_code }}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <h4 class="mt-5">📈 Elpriser ({{ selected_date + timedelta(days=1) }})</h4>
+    <table class="table table-bordered table-striped">
+        <thead>
+            <tr>
+                <th>Tidpunkt</th>
+                <th>Pris (öre/kWh)</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for rad in elprisdata %}
+                <tr>
+                    <td>{{ rad.datetime }}</td>
+                    <td>{{ rad.price }}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <canvas id="chart" width="100%" height="40"></canvas>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        const ctx = document.getElementById('chart').getContext('2d');
+
+        const tempData = {
+            label: 'Temperatur (°C)',
+            data: {{ weatherdata | map(attribute='temperature') | list | tojson }},
+            borderColor: 'red',
+            yAxisID: 'yTemp',
+            tension: 0.3
+        };
+
+        const windData = {
+            label: 'Vind (m/s)',
+            data: {{ weatherdata | map(attribute='vind') | list | tojson }},
+            borderColor: 'blue',
+            yAxisID: 'yWind',
+            tension: 0.3
+        };
+
+        const priceData = {
+            label: 'Elpris (öre/kWh)',
+            data: {{ elprisdata | map(attribute='price') | list | tojson }},
+            borderColor: 'green',
+            yAxisID: 'yPrice',
+            tension: 0.3
+        };
+
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: {{ weatherdata | map(attribute='timestamp') | list | tojson }},
+                datasets: [tempData, windData, priceData]
+            },
+            options: {
+                responsive: true,
+                interaction: { mode: 'index', intersect: false },
+                stacked: false,
+                scales: {
+                    yTemp: { type: 'linear', position: 'left', title: { display: true, text: '°C' } },
+                    yWind: { type: 'linear', position: 'right', title: { display: true, text: 'm/s' }, grid: { drawOnChartArea: false } },
+                    yPrice: { type: 'linear', position: 'right', title: { display: true, text: 'öre/kWh' }, grid: { drawOnChartArea: false } }
+                }
+            }
+        });
+    </script>
+
+    <h4 class="mt-5">📉 Medelvärden</h4>
+    <ul>
+        <li>🌡️ Medeltemperatur: {{ avg_temp }} °C</li>
+        <li>🍃 Medelvind: {{ avg_wind }} m/s</li>
+        <li>⚡ Medelpris: {{ avg_price }} öre/kWh</li>
+    </ul>
+
+    <a href="/" class="btn btn-secondary mt-4">⬅️ Tillbaka till startsidan</a>
+</div>
+
+{% endblock %}
