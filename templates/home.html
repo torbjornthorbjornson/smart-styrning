@@ -2,43 +2,19 @@
 <html lang="sv">
 <head>
     <meta charset="UTF-8">
-    <title>Torbjörns fantastiska fastighetsstyrning</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
-    <style>
-        body { font-family: sans-serif; padding: 2rem; background-color: #eef2f3; }
-        h1 { color: #2c3e50; }
-        .nav a { margin-right: 1rem; text-decoration: none; color: #2980b9; }
-        .box { background: white; border-radius: 8px; padding: 1rem; box-shadow: 0 2px 5px rgba(0,0,0,0.1); margin-top: 2rem; }
-    </style>
+    <title>Smart fastighetsstyrning</title>
+    <link rel="stylesheet" href="/static/styles.css">
 </head>
 <body>
-    <h1>🏠 Torbjörns fantastiska fastighetsstyrning</h1>
-    <div class="nav">
-        <a href="{{ url_for('index') }}">Elpris & Väder</a>
+    <h1>Välkommen till Torbjörns fantastiska fastighetsstyrning</h1>
+
+    <p>Systemet presenterar väderprognos, elpris och driftstrategi för fastigheter i Sverige.</p>
+
+    <div class="button-container">
+        <a href="{{ url_for('elprisvader') }}">Elpris & Väder</a>
+        <a href="{{ url_for('dokumentation') }}">Dokumentation</a>
         <a href="{{ url_for('vision') }}">Vision</a>
-        <a href="/fastigheter">Fastigheter (kommer snart)</a>
-    </div>
-
-    <div class="box">
-        <h2>Vad är detta?</h2>
-        <p>Detta är startsidan för vårt smarta styrsystem som automatiskt optimerar drift av värmesystem i fastigheter baserat på elpris, väder och fastighetens behov.</p>
-        <ul>
-            <li>📈 Hämta elpris och väderdata</li>
-            <li>🌡️ Beräkna driftbehov per fastighet</li>
-            <li>⚡ Schemalägg drift när elpriset är som lägst</li>
-            <li>📊 Visa och redigera i webbgränssnitt</li>
-        </ul>
-    </div>
-
-    <div class="box">
-        <h2>Vad händer härnäst?</h2>
-        <p>Snart kommer här:</p>
-        <ul>
-            <li>📷 Visning av fastighetsbilder med vädereffekter</li>
-            <li>📊 Stapeldiagram: blå = elpris, grön = drift</li>
-            <li>📍 SE-område, väder och prognos för varje fastighet</li>
-        </ul>
+        <a href="{{ url_for('gitlog') }}">Git-logg</a>
     </div>
 </body>
 </html>
-

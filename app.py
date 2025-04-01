@@ -1,3 +1,5 @@
+
+    app.run(debug=True)
 from flask import Flask, render_template, request, jsonify
 import mysql.connector
 import json
@@ -75,4 +77,3 @@ def elprisvader():
     )
 
 if __name__ == "__main__":
-    app.run(debug=True)
