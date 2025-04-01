@@ -1,63 +1,56 @@
-# Världens bästa fastighetsstyrning – Delmål 1
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+    <meta charset="UTF-8">
+    <title>Vision</title>
+    <link rel="stylesheet" href="/static/styles.css">
+    <style>
+        body {
+            font-family: "Segoe UI", sans-serif;
+            background-color: #f0f4f8;
+            padding: 2rem;
+            color: #333;
+        }
+        .vision-box {
+            background: white;
+            padding: 2rem;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            max-width: 900px;
+            margin: auto;
+        }
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+        }
+        p {
+            line-height: 1.6;
+        }
+    </style>
+</head>
+<body>
+    <div class="vision-box">
+        <h1>🌍 Vision</h1>
+        <p><em>"Skapa världens bästa fastighetsstyrning."</em></p>
 
-## 🎯 Vision
-Målet är att skapa världens bästa fastighetsstyrning. Systemet ska vara intelligent, automatiserat, energieffektivt och datadrivet.
+        <p>
+        Systemet ska automatiskt hämta elpris och väderdata för kommande 24 timmar, lagra det i databas,
+        och styra varje fastighets uppvärmning efter optimal kostnad och behov. 
+        Med ett smart fastighetsregister, temperaturprofiler och geografisk analys ska varje fastighet styras så energieffektivt som möjligt.
+        </p>
 
----
+        <p>
+        På sikt ska systemet kunna hantera 15-minuterselpriser, styra med hänsyn till väderprognos, 
+        och ge en tydlig och pedagogisk vy till användare och tekniker.
+        </p>
 
-## ✅ Delmål 1 – Funktioner som ska uppnås (vissa redan klara)
+        <p>
+        Vårt mål är inte bara att spara energi &ndash; utan att göra det vackert, logiskt och värdefullt för varje fastighetsägare.
+        </p>
 
-### 1. Elpris & väderprognos
-- Hämta **elpris per timme** (senare 15-minutersintervaller)
-- Hämta **väderdata** (temperatur, vind, symbol_code m.m.)
-- Spara data i en **SQL-databas** (klart)
-
-### 2. Fastighetsregister
-- Databas med:
-  - Fastighetsbeteckning
-  - Temperaturprofil (drifttimmar från -25°C till +20°C)
-  - Driftbehov kopplat till aktuell medeltemperatur
-- Visa och redigera via webbsida
-
-### 3. Temperaturanalys
-- Beräkna **medeltemperatur** för kommande 24 timmar
-- Avgör antal drifttimmar för varje fastighet baserat på dess temperaturprofil
-
-### 4. Optimerad styrning
-- Välj de **billigaste elpristimmarna** (utifrån behovet) för varje fastighet
-- Styr värmepumpen endast under de utvalda timmarna
-
-### 5. Geopositionering & SE-kod
-- Använd **API från Lantmäteriet** för att hämta geoposition utifrån fastighetsbeteckning
-- Avgör korrekt elprisområde (SE1, SE2, SE3, SE4)
-- Hämta rätt väderprognos för fastighetens plats
-
----
-
-## 🌐 Webbgränssnitt
-- Flask-baserad webbsida
-- HTML, CSS, JavaScript (Chart.js)
-- Visar:
-  - Elpris och väder (graf & tabell)
-  - Symboler (SVG/emojis)
-  - Medelvärden
-- Möjlighet att redigera fastigheter & profiler
-
----
-
-## ⚙️ Teknikstack
-- **Backend:** Python (Flask), SQLAlchemy, MariaDB, RPi.GPIO, pymodbus
-- **Frontend:** HTML, CSS, JS, Chart.js, Bootstrap, WebSockets (senare)
-- **Server:** Raspberry Pi 5, Gunicorn (med eller utan Nginx)
-- **Automation:** systemd services, backup via `inotifywait`, Git för versionshantering
-
----
-
-## 🔁 Flexibilitet & framtidssäkring
-- Enkelt att byta till 15-minutersintervall för elpris
-- Temperaturprofiler kan justeras per fastighet
-- Lätt att bygga vidare på: fjärrstyrning, molnkoppling, m.m.
-
----
-
-Detta är första steget – men grunden är redan solid.
+        <p style="text-align:center;">
+            <a href="/">⬅ Tillbaka till startsidan</a>
+        </p>
+    </div>
+</body>
+</html>

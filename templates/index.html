@@ -2,129 +2,45 @@
 <html lang="sv">
 <head>
     <meta charset="UTF-8">
-    <title>Väder & Elpris</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <title>Smart fastighetsstyrning</title>
+    <link rel="stylesheet" href="/static/styles.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f2f2f2;
+            padding: 2rem;
+            text-align: center;
+        }
+        h1 {
+            color: #2c3e50;
+        }
+        .nav {
+            margin-top: 2rem;
+        }
+        .nav a {
+            display: inline-block;
+            margin: 0.5rem 1rem;
+            padding: 0.7rem 1.5rem;
+            background-color: #3498db;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+        }
+        .nav a:hover {
+            background-color: #2980b9;
+        }
+    </style>
 </head>
 <body>
-    <h1>Väder & Elpris</h1>
+    <h1>🏠 Välkommen till Smart fastighetsstyrning</h1>
+    <p>Detta system hjälper dig optimera energiförbrukning, värmekostnader och få full kontroll på din fastighet.</p>
 
-    <form method="get">
-        <label for="datum">Välj datum:</label>
-        <input type="date" id="datum" name="datum" value="{{ selected_date }}">
-        <button type="submit">Visa</button>
-    </form>
-
-    {% if weatherdata %}
-        <div class="icon-row">
-            {% for row in weatherdata %}
-                <img src="{{ url_for('static', filename='weather-icons/' + row.symbol_code + '.svg') }}" onerror="this.style.display='none'" alt="{{ row.symbol_code }}">
-            {% endfor %}
-        </div>
-
-        <div class="chart-container">
-            <canvas id="weatherChart"></canvas>
-        </div>
-
-        <table>
-            <thead>
-                <tr>
-                    <th>Tid</th>
-                    <th>Temperatur (°C)</th>
-                    <th>Vindstyrka (m/s)</th>
-                    <th>Symbol</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for row in weatherdata %}
-                <tr>
-                    <td>{{ row.timestamp.strftime('%H:%M') }}</td>
-                    <td>{{ row.temperature }}</td>
-                    <td>{{ row.vind }}</td>
-                    <td>{{ row.symbol_code }}</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    {% else %}
-        <p>Ingen väderdata tillgänglig.</p>
-    {% endif %}
-
-    {% if elprisdata %}
-        <div class="chart-container">
-            <canvas id="electricityChart"></canvas>
-        </div>
-
-        <table>
-            <thead>
-                <tr>
-                    <th>Tid</th>
-                    <th>Elpris (kr/kWh)</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for row in elprisdata %}
-                <tr>
-                    <td>{{ row.datetime.strftime('%H:%M') }}</td>
-                    <td>{{ row.price }}</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    {% else %}
-        <p>Inga elpriser tillgängliga.</p>
-    {% endif %}
-
-    <p><strong>Medeltemperatur:</strong> {{ avg_temp }} °C |
-       <strong>Medelvind:</strong> {{ avg_wind }} m/s |
-       <strong>Medelpris:</strong> {{ avg_price }} kr/kWh</p>
-
-    <script>
-        const weatherData = {{ weatherdata | tojson | safe }};
-        const elprisData = {{ elprisdata | tojson | safe }};
-
-        if (weatherData.length > 0) {
-            const ctx = document.getElementById('weatherChart').getContext('2d');
-            new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: weatherData.map(row => row.timestamp.split('T')[1].substring(0, 5)),
-                    datasets: [
-                        {
-                            label: 'Temperatur (°C)',
-                            data: weatherData.map(row => row.temperature),
-                            borderColor: 'blue',
-                            backgroundColor: 'rgba(0, 0, 255, 0.1)',
-                            tension: 0.3
-                        },
-                        {
-                            label: 'Vindstyrka (m/s)',
-                            data: weatherData.map(row => row.vind),
-                            borderColor: 'purple',
-                            backgroundColor: 'rgba(128, 0, 128, 0.1)',
-                            tension: 0.3
-                        }
-                    ]
-                }
-            });
-        }
-
-        if (elprisData.length > 0) {
-            const ctx2 = document.getElementById('electricityChart').getContext('2d');
-            new Chart(ctx2, {
-                type: 'line',
-                data: {
-                    labels: elprisData.map(row => row.datetime.split('T')[1].substring(0, 5)),
-                    datasets: [{
-                        label: 'Elpris (kr/kWh)',
-                        data: elprisData.map(row => row.price),
-                        borderColor: 'orange',
-                        backgroundColor: 'rgba(255, 165, 0, 0.1)',
-                        tension: 0.3
-                    }]
-                }
-            });
-        }
-    </script>
+    <div class="nav">
+        <a href="/index">Väder & Elpris</a>
+        <a href="/vision">Vision</a>
+        <a href="/dokumentation">Dokumentation</a>
+        <a href="/gitlog">Git-logg</a>
+        <a href="/oversikt">Systemöversikt</a>
+    </div>
 </body>
 </html>
