@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, jsonify
 import mysql.connector
 import json
 from datetime import datetime, timedelta
@@ -47,21 +47,21 @@ def elprisvader():
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
 
-    # Hämta väderdata
     cursor.execute("SELECT * FROM weather WHERE DATE(timestamp) = %s", (selected_date,))
     weatherdata = cursor.fetchall()
 
-    # Hämta elprisdata
     cursor.execute("SELECT * FROM electricity_prices WHERE DATE(datetime) = %s", (tomorrow,))
     elprisdata = cursor.fetchall()
 
-    # Räkna ut medelvärden
     def average(values):
         return round(sum(values) / len(values), 2) if values else 0
 
     avg_temp = average([row["temperature"] for row in weatherdata if row.get("temperature") is not None])
     avg_wind = average([row["vind"] for row in weatherdata if row.get("vind") is not None])
     avg_price = average([row["price"] for row in elprisdata if row.get("price") is not None])
+
+    weatherdata_json = json.dumps(weatherdata, default=str)
+    elprisdata_json = json.dumps(elprisdata, default=str)
 
     cursor.close()
     conn.close()
@@ -70,6 +70,8 @@ def elprisvader():
         "elpris_vader.html",
         weatherdata=weatherdata,
         elprisdata=elprisdata,
+        weatherdata_json=weatherdata_json,
+        elprisdata_json=elprisdata_json,
         avg_temp=avg_temp,
         avg_wind=avg_wind,
         avg_price=avg_price,

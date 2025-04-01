@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+    <meta charset="UTF-8">
+    <title>{% block title %}Smart fastighetsstyrning{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+    <header>
+        <h1>Smart fastighetsstyrning</h1>
+        <nav>
+            <a href="{{ url_for('home') }}">🏠 Start</a>
+            <a href="{{ url_for('elprisvader') }}">⚡ Elpris & Väder</a>
+            <a href="{{ url_for('dokumentation') }}">📘 Dokumentation</a>
+            <a href="{{ url_for('vision') }}">🌟 Vision</a>
+            <a href="{{ url_for('gitlog') }}">🛠️ Git-logg</a>
+        </nav>
+        <hr>
+    </header>
+    <main>
+        {% block content %}{% endblock %}
+    </main>
+    <footer>
+        <hr>
+        <p>&copy; 2025 Torbjörns fantastiska fastighetsstyrning</p>
+    </footer>
+</body>
+</html>

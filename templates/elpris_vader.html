@@ -1,77 +1,98 @@
-from flask import Flask, render_template, request, jsonify
-import mysql.connector
-import json
-from datetime import datetime, timedelta
-import os
+{% extends "layout.html" %}
+{% block content %}
+<h2>📈 Elpris & Väder för {{ selected_date }}</h2>
+<form method="get" action="/elprisvader">
+    <label for="datum">Välj datum:</label>
+    <input type="date" id="datum" name="datum" value="{{ selected_date }}">
+    <button type="submit">Visa</button>
+</form>
 
-app = Flask(__name__)
+<canvas id="weatherChart"></canvas>
+<canvas id="elprisChart"></canvas>
 
-def get_db_connection():
-    return mysql.connector.connect(
-        option_files='/home/runerova/.my.cnf',
-        database='smart_styrning'
-    )
+<h3>☀️ Väderdata</h3>
+<table>
+    <tr>
+        <th>Tid</th>
+        <th>Temperatur (°C)</th>
+        <th>Vind (m/s)</th>
+        <th>Symbol</th>
+    </tr>
+    {% for row in weatherdata %}
+    <tr>
+        <td>{{ row.timestamp.strftime('%H:%M') }}</td>
+        <td>{{ row.temperature }}</td>
+        <td>{{ row.vind }}</td>
+        <td>{{ row.symbol_code }}</td>
+    </tr>
+    {% endfor %}
+</table>
 
-@app.route("/")
-def home():
-    return render_template("home.html")
+<h3>⚡ Elpriser ({{ selected_date + timedelta(days=1) }})</h3>
+<table>
+    <tr>
+        <th>Tid</th>
+        <th>Elpris (öre/kWh)</th>
+    </tr>
+    {% for row in elprisdata %}
+    <tr>
+        <td>{{ row.datetime.strftime('%H:%M') }}</td>
+        <td>{{ row.price }}</td>
+    </tr>
+    {% endfor %}
+</table>
 
-@app.route("/vision")
-def vision():
-    return render_template("vision.html")
+<h3>📊 Medelvärden</h3>
+<ul>
+    <li>Temperatur: {{ avg_temp }} °C</li>
+    <li>Vind: {{ avg_wind }} m/s</li>
+    <li>Elpris: {{ avg_price }} öre/kWh</li>
+</ul>
 
-@app.route("/dokumentation")
-def dokumentation():
-    return render_template("dokumentation.html")
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    const weatherdata = {{ weatherdata_json | safe }};
+    const elprisdata = {{ elprisdata_json | safe }};
 
-@app.route("/gitlog")
-def gitlog():
-    log_path = "/home/runerova/smartweb/git_backup/git_backup.log"
-    if os.path.exists(log_path):
-        with open(log_path, "r") as f:
-            log_content = f.read()
-    else:
-        log_content = "Loggfilen hittades inte."
-    return render_template("gitlog.html", log=log_content)
+    const weatherLabels = weatherdata.map(row => row.timestamp.substring(11, 16));
+    const temperatureData = weatherdata.map(row => row.temperature);
+    const windData = weatherdata.map(row => row.vind);
 
-@app.route("/elprisvader")
-def elprisvader():
-    selected_date_str = request.args.get('datum')
-    try:
-        selected_date = datetime.strptime(selected_date_str, "%Y-%m-%d").date()
-    except (TypeError, ValueError):
-        selected_date = datetime.now().date()
+    const elprisLabels = elprisdata.map(row => row.datetime.substring(11, 16));
+    const priceData = elprisdata.map(row => row.price);
 
-    tomorrow = selected_date + timedelta(days=1)
+    new Chart(document.getElementById('weatherChart'), {
+        type: 'line',
+        data: {
+            labels: weatherLabels,
+            datasets: [
+                {
+                    label: 'Temperatur (°C)',
+                    data: temperatureData,
+                    borderColor: 'red',
+                    fill: false
+                },
+                {
+                    label: 'Vind (m/s)',
+                    data: windData,
+                    borderColor: 'blue',
+                    fill: false
+                }
+            ]
+        }
+    });
 
-    conn = get_db_connection()
-    cursor = conn.cursor(dictionary=True)
-
-    cursor.execute("SELECT * FROM weather WHERE DATE(timestamp) = %s", (selected_date,))
-    weatherdata = cursor.fetchall()
-
-    cursor.execute("SELECT * FROM electricity_prices WHERE DATE(datetime) = %s", (tomorrow,))
-    elprisdata = cursor.fetchall()
-
-    def average(values):
-        return round(sum(values) / len(values), 2) if values else 0
-
-    avg_temp = average([row["temperature"] for row in weatherdata if row.get("temperature") is not None])
-    avg_wind = average([row["vind"] for row in weatherdata if row.get("vind") is not None])
-    avg_price = average([row["price"] for row in elprisdata if row.get("price") is not None])
-
-    cursor.close()
-    conn.close()
-
-    return render_template(
-        "elpris_vader.html",
-        weatherdata=weatherdata,
-        elprisdata=elprisdata,
-        avg_temp=avg_temp,
-        avg_wind=avg_wind,
-        avg_price=avg_price,
-        selected_date=selected_date
-    )
-
-if __name__ == "__main__":
-    app.run(debug=True)
+    new Chart(document.getElementById('elprisChart'), {
+        type: 'line',
+        data: {
+            labels: elprisLabels,
+            datasets: [{
+                label: 'Elpris (öre/kWh)',
+                data: priceData,
+                borderColor: 'green',
+                fill: false
+            }]
+        }
+    });
+</script>
+{% endblock %}
