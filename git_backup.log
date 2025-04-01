@@ -39,3 +39,8 @@ To https://github.com/torbjornthorbjornson/smart-styrning.git
  1 file changed, 7 insertions(+)
 To https://github.com/torbjornthorbjornson/smart-styrning.git
    8a47c94..5410b14  main -> main
+[main b419435] Automatisk backup: 2025-04-01 22:30
+ 5 files changed, 94 insertions(+), 78 deletions(-)
+ create mode 100644 .run.sh.swp
+To https://github.com/torbjornthorbjornson/smart-styrning.git
+   5410b14..b419435  main -> main
