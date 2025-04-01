@@ -1,0 +1,35 @@
+from flask import Flask, render_template
+from flask_sqlalchemy import SQLAlchemy
+import os
+
+app = Flask(__name__)
+
+# Konfiguration
+
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+db = SQLAlchemy(app)
+
+# Modeller
+class Elpris(db.Model):
+    __tablename__ = 'elpriser'
+    id = db.Column(db.Integer, primary_key=True)
+    datum = db.Column(db.Date)
+    timme = db.Column(db.Integer)
+    pris = db.Column(db.Float)
+
+class Weather(db.Model):
+    __tablename__ = 'weather'
+    id = db.Column(db.Integer, primary_key=True)
+    timestamp = db.Column(db.DateTime)
+    temperatur = db.Column(db.Float)
+    vind = db.Column(db.Float)
+
+@app.route('/')
+def index():
+    elpriser = Elpris.query.order_by(Elpris.datum.desc(), Elpris.timme).limit(24).all()
+    weather = Weather.query.order_by(Weather.timestamp.desc()).first()
+    return render_template('index.html', elpriser=elpriser, weather=weather)
+
+if __name__ == '__main__':
+    app.run(debug=True)

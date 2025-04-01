@@ -1,0 +1,33 @@
+# GIT – FUSKLAPP FÖR VANLIGA KOMMANDON
+
+# Kontrollera status (vad har ändrats)
+git status
+
+# Lägg till en fil
+git add filnamn
+
+# Lägg till alla ändrade filer
+git add .
+
+# Spara ändring med kommentar
+git commit -m "Beskriv vad du gjort"
+
+# Se historik
+git log
+
+# Se ändringar i en specifik fil (innan commit)
+git diff filnamn
+
+# Återställ ändringar i fil (innan commit)
+git restore filnamn
+
+# Ta bort en fil från versionhantering (men inte disken)
+git rm --cached filnamn
+
+# Visa alla konfigurationsinställningar
+git config --list
+
+# Konfigurera namn och e-post (globalt)
+git config --global user.name "Torbjörn Runer"
+git config --global user.email "torbjorn@svenskastenhus.se"
+

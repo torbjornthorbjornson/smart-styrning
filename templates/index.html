@@ -1,9 +1,9 @@
-<!OCTYPE html>
+<!DOCTYPE html>
 <html lang="sv">
 <head>
     <meta charset="UTF-8">
     <title>Väder & Elpris</title>
-    <link rel="stylesheet" href="/static/styles.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
@@ -18,7 +18,7 @@
     {% if weatherdata %}
         <div class="icon-row">
             {% for row in weatherdata %}
-                <img src="{{ url_for('static', filename='weather-icons/' + row.symbol_code + '.svg') }}" onerror="this.style.display='none'">
+                <img src="{{ url_for('static', filename='weather-icons/' + row.symbol_code + '.svg') }}" onerror="this.style.display='none'" alt="{{ row.symbol_code }}">
             {% endfor %}
         </div>
 
@@ -50,7 +50,7 @@
         <p>Ingen väderdata tillgänglig.</p>
     {% endif %}
 
-    {% if electricity_prices %}
+    {% if elprisdata %}
         <div class="chart-container">
             <canvas id="electricityChart"></canvas>
         </div>
@@ -63,7 +63,7 @@
                 </tr>
             </thead>
             <tbody>
-                {% for row in electricity_prices %}
+                {% for row in elprisdata %}
                 <tr>
                     <td>{{ row.datetime.strftime('%H:%M') }}</td>
                     <td>{{ row.price }}</td>
@@ -75,31 +75,29 @@
         <p>Inga elpriser tillgängliga.</p>
     {% endif %}
 
-    <p><strong>Medeltemperatur:</strong> {{ avg_temp }} °C |
-       <strong>Medelvind:</strong> {{ avg_wind }} m/s |
-       <strong>Medelpris:</strong> {{ avg_price }} kr/kWh</p>
-
     <script>
         const weatherData = {{ weatherdata | tojson | safe }};
-        const electricityData = {{ electricity_prices | tojson | safe }};
+        const elprisData = {{ elprisdata | tojson | safe }};
 
         if (weatherData.length > 0) {
             const ctx = document.getElementById('weatherChart').getContext('2d');
             new Chart(ctx, {
                 type: 'line',
                 data: {
-                    labels: weatherData.map(row => row.timestamp.split('T')[1].substring(0,5)),
+                    labels: weatherData.map(row => row.timestamp.split('T')[1].substring(0, 5)),
                     datasets: [
                         {
                             label: 'Temperatur (°C)',
                             data: weatherData.map(row => row.temperature),
                             borderColor: 'blue',
+                            backgroundColor: 'rgba(0, 0, 255, 0.1)',
                             tension: 0.3
                         },
                         {
                             label: 'Vindstyrka (m/s)',
                             data: weatherData.map(row => row.vind),
-                            borderColor: 'pink',
+                            borderColor: 'purple',
+                            backgroundColor: 'rgba(128, 0, 128, 0.1)',
                             tension: 0.3
                         }
                     ]
@@ -107,16 +105,17 @@
             });
         }
 
-        if (electricityData.length > 0) {
+        if (elprisData.length > 0) {
             const ctx2 = document.getElementById('electricityChart').getContext('2d');
             new Chart(ctx2, {
                 type: 'line',
                 data: {
-                    labels: electricityData.map(row => row.datetime.split('T')[1].substring(0,5)),
+                    labels: elprisData.map(row => row.datetime.split('T')[1].substring(0, 5)),
                     datasets: [{
                         label: 'Elpris (kr/kWh)',
-                        data: electricityData.map(row => row.price),
+                        data: elprisData.map(row => row.price),
                         borderColor: 'orange',
+                        backgroundColor: 'rgba(255, 165, 0, 0.1)',
                         tension: 0.3
                     }]
                 }

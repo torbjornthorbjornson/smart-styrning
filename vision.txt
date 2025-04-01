@@ -1,0 +1,63 @@
+# Världens bästa fastighetsstyrning – Delmål 1
+
+## 🎯 Vision
+Målet är att skapa världens bästa fastighetsstyrning. Systemet ska vara intelligent, automatiserat, energieffektivt och datadrivet.
+
+---
+
+## ✅ Delmål 1 – Funktioner som ska uppnås (vissa redan klara)
+
+### 1. Elpris & väderprognos
+- Hämta **elpris per timme** (senare 15-minutersintervaller)
+- Hämta **väderdata** (temperatur, vind, symbol_code m.m.)
+- Spara data i en **SQL-databas** (klart)
+
+### 2. Fastighetsregister
+- Databas med:
+  - Fastighetsbeteckning
+  - Temperaturprofil (drifttimmar från -25°C till +20°C)
+  - Driftbehov kopplat till aktuell medeltemperatur
+- Visa och redigera via webbsida
+
+### 3. Temperaturanalys
+- Beräkna **medeltemperatur** för kommande 24 timmar
+- Avgör antal drifttimmar för varje fastighet baserat på dess temperaturprofil
+
+### 4. Optimerad styrning
+- Välj de **billigaste elpristimmarna** (utifrån behovet) för varje fastighet
+- Styr värmepumpen endast under de utvalda timmarna
+
+### 5. Geopositionering & SE-kod
+- Använd **API från Lantmäteriet** för att hämta geoposition utifrån fastighetsbeteckning
+- Avgör korrekt elprisområde (SE1, SE2, SE3, SE4)
+- Hämta rätt väderprognos för fastighetens plats
+
+---
+
+## 🌐 Webbgränssnitt
+- Flask-baserad webbsida
+- HTML, CSS, JavaScript (Chart.js)
+- Visar:
+  - Elpris och väder (graf & tabell)
+  - Symboler (SVG/emojis)
+  - Medelvärden
+- Möjlighet att redigera fastigheter & profiler
+
+---
+
+## ⚙️ Teknikstack
+- **Backend:** Python (Flask), SQLAlchemy, MariaDB, RPi.GPIO, pymodbus
+- **Frontend:** HTML, CSS, JS, Chart.js, Bootstrap, WebSockets (senare)
+- **Server:** Raspberry Pi 5, Gunicorn (med eller utan Nginx)
+- **Automation:** systemd services, backup via `inotifywait`, Git för versionshantering
+
+---
+
+## 🔁 Flexibilitet & framtidssäkring
+- Enkelt att byta till 15-minutersintervall för elpris
+- Temperaturprofiler kan justeras per fastighet
+- Lätt att bygga vidare på: fjärrstyrning, molnkoppling, m.m.
+
+---
+
+Detta är första steget – men grunden är redan solid.

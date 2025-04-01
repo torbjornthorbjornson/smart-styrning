@@ -1,0 +1,18 @@
+[Service]
+User=runerova
+Group=www-data
+WorkingDirectory=/home/runerova/smartweb
+ExecStart=/home/runerova/smartweb/run.sh
+[Unit]
+Description=Gunicorn instance to serve smartweb
+After=network.target
+
+[Service]
+User=pi
+Group=www-data
+WorkingDirectory=/home/pi/smartweb
+ExecStart=/home/pi/smartweb/run.sh
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
