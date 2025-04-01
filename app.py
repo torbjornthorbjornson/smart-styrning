@@ -1,5 +1,3 @@
-
-    app.run(debug=True)
 from flask import Flask, render_template, request, jsonify
 import mysql.connector
 import json
@@ -42,7 +40,7 @@ def elprisvader():
     except (TypeError, ValueError):
         selected_date = datetime.now().date()
 
-    tomorrow = selected_date + timedelta(days=1)
+    tomorrow_date = selected_date + timedelta(days=1)
 
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
@@ -52,7 +50,7 @@ def elprisvader():
     weatherdata = cursor.fetchall()
 
     # Hämta elprisdata
-    cursor.execute("SELECT * FROM electricity_prices WHERE DATE(datetime) = %s", (tomorrow,))
+    cursor.execute("SELECT * FROM electricity_prices WHERE DATE(datetime) = %s", (tomorrow_date,))
     elprisdata = cursor.fetchall()
 
     # Räkna ut medelvärden
@@ -73,7 +71,9 @@ def elprisvader():
         avg_temp=avg_temp,
         avg_wind=avg_wind,
         avg_price=avg_price,
-        selected_date=selected_date
+        selected_date=selected_date,
+        tomorrow_date=tomorrow_date
     )
 
 if __name__ == "__main__":
+    app.run(debug=True)
