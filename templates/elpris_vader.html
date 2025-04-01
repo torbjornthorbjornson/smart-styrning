@@ -1,98 +1,98 @@
+<!DOCTYPE html>
+<html lang="sv">
 {% extends "layout.html" %}
 {% block content %}
-<h2>📈 Elpris & Väder för {{ selected_date }}</h2>
-<form method="get" action="/elprisvader">
-    <label for="datum">Välj datum:</label>
-    <input type="date" id="datum" name="datum" value="{{ selected_date }}">
-    <button type="submit">Visa</button>
-</form>
+<head>
+    <meta charset="UTF-8">
+    <title>Elpris & Väder</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <h2>📈 Elpris & Väder {{ selected_date }}</h2>
+    <form method="get" action="/elprisvader">
+        <input type="date" name="datum" value="{{ selected_date }}">
+        <button type="submit">Visa</button>
+    </form>
 
-<canvas id="weatherChart"></canvas>
-<canvas id="elprisChart"></canvas>
+    <h3>☀️ Väder ({{ selected_date }})</h3>
+    <canvas id="weatherChart" height="100"></canvas>
 
-<h3>☀️ Väderdata</h3>
-<table>
-    <tr>
-        <th>Tid</th>
-        <th>Temperatur (°C)</th>
-        <th>Vind (m/s)</th>
-        <th>Symbol</th>
-    </tr>
-    {% for row in weatherdata %}
-    <tr>
-        <td>{{ row.timestamp.strftime('%H:%M') }}</td>
-        <td>{{ row.temperature }}</td>
-        <td>{{ row.vind }}</td>
-        <td>{{ row.symbol_code }}</td>
-    </tr>
-    {% endfor %}
-</table>
+    <h3>⚡ Elpriser ({{ (selected_date + timedelta(days=1)).strftime('%Y-%m-%d') }})</h3>
+    <canvas id="priceChart" height="100"></canvas>
 
-<h3>⚡ Elpriser ({{ selected_date + timedelta(days=1) }})</h3>
-<table>
-    <tr>
-        <th>Tid</th>
-        <th>Elpris (öre/kWh)</th>
-    </tr>
-    {% for row in elprisdata %}
-    <tr>
-        <td>{{ row.datetime.strftime('%H:%M') }}</td>
-        <td>{{ row.price }}</td>
-    </tr>
-    {% endfor %}
-</table>
+    <table>
+        <thead>
+            <tr>
+                <th>Tid</th>
+                <th>Temp (°C)</th>
+                <th>Vind (m/s)</th>
+                <th>Symbol</th>
+                <th>Elpris (öre/kWh)</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in weatherdata %}
+            <tr>
+                <td>{{ row.timestamp.strftime('%H:%M') }}</td>
+                <td>{{ row.temperature }}</td>
+                <td>{{ row.vind }}</td>
+                <td>{{ row.symbol_code }}</td>
+                <td>
+                    {% for p in elprisdata %}
+                        {% if p.datetime.hour == row.timestamp.hour %}
+                            {{ p.price }}
+                        {% endif %}
+                    {% endfor %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
 
-<h3>📊 Medelvärden</h3>
-<ul>
-    <li>Temperatur: {{ avg_temp }} °C</li>
-    <li>Vind: {{ avg_wind }} m/s</li>
-    <li>Elpris: {{ avg_price }} öre/kWh</li>
-</ul>
+    <p><strong>Medeltemperatur:</strong> {{ avg_temp }} °C</p>
+    <p><strong>Medelvind:</strong> {{ avg_wind }} m/s</p>
+    <p><strong>Medelpris:</strong> {{ avg_price }} öre/kWh</p>
 
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script>
-    const weatherdata = {{ weatherdata_json | safe }};
-    const elprisdata = {{ elprisdata_json | safe }};
+    <script>
+        const weatherLabels = {{ weatherdata|map(attribute='timestamp')|map('string')|list|tojson }}.map(t => t.slice(11, 16));
+        const tempData = {{ weatherdata|map(attribute='temperature')|list|tojson }};
+        const windData = {{ weatherdata|map(attribute='vind')|list|tojson }};
+        const priceData = {{ elprisdata|map(attribute='price')|list|tojson }};
 
-    const weatherLabels = weatherdata.map(row => row.timestamp.substring(11, 16));
-    const temperatureData = weatherdata.map(row => row.temperature);
-    const windData = weatherdata.map(row => row.vind);
+        new Chart(document.getElementById('weatherChart'), {
+            type: 'line',
+            data: {
+                labels: weatherLabels,
+                datasets: [
+                    {
+                        label: 'Temperatur (°C)',
+                        data: tempData,
+                        borderWidth: 2,
+                        fill: false
+                    },
+                    {
+                        label: 'Vind (m/s)',
+                        data: windData,
+                        borderWidth: 2,
+                        fill: false
+                    }
+                ]
+            }
+        });
 
-    const elprisLabels = elprisdata.map(row => row.datetime.substring(11, 16));
-    const priceData = elprisdata.map(row => row.price);
-
-    new Chart(document.getElementById('weatherChart'), {
-        type: 'line',
-        data: {
-            labels: weatherLabels,
-            datasets: [
-                {
-                    label: 'Temperatur (°C)',
-                    data: temperatureData,
-                    borderColor: 'red',
+        new Chart(document.getElementById('priceChart'), {
+            type: 'line',
+            data: {
+                labels: weatherLabels,
+                datasets: [{
+                    label: 'Elpris (öre/kWh)',
+                    data: priceData,
+                    borderWidth: 2,
                     fill: false
-                },
-                {
-                    label: 'Vind (m/s)',
-                    data: windData,
-                    borderColor: 'blue',
-                    fill: false
-                }
-            ]
-        }
-    });
-
-    new Chart(document.getElementById('elprisChart'), {
-        type: 'line',
-        data: {
-            labels: elprisLabels,
-            datasets: [{
-                label: 'Elpris (öre/kWh)',
-                data: priceData,
-                borderColor: 'green',
-                fill: false
-            }]
-        }
-    });
-</script>
+                }]
+            }
+        });
+    </script>
+</body>
 {% endblock %}
+</html>

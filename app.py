@@ -42,7 +42,7 @@ def elprisvader():
     except (TypeError, ValueError):
         selected_date = datetime.now().date()
 
-    tomorrow = selected_date + timedelta(days=1)
+    selected_date_plus1 = selected_date + timedelta(days=1)
 
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
@@ -50,7 +50,7 @@ def elprisvader():
     cursor.execute("SELECT * FROM weather WHERE DATE(timestamp) = %s", (selected_date,))
     weatherdata = cursor.fetchall()
 
-    cursor.execute("SELECT * FROM electricity_prices WHERE DATE(datetime) = %s", (tomorrow,))
+    cursor.execute("SELECT * FROM electricity_prices WHERE DATE(datetime) = %s", (selected_date_plus1,))
     elprisdata = cursor.fetchall()
 
     def average(values):
@@ -60,9 +60,6 @@ def elprisvader():
     avg_wind = average([row["vind"] for row in weatherdata if row.get("vind") is not None])
     avg_price = average([row["price"] for row in elprisdata if row.get("price") is not None])
 
-    weatherdata_json = json.dumps(weatherdata, default=str)
-    elprisdata_json = json.dumps(elprisdata, default=str)
-
     cursor.close()
     conn.close()
 
@@ -70,12 +67,11 @@ def elprisvader():
         "elpris_vader.html",
         weatherdata=weatherdata,
         elprisdata=elprisdata,
-        weatherdata_json=weatherdata_json,
-        elprisdata_json=elprisdata_json,
         avg_temp=avg_temp,
         avg_wind=avg_wind,
         avg_price=avg_price,
-        selected_date=selected_date
+        selected_date=selected_date,
+        selected_date_plus1=selected_date_plus1
     )
 
 if __name__ == "__main__":
