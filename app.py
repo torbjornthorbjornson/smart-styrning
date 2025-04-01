@@ -2,7 +2,6 @@ from flask import Flask, render_template, request, jsonify
 import mysql.connector
 import json
 from datetime import datetime, timedelta
-import os
 
 app = Flask(__name__)
 
@@ -26,16 +25,15 @@ def dokumentation():
 
 @app.route("/gitlog")
 def gitlog():
-    log_path = "/home/runerova/smartweb/git_backup/git_backup.log"
-    if os.path.exists(log_path):
-        with open(log_path, "r") as f:
+    try:
+        with open("/home/runerova/smartweb/git_backup.log", "r") as f:
             log_content = f.read()
-    else:
+    except FileNotFoundError:
         log_content = "Loggfilen hittades inte."
     return render_template("gitlog.html", log=log_content)
 
-@app.route("/index")
-def index():
+@app.route("/elprisvader")
+def elprisvader():
     selected_date_str = request.args.get('datum')
     try:
         selected_date = datetime.strptime(selected_date_str, "%Y-%m-%d").date()
@@ -67,7 +65,7 @@ def index():
     conn.close()
 
     return render_template(
-        "index.html",
+        "elpris_vader.html",
         weatherdata=weatherdata,
         elprisdata=elprisdata,
         avg_temp=avg_temp,
