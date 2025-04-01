@@ -75,6 +75,10 @@
         <p>Inga elpriser tillgängliga.</p>
     {% endif %}
 
+    <p><strong>Medeltemperatur:</strong> {{ avg_temp }} °C |
+       <strong>Medelvind:</strong> {{ avg_wind }} m/s |
+       <strong>Medelpris:</strong> {{ avg_price }} kr/kWh</p>
+
     <script>
         const weatherData = {{ weatherdata | tojson | safe }};
         const elprisData = {{ elprisdata | tojson | safe }};
