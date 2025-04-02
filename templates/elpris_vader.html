@@ -5,6 +5,18 @@
     <title>Elpris & Väder</title>
     <link rel="stylesheet" href="/static/styles.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+    function padHourlyData(data, field, timestampField) {
+        const result = Array(24).fill(null);
+        data.forEach(d => {
+            const hour = new Date(d[timestampField]).getHours();
+            result[hour] = d[field];
+        });
+        return result;
+    }
+</script>
+
 </head>
 <body>
     <h1>Elpris & Väder</h1>
@@ -97,11 +109,12 @@
         const electricityData = {{ electricity_prices | tojson | safe }};
 
         if (weatherData.length > 0) {
-            const weatherLabels = weatherData.map(row => {
+            const weatherLabels = [...Array(24).keys()].map(h => h.toString().padStart(2, '0') + ':00');
                 const d = new Date(row.timestamp);
                 return d.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-            });
-            const ctx = document.getElementById('weatherChart').getContext('2d');
+           
+            
+const ctx = document.getElementById('weatherChart').getContext('2d');
             new Chart(ctx, {
                 type: 'line',
                 data: {
@@ -109,13 +122,13 @@
                     datasets: [
                         {
                             label: 'Temperatur (°C)',
-                            data: weatherData.map(row => row.temperature),
+                            data: padHourlyData(weatherData, 'temperature', 'timestamp'),
                             borderColor: 'red',
                             tension: 0.3
                         },
                         {
                             label: 'Vindstyrka (m/s)',
-                            data: weatherData.map(row => row.vind),
+                            data: padHourlyData(weatherData, 'vind', 'timestamp'),
                             borderColor: 'blue',
                             tension: 0.3
                         }
@@ -125,7 +138,7 @@
         }
 
         if (electricityData.length > 0) {
-            const electricityLabels = electricityData.map(row => {
+            const electricityLabels = [...Array(24).keys()].map(h => h.toString().padStart(2, '0') + ':00');
                 const d = new Date(row.datetime);
                 return d.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
             });
@@ -136,7 +149,7 @@
                     labels: electricityLabels,
                     datasets: [{
                         label: 'Elpris (kr/kWh)',
-                        data: electricityData.map(row => row.price),
+                        data: padHourlyData(electricityData, 'price', 'datetime'),
                         borderColor: 'green',
                         tension: 0.3
                     }]
