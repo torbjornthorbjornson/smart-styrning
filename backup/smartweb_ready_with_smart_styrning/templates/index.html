@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+    <meta charset="UTF-8">
+    <title>Smart Fastighetsstyrning</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+    <h1>Elpris & Väder</h1>
+
+    <canvas id="weatherChart"></canvas>
+    <canvas id="priceChart"></canvas>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Tid</th>
+                <th>Temp (°C)</th>
+                <th>Vind (m/s)</th>
+                <th>Symbol</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in weather_data %}
+            <tr>
+                <td>{{ row.timestamp }}</td>
+                <td>{{ row.temperature }}</td>
+                <td>{{ row.wind_speed }}</td>
+                <td>{{ row.symbol_code }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <p>Medeltemperatur: {{ avg_temp }} °C</p>
+    <p>Medelvind: {{ avg_wind }} m/s</p>
+    <p>Medelpris: {{ avg_price }} SEK/kWh</p>
+
+    <script>
+        const weatherData = {{ weather_json | safe }};
+        const priceData = {{ price_json | safe }};
+
+        const labels = weatherData.map(row => row.timestamp.slice(11, 16));
+        const temperatures = weatherData.map(row => row.temperature);
+        const windSpeeds = weatherData.map(row => row.wind_speed);
+
+        new Chart(document.getElementById("weatherChart"), {
+            type: "line",
+            data: {
+                labels: labels,
+                datasets: [
+                    {
+                        label: "Temperatur (°C)",
+                        data: temperatures,
+                        borderWidth: 2,
+                        fill: false
+                    },
+                    {
+                        label: "Vind (m/s)",
+                        data: windSpeeds,
+                        borderWidth: 2,
+                        fill: false
+                    }
+                ]
+            }
+        });
+
+        const priceLabels = priceData.map(row => row.datetime.slice(11, 16));
+        const prices = priceData.map(row => row.price);
+
+        new Chart(document.getElementById("priceChart"), {
+            type: "line",
+            data: {
+                labels: priceLabels,
+                datasets: [{
+                    label: "Elpris (SEK/kWh)",
+                    data: prices,
+                    borderWidth: 2,
+                    fill: false
+                }]
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+    <meta charset="UTF-8">
+    <title>Väder & Elpris</title>
+    <link rel="stylesheet" href="/static/styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <h1>Väder & Elpris</h1>
+
+    <form method="get">
+        <label for="datum">Välj datum:</label>
+        <input type="date" id="datum" name="datum" value="{{ selected_date }}">
+        <button type="submit">Visa</button>
+    </form>
+
+    {% if weatherdata %}
+        <div class="icon-row">
+            {% for row in weatherdata %}
+                <img src="/static/icons/svg/{{ row.symbol_code }}.svg" alt="{{ row.symbol_code }}" title="{{ row.symbol_code }}" class="weather-icon">
+            {% endfor %}
+        </div>
+        <div class="chart-container">
+            <canvas id="weatherChart"></canvas>
+        </div>
+    {% else %}
+        <p>Ingen väderdata tillgänglig för valt datum.</p>
+    {% endif %}
+
+    {% if electricity_prices %}
+        <div class="chart-container">
+            <canvas id="electricityChart"></canvas>
+        </div>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Tid</th>
+                    <th>Elpris (kr/kWh)</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in electricity_prices %}
+                    <tr>
+                        <td>{{ row.datetime.strftime('%H:%M') }}</td>
+                        <td>{{ row.price }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p>Inga elpriser tillgängliga för valt datum.</p>
+    {% endif %}
+
+    <script>
+        const weatherData = {{ weatherdata | tojson | safe }};
+        const electricityData = {{ electricity_prices | tojson | safe }};
+
+        if (weatherData.length > 0) {
+            const weatherCtx = document.getElementById('weatherChart').getContext('2d');
+            new Chart(weatherCtx, {
+                type: 'line',
+                data: {
+                    labels: weatherData.map(row => row.timestamp.split('T')[1].substring(0, 5)),
+                    datasets: [
+                        {
+                            label: 'Temperatur (°C)',
+                            data: weatherData.map(row => row.temperature),
+                            borderColor: 'blue',
+                            tension: 0.1
+                        },
+                        {
+                            label: 'Vindstyrka (m/s)',
+                            data: weatherData.map(row => row.vind),
+                            borderColor: 'pink',
+                            tension: 0.1
+                        }
+                    ]
+                }
+            });
+        }
+
+        if (electricityData.length > 0) {
+            const electricityCtx = document.getElementById('electricityChart').getContext('2d');
+            new Chart(electricityCtx, {
+                type: 'line',
+                data: {
+                    labels: electricityData.map(row => row.datetime.split('T')[1].substring(0, 5)),
+                    datasets: [{
+                        label: 'Elpris (kr/kWh)',
+                        data: electricityData.map(row => row.price),
+                        borderColor: 'orange',
+                        tension: 0.1
+                    }]
+                }
+            });
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+    <meta charset="UTF-8">
+    <title>Väder & Elpris</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="container">
+        <h1>Väder & Elpris</h1>
+        <form method="get">
+            <label for="datum">Välj datum:</label>
+            <input type="date" id="datum" name="datum" value="{{ selected_date }}">
+            <button type="submit">Visa</button>
+        </form>
+
+        <div class="weather-icons">
+            {% for w in weatherdata %}
+                {% if w.symbol_code %}
+                    <img src="{{ url_for('static', filename='icons/svg/' ~ w.symbol_code ~ '.svg') }}" alt="{{ w.symbol_code }}" onerror="this.outerHTML='❓'">
+                {% else %}
+                    ❓
+                {% endif %}
+            {% endfor %}
+        </div>
+
+        <canvas id="weatherChart"></canvas>
+        <canvas id="priceChart"></canvas>
+
+        <table>
+            <thead>
+                <tr><th>Tid</th><th>Elpris (kr/kWh)</th></tr>
+            </thead>
+            <tbody>
+                {% for p in electricity_prices %}
+                    <tr><td>{{ p.time[11:16] }}</td><td>{{ "%.2f"|format(p.pris) }}</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        const weatherData = {{ weatherdata | tojson }};
+        const priceData = {{ electricity_prices | tojson }};
+
+        const weatherChart = new Chart(document.getElementById("weatherChart").getContext("2d"), {
+            type: "line",
+            data: {
+                labels: weatherData.map(w => w.time.substring(11, 16)),
+                datasets: [
+                    {
+                        label: "Temperatur (°C)",
+                        data: weatherData.map(w => w.temp),
+                        borderColor: "deepskyblue",
+                        tension: 0.4
+                    },
+                    {
+                        label: "Vindstyrka (m/s)",
+                        data: weatherData.map(w => w.wind),
+                        borderColor: "hotpink",
+                        tension: 0.4
+                    }
+                ]
+            }
+        });
+
+        const priceChart = new Chart(document.getElementById("priceChart").getContext("2d"), {
+            type: "line",
+            data: {
+                labels: priceData.map(p => p.time.substring(11, 16)),
+                datasets: [{
+                    label: "Elpris (kr/kWh)",
+                    data: priceData.map(p => p.pris),
+                    borderColor: "orange",
+                    tension: 0.4
+                }]
+            }
+        });
+    </script>
+</body>
+</html>

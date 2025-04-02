@@ -39,7 +39,7 @@ def elprisvader():
     try:
         conn = get_connection()
         with conn.cursor() as cursor:
-            # Hämta väderdata
+            # Väderdata: filtrera UTC-säkert
             cursor.execute('''
                 SELECT * FROM weather
                 WHERE timestamp >= %s AND timestamp < DATE_ADD(%s, INTERVAL 1 DAY)
@@ -47,20 +47,22 @@ def elprisvader():
             ''', (selected_date, selected_date))
             weather_data = cursor.fetchall()
 
-            # Hämta elprisdata
+            # Elprisdata: UTC-justering för svensk lokal tid (sommartid)
+            utc_start = datetime.combine(selected_date, datetime.min.time()) - timedelta(hours=2)
+            utc_end = utc_start + timedelta(days=1)
             cursor.execute('''
                 SELECT * FROM electricity_prices
-                WHERE datetime >= %s AND datetime < DATE_ADD(%s, INTERVAL 1 DAY)
+                WHERE datetime >= %s AND datetime < %s
                 ORDER BY datetime
-            ''', (selected_date, selected_date))
+            ''', (utc_start, utc_end))
             elpris_data = cursor.fetchall()
 
-            # Beräkna medelvärden
+            # Medelvärden
             medel_temperature = round(sum(row["temperature"] for row in weather_data) / len(weather_data), 1) if weather_data else "-"
             medel_vind = round(sum(row["vind"] for row in weather_data) / len(weather_data), 1) if weather_data else "-"
             medel_elpris = round(sum(row["price"] for row in elpris_data) / len(elpris_data), 1) if elpris_data else "-"
 
-            # Formatera för grafer
+            # Grafer
             labels = [row["timestamp"].strftime("%H:%M") for row in weather_data]
             temperature = [row["temperature"] for row in weather_data]
             vind = [row["vind"] for row in weather_data]

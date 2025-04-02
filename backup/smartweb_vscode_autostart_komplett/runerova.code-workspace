@@ -1,0 +1,22 @@
+{
+    "folders": [
+        {
+            "name": "smartweb",
+            "uri": "vscode-remote://ssh-remote+pi/home/runerova/smartweb"
+        }
+    ],
+    "settings": {
+        "terminal.integrated.defaultProfile.linux": "bash",
+        "terminal.integrated.profiles.linux": {
+            "bash": {
+                "path": "/bin/bash"
+            }
+        },
+        "terminal.integrated.splitCwd": "workspace",
+        "terminal.integrated.cwd": "/home/runerova/smartweb/",
+        "tasks.runOnStartup": [
+            "Starta smartweb",
+            "Visa loggfil"
+        ]
+    }
+}
