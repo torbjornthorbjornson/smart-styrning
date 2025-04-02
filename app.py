@@ -39,25 +39,47 @@ def elprisvader():
     try:
         conn = get_connection()
         with conn.cursor() as cursor:
-            query = '''
-                SELECT *
-                FROM weather
+            # Hämta väderdata
+            cursor.execute('''
+                SELECT * FROM weather
                 WHERE timestamp >= %s AND timestamp < DATE_ADD(%s, INTERVAL 1 DAY)
                 ORDER BY timestamp
-            '''
-            cursor.execute(query, (selected_date, selected_date))
+            ''', (selected_date, selected_date))
             weather_data = cursor.fetchall()
 
-        labels = [row["timestamp"].strftime("%H:%M") for row in weather_data]
-        temperature = [row["temperature"] for row in weather_data]
-        vind = [row["vind"] for row in weather_data]
+            # Hämta elprisdata
+            cursor.execute('''
+                SELECT * FROM electricity_prices
+                WHERE datetime >= %s AND datetime < DATE_ADD(%s, INTERVAL 1 DAY)
+                ORDER BY datetime
+            ''', (selected_date, selected_date))
+            elpris_data = cursor.fetchall()
+
+            # Beräkna medelvärden
+            medel_temperature = round(sum(row["temperature"] for row in weather_data) / len(weather_data), 1) if weather_data else "-"
+            medel_vind = round(sum(row["vind"] for row in weather_data) / len(weather_data), 1) if weather_data else "-"
+            medel_elpris = round(sum(row["price"] for row in elpris_data) / len(elpris_data), 1) if elpris_data else "-"
+
+            # Formatera för grafer
+            labels = [row["timestamp"].strftime("%H:%M") for row in weather_data]
+            temperature = [row["temperature"] for row in weather_data]
+            vind = [row["vind"] for row in weather_data]
+
+            elpris_labels = [row["datetime"].strftime("%H:%M") for row in elpris_data]
+            elpris_values = [row["price"] for row in elpris_data]
 
         return render_template("elpris_vader.html",
                                selected_date=selected_date,
                                weatherdata=weather_data,
+                               elprisdata=elpris_data,
                                labels=labels,
                                temperature=temperature,
-                               vind=vind)
+                               vind=vind,
+                               elpris_labels=elpris_labels,
+                               elpris_values=elpris_values,
+                               medel_temperature=medel_temperature,
+                               medel_vind=medel_vind,
+                               medel_elpris=medel_elpris)
 
     except Exception as e:
         return f"Fel vid hämtning av data: {e}"

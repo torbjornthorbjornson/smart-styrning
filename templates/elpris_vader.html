@@ -1,9 +1,8 @@
 
 {% extends "layout.html" %}
-
 {% block content %}
-<h2>Elpris & Väder</h2>
 
+<h2>Elpris & Väder</h2>
 <a href="{{ url_for('home') }}">← Till startsidan</a><br><br>
 
 <form method="get">
@@ -12,26 +11,37 @@
   <button type="submit">Visa</button>
 </form>
 
-<!-- Ikonrad ovanför grafen -->
+<!-- Ikonrad -->
 <div class="icon-row">
   {% for row in weatherdata %}
     <div class="icon-cell">
       {% set icon_path = 'weather-icons/' + row.symbol_code + '.svg' %}
       <img src="{{ url_for('static', filename=icon_path) }}" alt="{{ row.symbol_code }}"
-           title="{{ row.symbol_code }}"
-           onerror="this.outerHTML='❓'" class="weather-icon">
+           title="{{ row.symbol_code }}" onerror="this.outerHTML='❓'" class="weather-icon">
       <div class="icon-hour">{{ row.timestamp.strftime('%H:%M') }}</div>
     </div>
   {% endfor %}
 </div>
 
+<!-- Vädergraf -->
+<h3>Temperatur & Vind</h3>
 <canvas id="weatherChart" width="100%" height="40"></canvas>
 
+<!-- Elprisgraf -->
+<h3 style="margin-top:40px;">Elpris</h3>
+{% if elprisdata %}
+<canvas id="elprisChart" width="100%" height="40"></canvas>
+{% else %}
+<p style="color: red;">⚠️ Ingen elprisdata tillgänglig för valt datum.</p>
+{% endif %}
+
+<!-- Vädertabell -->
+<h3 style="margin-top:40px;">Väderdata</h3>
 <table>
   <thead>
     <tr>
       <th>Tid</th>
-      <th>Temperatur (°C)</th>
+      <th>Temp (°C)</th>
       <th>Vind (m/s)</th>
       <th>Symbol</th>
     </tr>
@@ -45,8 +55,7 @@
       <td>
         {% set icon_path = 'weather-icons/' + row.symbol_code + '.svg' %}
         <img src="{{ url_for('static', filename=icon_path) }}" alt="{{ row.symbol_code }}"
-             title="{{ row.symbol_code }}"
-             onerror="this.outerHTML='❓'" class="weather-icon-small">
+             title="{{ row.symbol_code }}" onerror="this.outerHTML='❓'" class="weather-icon-small">
         {{ row.symbol_code }}
       </td>
     </tr>
@@ -54,9 +63,40 @@
   </tbody>
 </table>
 
+<!-- Elpristabell -->
+<h3 style="margin-top:40px;">Elpriser</h3>
+{% if elprisdata %}
+<table>
+  <thead>
+    <tr>
+      <th>Tid</th>
+      <th>Pris (öre/kWh)</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for row in elprisdata %}
+    <tr>
+      <td>{{ row.datetime.strftime('%H:%M') }}</td>
+      <td>{{ row.price }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<p style="color: red;">⚠️ Inga elpriser att visa.</p>
+{% endif %}
+
+<!-- Medelvärden -->
+<h3 style="margin-top:40px;">Medelvärden</h3>
+<ul>
+  <li>🌡️ Temperatur: {{ medel_temperature }} °C</li>
+  <li>💨 Vind: {{ medel_vind }} m/s</li>
+  <li>⚡ Elpris: {{ medel_elpris }} öre/kWh</li>
+</ul>
+
 <script>
-const ctx = document.getElementById('weatherChart').getContext('2d');
-const weatherChart = new Chart(ctx, {
+const ctx1 = document.getElementById('weatherChart').getContext('2d');
+new Chart(ctx1, {
     type: 'line',
     data: {
         labels: {{ labels|tojson }},
@@ -65,30 +105,35 @@ const weatherChart = new Chart(ctx, {
                 label: 'Temperatur (°C)',
                 data: {{ temperature|tojson }},
                 borderColor: 'red',
-                backgroundColor: 'transparent',
                 tension: 0.3
             },
             {
                 label: 'Vind (m/s)',
                 data: {{ vind|tojson }},
                 borderColor: 'blue',
-                backgroundColor: 'transparent',
                 tension: 0.3
             }
         ]
-    },
-    options: {
-        responsive: true,
-        scales: {
-            x: {
-                ticks: { autoSkip: false }
-            },
-            y: {
-                beginAtZero: true
-            }
-        }
     }
 });
+
+{% if elprisdata %}
+const ctx2 = document.getElementById('elprisChart').getContext('2d');
+new Chart(ctx2, {
+    type: 'line',
+    data: {
+        labels: {{ elpris_labels|tojson }},
+        datasets: [
+            {
+                label: 'Elpris (öre/kWh)',
+                data: {{ elpris_values|tojson }},
+                borderColor: 'green',
+                tension: 0.3
+            }
+        ]
+    }
+});
+{% endif %}
 </script>
 
 <style>
