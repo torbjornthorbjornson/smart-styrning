@@ -389,3 +389,28 @@ To https://github.com/torbjornthorbjornson/smart-styrning.git
  1 file changed, 6 insertions(+)
 To https://github.com/torbjornthorbjornson/smart-styrning.git
    8648798..fa86e32  main -> main
+[main 7edb009] Automatisk backup: 2025-04-02 09:30
+ 22 files changed, 24 insertions(+)
+ create mode 100644 static/icons/svg/clearsky_day.svg
+ create mode 100644 static/icons/svg/clearsky_night.svg
+ create mode 100644 static/icons/svg/cloudy.svg
+ create mode 100644 static/icons/svg/fair_day.svg
+ create mode 100644 static/icons/svg/fair_night.svg
+ create mode 100644 static/icons/svg/fog.svg
+ create mode 100644 static/icons/svg/heavyrain.svg
+ create mode 100644 static/icons/svg/heavysnow.svg
+ create mode 100644 static/icons/svg/lightrain.svg
+ create mode 100644 static/icons/svg/lightsnow.svg
+ create mode 100644 static/icons/svg/partlycloudy_day.svg
+ create mode 100644 static/icons/svg/partlycloudy_night.svg
+ create mode 100644 static/icons/svg/rain.svg
+ create mode 100644 static/icons/svg/rainshowers_day.svg
+ create mode 100644 static/icons/svg/rainshowers_night.svg
+ create mode 100644 static/icons/svg/sleet.svg
+ create mode 100644 static/icons/svg/snow.svg
+ create mode 100644 static/icons/svg/snowshowers_day.svg
+ create mode 100644 static/icons/svg/snowshowers_night.svg
+ create mode 100644 static/icons/svg/thunderstorm.svg
+ rename static/{icons/svg => }/styles.css (100%)
+To https://github.com/torbjornthorbjornson/smart-styrning.git
+   fa86e32..7edb009  main -> main
