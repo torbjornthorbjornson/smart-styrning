@@ -598,3 +598,42 @@ To https://github.com/torbjornthorbjornson/smart-styrning.git
  1 file changed, 4 insertions(+)
 To https://github.com/torbjornthorbjornson/smart-styrning.git
    338bcb5..baad623  main -> main
+[main d94ff2f] Automatisk backup: 2025-04-02 21:00
+ 36 files changed, 393 insertions(+), 20 deletions(-)
+ delete mode 100644 static/icons/svg/clearsky_day.svg
+ delete mode 100644 static/icons/svg/clearsky_night.svg
+ delete mode 100644 static/icons/svg/cloudy.svg
+ delete mode 100644 static/icons/svg/fair_day.svg
+ delete mode 100644 static/icons/svg/fair_night.svg
+ delete mode 100644 static/icons/svg/fog.svg
+ delete mode 100644 static/icons/svg/heavyrain.svg
+ delete mode 100644 static/icons/svg/heavysnow.svg
+ delete mode 100644 static/icons/svg/lightrain.svg
+ delete mode 100644 static/icons/svg/lightsnow.svg
+ delete mode 100644 static/icons/svg/partlycloudy_day.svg
+ delete mode 100644 static/icons/svg/partlycloudy_night.svg
+ delete mode 100644 static/icons/svg/rain.svg
+ delete mode 100644 static/icons/svg/rainshowers_day.svg
+ delete mode 100644 static/icons/svg/rainshowers_night.svg
+ delete mode 100644 static/icons/svg/sleet.svg
+ delete mode 100644 static/icons/svg/snow.svg
+ delete mode 100644 static/icons/svg/snowshowers_day.svg
+ delete mode 100644 static/icons/svg/snowshowers_night.svg
+ delete mode 100644 static/icons/svg/thunderstorm.svg
+ create mode 100644 static/weather-icons/clearsky_day.svg
+ create mode 100644 static/weather-icons/clearsky_night.svg
+ create mode 100644 static/weather-icons/cloudy.svg
+ create mode 100644 static/weather-icons/fair_day.svg
+ create mode 100644 static/weather-icons/fair_night.svg
+ create mode 100644 static/weather-icons/fog.svg
+ create mode 100644 static/weather-icons/heavyrain.svg
+ create mode 100644 static/weather-icons/lightrain.svg
+ create mode 100644 static/weather-icons/partlycloudy_day.svg
+ create mode 100644 static/weather-icons/partlycloudy_night.svg
+ create mode 100644 static/weather-icons/rain.svg
+ create mode 100644 static/weather-icons/rainshowers_day.svg
+ create mode 100644 static/weather-icons/rainshowers_night.svg
+ create mode 100644 static/weather-icons/snow.svg
+ create mode 100644 static/weather-icons/thunderstorm.svg
+To https://github.com/torbjornthorbjornson/smart-styrning.git
+   baad623..d94ff2f  main -> main
