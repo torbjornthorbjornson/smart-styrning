@@ -1,166 +1,117 @@
 
-{% extends "layout.html" %}
-{% block content %}
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+    <meta charset="UTF-8">
+    <title>Elpris & Väder</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <h1>📊 Elpris & 🌦️ Väder</h1>
 
-<h2>Elpris & Väder</h2>
-<a href="{{ url_for('home') }}">← Till startsidan</a><br><br>
+    <form method="get" action="{{ url_for('elprisvader') }}">
+        <label for="date">Välj datum:</label>
+        <input type="date" id="date" name="date" value="{{ selected_date.strftime('%Y-%m-%d') if selected_date else '' }}">
+        <button type="submit">Visa</button>
+    </form>
 
-<form method="get">
-  <label for="datum">Välj datum:</label>
-  <input type="date" id="datum" name="datum" value="{{ selected_date }}">
-  <button type="submit">Visa</button>
-</form>
+    {% if error %}
+        <p style="color: red;">Fel vid hämtning av data: {{ error }}</p>
+    {% endif %}
 
-<!-- Ikonrad -->
-<div class="icon-row">
-  {% for row in weatherdata %}
-    <div class="icon-cell">
-      {% set icon_path = 'weather-icons/' + row.symbol_code + '.svg' %}
-      <img src="{{ url_for('static', filename=icon_path) }}" alt="{{ row.symbol_code }}"
-           title="{{ row.symbol_code }}" onerror="this.outerHTML='❓'" class="weather-icon">
-      <div class="icon-hour">{{ row.timestamp.strftime('%H:%M') }}</div>
-    </div>
-  {% endfor %}
-</div>
+    {% if weather_data and electricity_data %}
+        <div class="chart-container">
+            <canvas id="weatherChart"></canvas>
+            <div class="icon-row">
+                {% for item in weather_data %}
+                    <div class="icon">
+                        {% set icon_path = url_for('static', filename='icons/svg/' + item.symbol_code + '.svg') %}
+                        <img src="{{ icon_path }}" onerror="this.outerHTML='{{ symbol_emojis.get(item.symbol_code, '❓') }}'">
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
 
-<!-- Vädergraf -->
-<h3>Temperatur & Vind</h3>
-<canvas id="weatherChart" width="100%" height="40"></canvas>
+        <div class="chart-container">
+            <canvas id="elprisChart"></canvas>
+        </div>
 
-<!-- Vädertabell -->
-<h3 style="margin-top:40px;">Väderdata</h3>
-<table>
-  <thead>
-    <tr>
-      <th>Tid</th>
-      <th>Temp (°C)</th>
-      <th>Vind (m/s)</th>
-      <th>Symbol</th>
-    </tr>
-  </thead>
-  <tbody>
-    {% for row in weatherdata %}
-    <tr>
-      <td>{{ row.timestamp.strftime('%H:%M') }}</td>
-      <td>{{ row.temperature }}</td>
-      <td>{{ row.vind }}</td>
-      <td>
-        {% set icon_path = 'weather-icons/' + row.symbol_code + '.svg' %}
-        <img src="{{ url_for('static', filename=icon_path) }}" alt="{{ row.symbol_code }}"
-             title="{{ row.symbol_code }}" onerror="this.outerHTML='❓'" class="weather-icon-small">
-        {{ row.symbol_code }}
-      </td>
-    </tr>
-    {% endfor %}
-  </tbody>
-</table>
+        <table>
+            <thead>
+                <tr>
+                    <th>Tid</th>
+                    <th>Temp (°C)</th>
+                    <th>Vind (m/s)</th>
+                    <th>Symbol</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in weather_data %}
+                    <tr>
+                        <td>{{ row.timestamp|datetimeformat }}</td>
+                        <td>{{ row.temperature }}</td>
+                        <td>{{ row.vind }}</td>
+                        <td>
+                            {% set icon_path = url_for('static', filename='icons/svg/' + row.symbol_code + '.svg') %}
+                            <img src="{{ icon_path }}" onerror="this.outerHTML='{{ symbol_emojis.get(row.symbol_code, '❓') }}'" height="24">
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
 
-<!-- Medelvärden -->
-<h3 style="margin-top:40px;">Medelvärden</h3>
-<ul>
-  <li>🌡️ Temperatur: {{ medel_temperature }} °C</li>
-  <li>💨 Vind: {{ medel_vind }} m/s</li>
-  <li>⚡ Elpris: {{ medel_elpris }} öre/kWh</li>
-</ul>
+        <h3>📈 Medelvärden</h3>
+        <p>🌡️ Temperatur: {{ medel_temperature|round(1) }} °C</p>
+        <p>💨 Vind: {{ medel_vind|round(1) }} m/s</p>
+        <p>⚡ Elpris: {{ medel_price|round(2) }} kr/kWh</p>
+    {% endif %}
 
-<!-- Elprisgraf -->
-<h3 style="margin-top:40px;">Elpris</h3>
-{% if elprisdata %}
-<canvas id="elprisChart" width="100%" height="40"></canvas>
-{% else %}
-<p style="color: red;">⚠️ Ingen elprisdata tillgänglig för valt datum.</p>
-{% endif %}
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        const weatherData = {{ weather_data_json|safe }};
+        const electricityData = {{ electricity_data_json|safe }};
 
-<!-- Elpristabell -->
-{% if elprisdata %}
-<table>
-  <thead>
-    <tr>
-      <th>Tid</th>
-      <th>Pris (öre/kWh)</th>
-    </tr>
-  </thead>
-  <tbody>
-    {% for row in elprisdata %}
-    <tr>
-      <td>{{ row.datetime.strftime('%H:%M') }}</td>
-      <td>{{ row.price }}</td>
-    </tr>
-    {% endfor %}
-  </tbody>
-</table>
-{% else %}
-<p style="color: red;">⚠️ Inga elpriser att visa.</p>
-{% endif %}
-
-<script>
-const ctx1 = document.getElementById('weatherChart').getContext('2d');
-new Chart(ctx1, {
-    type: 'line',
-    data: {
-        labels: {{ labels|tojson }},
-        datasets: [
-            {
-                label: 'Temperatur (°C)',
-                data: {{ temperature|tojson }},
-                borderColor: 'red',
-                tension: 0.3
+        const weatherCtx = document.getElementById('weatherChart').getContext('2d');
+        new Chart(weatherCtx, {
+            type: 'line',
+            data: {
+                labels: weatherData.map(row => row.timestamp),
+                datasets: [
+                    {
+                        label: '🌡️ Temperatur (°C)',
+                        data: weatherData.map(row => row.temperature),
+                        yAxisID: 'y1'
+                    },
+                    {
+                        label: '💨 Vind (m/s)',
+                        data: weatherData.map(row => row.vind),
+                        yAxisID: 'y2'
+                    }
+                ]
             },
-            {
-                label: 'Vind (m/s)',
-                data: {{ vind|tojson }},
-                borderColor: 'blue',
-                tension: 0.3
+            options: {
+                responsive: true,
+                scales: {
+                    y1: { type: 'linear', position: 'left', title: { display: true, text: 'Temperatur (°C)' } },
+                    y2: { type: 'linear', position: 'right', title: { display: true, text: 'Vind (m/s)' }, grid: { drawOnChartArea: false } }
+                }
             }
-        ]
-    }
-});
+        });
 
-{% if elprisdata %}
-const ctx2 = document.getElementById('elprisChart').getContext('2d');
-new Chart(ctx2, {
-    type: 'line',
-    data: {
-        labels: {{ elpris_labels|tojson }},
-        datasets: [
-            {
-                label: 'Elpris (öre/kWh)',
-                data: {{ elpris_values|tojson }},
-                borderColor: 'green',
-                tension: 0.3
+        const priceCtx = document.getElementById('elprisChart').getContext('2d');
+        new Chart(priceCtx, {
+            type: 'line',
+            data: {
+                labels: electricityData.map(row => row.datetime),
+                datasets: [{
+                    label: '⚡ Elpris (kr/kWh)',
+                    data: electricityData.map(row => row.price)
+                }]
+            },
+            options: {
+                responsive: true
             }
-        ]
-    }
-});
-{% endif %}
-</script>
-
-<style>
-.icon-row {
-  display: flex;
-  justify-content: space-between;
-  flex-wrap: nowrap;
-  overflow-x: auto;
-  margin: 20px 0;
-}
-.icon-cell {
-  text-align: center;
-  width: 40px;
-  font-size: 12px;
-}
-.weather-icon {
-  width: 32px;
-  height: 32px;
-}
-.weather-icon-small {
-  width: 24px;
-  height: 24px;
-  vertical-align: middle;
-}
-.icon-hour {
-  font-size: 10px;
-  margin-top: 4px;
-}
-</style>
-
-{% endblock %}
+        });
+    </script>
+</body>
+</html>
