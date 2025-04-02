@@ -1758,3 +1758,527 @@ remote: error: GH001: Large files detected. You may want to try Git Large File S
 To https://github.com/torbjornthorbjornson/smart-styrning.git
  ! [remote rejected] main -> main (pre-receive hook declined)
 fel: misslyckades sända vissa referenser till "https://github.com/torbjornthorbjornson/smart-styrning.git"
+[main f1b13ad] Automatisk backup: 2025-04-03 00:30
+ 522 files changed, 186 insertions(+), 31821 deletions(-)
+ delete mode 100644 static/weather-icons/clearsky_day.svg
+ delete mode 100644 static/weather-icons/clearsky_night.svg
+ delete mode 100644 static/weather-icons/cloudy.svg
+ delete mode 100644 static/weather-icons/fair_day.svg
+ delete mode 100644 static/weather-icons/fair_night.svg
+ delete mode 100644 static/weather-icons/fog.svg
+ delete mode 100644 static/weather-icons/heavyrain.svg
+ delete mode 100644 static/weather-icons/lightrain.svg
+ delete mode 100644 static/weather-icons/partlycloudy_day.svg
+ delete mode 100644 static/weather-icons/partlycloudy_night.svg
+ delete mode 100644 static/weather-icons/rain.svg
+ delete mode 100644 static/weather-icons/rainshowers_day.svg
+ delete mode 100644 static/weather-icons/rainshowers_night.svg
+ delete mode 100644 static/weather-icons/snow.svg
+ delete mode 100644 static/weather-icons/thunderstorm.svg
+ delete mode 100644 templates/backup/ChatGPT Image 2 apr. 2025 09_17_31.png
+ delete mode 100644 templates/backup/ChromeSetup.exe
+ delete mode 100644 templates/backup/HittakvUpdateInstallerLatest.exe
+ delete mode 100644 templates/backup/PowerShell-7.5.0-win-x64.msi
+ delete mode 100644 "templates/backup/Smart fastighetsstyrning - Webbprojekt f\303\266r elpris.html"
+ delete mode 100644 "templates/backup/Smart fastighetsstyrning - Webbprojekt f\303\266r elpris_files/8d9f34df-1ead-4a4f-8868-15f359e2e3d2.png"
+ delete mode 100644 "templates/backup/Smart fastighetsstyrning - Webbprojekt f\303\266r elpris_files/FormattedText-ecwyy7s8.css"
+ delete mode 100644 "templates/backup/Smart fastighetsstyrning - Webbprojekt f\303\266r elpris_files/codemirror-m72qg85i.css"
+ delete mode 100644 "templates/backup/Smart fastighetsstyrning - Webbprojekt f\303\266r elpris_files/comments-plugin-dtishh47.css"
+ delete mode 100644 "templates/backup/Smart fastighetsstyrning - Webbprojekt f\303\266r elpris_files/conversation-small-kx6wglz1.css"
+ delete mode 100644 "templates/backup/Smart fastighetsstyrning - Webbprojekt f\303\266r elpris_files/root-drzjahv8.css"
+ delete mode 100644 "templates/backup/Smart fastighetsstyrning - Webbprojekt f\303\266r elpris_files/saved_resource.html"
+ delete mode 100644 "templates/backup/Smart fastighetsstyrning - Webbprojekt f\303\266r elpris_files/sora-mutf8tav.webp"
+ delete mode 100644 templates/backup/VSCodeUserSetup-x64-1.98.2.exe
+ delete mode 100644 templates/backup/app (1).py
+ delete mode 100644 templates/backup/app.py
+ delete mode 100644 templates/backup/app_full_jsonfix.py
+ delete mode 100644 templates/backup/app_jsonfix.py
+ delete mode 100644 templates/backup/app_updated_elpris_vader (1).py
+ delete mode 100644 templates/backup/app_updated_elpris_vader.py
+ delete mode 100644 templates/backup/elpris_vader.html
+ delete mode 100644 templates/backup/elpris_vader_clean_icons.zip
+ delete mode 100644 templates/backup/elpris_vader_clean_icons/static/styles.css
+ delete mode 100644 templates/backup/elpris_vader_clean_icons/templates/elpris_vader.html
+ delete mode 100644 templates/backup/elpris_vader_fix_datetime.zip
+ delete mode 100644 templates/backup/elpris_vader_fix_datetime/static/styles.css
+ delete mode 100644 templates/backup/elpris_vader_fix_datetime/templates/elpris_vader.html
+ delete mode 100644 templates/backup/elpris_vader_fix_timestamp.zip
+ delete mode 100644 templates/backup/elpris_vader_fix_timestamp/templates/elpris_vader.html
+ delete mode 100644 templates/backup/elpris_vader_step1_base.zip
+ delete mode 100644 templates/backup/elpris_vader_step1_base/app.py
+ delete mode 100644 templates/backup/elpris_vader_step1_base/static/styles.css
+ delete mode 100644 templates/backup/elpris_vader_step1_base/templates/elpris_vader.html
+ delete mode 100644 templates/backup/elpris_vader_step1_fix_timestamp.zip
+ delete mode 100644 templates/backup/elpris_vader_step1_fix_timestamp/app.py
+ delete mode 100644 templates/backup/elpris_vader_step1_fix_timestamp/static/styles.css
+ delete mode 100644 templates/backup/elpris_vader_step1_fix_timestamp/templates/elpris_vader.html
+ delete mode 100644 templates/backup/elpris_vader_step3_design.zip
+ delete mode 100644 templates/backup/elpris_vader_step3_design/static/styles.css
+ delete mode 100644 templates/backup/elpris_vader_step3_design/templates/elpris_vader.html
+ delete mode 100644 templates/backup/elpris_vader_step4_fix.zip
+ delete mode 100644 templates/backup/elpris_vader_step4_fix/static/styles.css
+ delete mode 100644 templates/backup/elpris_vader_step4_fix/templates/elpris_vader.html
+ delete mode 100644 templates/backup/elpris_vader_step5_aligned.zip
+ delete mode 100644 templates/backup/elpris_vader_step5_aligned/static/styles.css
+ delete mode 100644 templates/backup/elpris_vader_step5_aligned/templates/elpris_vader.html
+ delete mode 100644 templates/backup/elpris_vader_step5_final.zip
+ delete mode 100644 templates/backup/elpris_vader_step5_final/static/styles.css
+ delete mode 100644 templates/backup/elpris_vader_step5_final/templates/elpris_vader.html
+ delete mode 100644 templates/backup/elpris_vader_step6_graphfix.zip
+ delete mode 100644 templates/backup/elpris_vader_step6_graphfix/static/styles.css
+ delete mode 100644 templates/backup/elpris_vader_step6_graphfix/templates/elpris_vader.html
+ delete mode 100644 templates/backup/elpris_vader_step7_fix_syntax.zip
+ delete mode 100644 templates/backup/elpris_vader_step7_fix_syntax/static/styles.css
+ delete mode 100644 templates/backup/elpris_vader_step7_fix_syntax/templates/elpris_vader.html
+ delete mode 100644 templates/backup/elpris_vader_step8_noreturnfix.zip
+ delete mode 100644 templates/backup/elpris_vader_step8_noreturnfix/static/styles.css
+ delete mode 100644 templates/backup/elpris_vader_step8_noreturnfix/templates/elpris_vader.html
+ delete mode 100644 templates/backup/elpris_vader_step9_clean_final.zip
+ delete mode 100644 templates/backup/elpris_vader_step9_clean_final/static/styles.css
+ delete mode 100644 templates/backup/elpris_vader_step9_clean_final/templates/elpris_vader.html
+ delete mode 100644 templates/backup/elpris_vader_update.zip
+ delete mode 100644 templates/backup/elpris_vader_update/elpris_vader.html
+ delete mode 100644 templates/backup/elpris_vader_update/styles.css
+ delete mode 100644 templates/backup/flytta_och_starta_vscode.bat
+ delete mode 100644 templates/backup/flytta_starta_FIXAD.bat
+ delete mode 100644 "templates/backup/flytta_vscode_inst\303\244llningar.bat"
+ delete mode 100644 templates/backup/gitlog.html
+ delete mode 100644 templates/backup/index (1).html
+ delete mode 100644 templates/backup/index.html
+ delete mode 100644 templates/backup/index.txt
+ delete mode 100644 templates/backup/index_fixad.html
+ delete mode 100644 templates/backup/index_fixed.html
+ delete mode 100644 templates/backup/index_full.html
+ delete mode 100644 templates/backup/index_full_fix (1).html
+ delete mode 100644 templates/backup/index_full_fix (2).html
+ delete mode 100644 templates/backup/index_full_fix.html
+ delete mode 100644 templates/backup/index_with_icons_final.html
+ delete mode 100644 templates/backup/layout.html
+ delete mode 100644 templates/backup/run.sh
+ delete mode 100644 templates/backup/runerova.code-workspace
+ delete mode 100644 templates/backup/runerova_FIXAD.code-workspace
+ delete mode 100644 templates/backup/skapa_ssh_config.bat
+ delete mode 100644 templates/backup/smartweb_elpris_vader_ready.zip
+ delete mode 100644 templates/backup/smartweb_elpris_vader_ready/app.py
+ delete mode 100644 templates/backup/smartweb_elpris_vader_ready/static/styles.css
+ delete mode 100644 templates/backup/smartweb_elpris_vader_ready/templates/elpris_vader.html
+ delete mode 100644 templates/backup/smartweb_files.zip
+ delete mode 100644 templates/backup/smartweb_files/app.py
+ delete mode 100644 templates/backup/smartweb_files/static/styles.css
+ delete mode 100644 templates/backup/smartweb_files/templates/index.html
+ delete mode 100644 templates/backup/smartweb_fix_tid.zip
+ delete mode 100644 templates/backup/smartweb_fix_tid/app.py
+ delete mode 100644 templates/backup/smartweb_fix_tid/templates/elpris_vader.html
+ delete mode 100644 templates/backup/smartweb_ready_with_smart_styrning.zip
+ delete mode 100644 templates/backup/smartweb_ready_with_smart_styrning/app.py
+ delete mode 100644 templates/backup/smartweb_ready_with_smart_styrning/static/styles.css
+ delete mode 100644 templates/backup/smartweb_ready_with_smart_styrning/templates/index.html
+ delete mode 100644 templates/backup/smartweb_step1_grafer.zip
+ delete mode 100644 templates/backup/smartweb_step1_grafer/static/styles.css
+ delete mode 100644 templates/backup/smartweb_step1_grafer/templates/elpris_vader.html
+ delete mode 100644 templates/backup/smartweb_vscode_autostart_komplett.zip
+ delete mode 100644 templates/backup/smartweb_vscode_autostart_komplett/runerova.code-workspace
+ delete mode 100644 templates/backup/smartweb_vscode_autostart_komplett/start_Pi_vscode.bat
+ delete mode 100644 templates/backup/smartweb_vscode_autostart_komplett/tasks.json
+ delete mode 100644 templates/backup/smartweb_vscode_startpaket.zip
+ delete mode 100644 templates/backup/smartweb_vscode_startpaket/runerova.code-workspace
+ delete mode 100644 templates/backup/smartweb_vscode_startpaket/start_Pi_vscode.bat
+ delete mode 100644 templates/backup/smartweb_vscode_startpaket/tasks.json
+ delete mode 100644 templates/backup/start_Pi_vscode.bat
+ delete mode 100644 templates/backup/start_Pi_vscode_FIXAD.bat
+ delete mode 100644 templates/backup/start_Pi_vscode_WAIT_FIXAD.bat
+ delete mode 100644 templates/backup/start_smartweb.zip
+ delete mode 100644 templates/backup/startpaket_torbjorn.zip
+ delete mode 100644 templates/backup/startpaket_torbjorn_FULL.zip
+ delete mode 100644 templates/backup/styles (1).css
+ delete mode 100644 templates/backup/styles (2).css
+ delete mode 100644 templates/backup/styles.css
+ delete mode 100644 templates/backup/v3_stabil_bas.zip
+ delete mode 100644 templates/backup/v3_stabil_bas/app.py
+ delete mode 100644 templates/backup/v3_stabil_bas/static/icons/svg/clearsky_day.svg
+ delete mode 100644 templates/backup/v3_stabil_bas/templates/dokumentation.html
+ delete mode 100644 templates/backup/v3_stabil_bas/templates/elpris_vader.html
+ delete mode 100644 templates/backup/v3_stabil_bas/templates/gitlog.html
+ delete mode 100644 templates/backup/v3_stabil_bas/templates/home.html
+ delete mode 100644 templates/backup/v3_stabil_bas/templates/vision.html
+ delete mode 100644 templates/backup/weather-icons.zip
+ delete mode 100644 templates/backup/weather-icons/clearsky_day.svg
+ delete mode 100644 templates/backup/weather-icons/clearsky_night.svg
+ delete mode 100644 templates/backup/weather-icons/cloudy.svg
+ delete mode 100644 templates/backup/weather-icons/fair_day.svg
+ delete mode 100644 templates/backup/weather-icons/fair_night.svg
+ delete mode 100644 templates/backup/weather-icons/fog.svg
+ delete mode 100644 templates/backup/weather-icons/heavyrain.svg
+ delete mode 100644 templates/backup/weather-icons/lightrain.svg
+ delete mode 100644 templates/backup/weather-icons/partlycloudy_day.svg
+ delete mode 100644 templates/backup/weather-icons/partlycloudy_night.svg
+ delete mode 100644 templates/backup/weather-icons/rain.svg
+ delete mode 100644 templates/backup/weather-icons/rainshowers_day.svg
+ delete mode 100644 templates/backup/weather-icons/rainshowers_night.svg
+ delete mode 100644 templates/backup/weather-icons/snow.svg
+ delete mode 100644 templates/backup/weather-icons/thunderstorm.svg
+ delete mode 100644 templates/backup/weather.py
+ delete mode 100644 templates/backup/weather_icons_all_svg.zip
+ delete mode 100644 templates/backup/weather_icons_svg_pack.zip
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1).zip
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/.gitignore
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/.nvmrc
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/BUILD.MD
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/Dockerfile
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/LICENSE
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/README.md
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/bin/buildDocs.ts
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/locales/en.json
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/locales/nb.json
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/locales/nn.json
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/package-lock.json
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/package.json
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/prettier.config.js
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/src/index.ts
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/darkmode/01d.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/darkmode/01m.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/darkmode/01n.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/darkmode/02d.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/darkmode/02m.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/darkmode/02n.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/darkmode/03d.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/darkmode/03m.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/darkmode/03n.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/darkmode/04.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/darkmode/05d.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/darkmode/05m.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/darkmode/05n.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/darkmode/06d.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/darkmode/06m.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/darkmode/06n.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/darkmode/07d.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/darkmode/07m.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/darkmode/07n.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/darkmode/08d.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/darkmode/08m.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/darkmode/08n.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/darkmode/09.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/darkmode/10.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/darkmode/11.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/darkmode/12.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/darkmode/13.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/darkmode/14.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/darkmode/15.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/darkmode/20d.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/darkmode/20m.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/darkmode/20n.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/darkmode/21d.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/darkmode/21m.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/darkmode/21n.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/darkmode/22.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/darkmode/23.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/darkmode/24d.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/darkmode/24m.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/darkmode/24n.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/darkmode/25d.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/darkmode/25m.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/darkmode/25n.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/darkmode/26d.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/darkmode/26m.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/darkmode/26n.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/darkmode/27d.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/darkmode/27m.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/darkmode/27n.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/darkmode/28d.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/darkmode/28m.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/darkmode/28n.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/darkmode/29d.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/darkmode/29m.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/darkmode/29n.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/darkmode/30.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/darkmode/31.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/darkmode/32.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/darkmode/33.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/darkmode/34.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/darkmode/40d.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/darkmode/40m.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/darkmode/40n.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/darkmode/41d.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/darkmode/41m.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/darkmode/41n.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/darkmode/42d.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/darkmode/42m.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/darkmode/42n.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/darkmode/43d.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/darkmode/43m.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/darkmode/43n.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/darkmode/44d.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/darkmode/44m.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/darkmode/44n.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/darkmode/45d.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/darkmode/45m.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/darkmode/45n.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/darkmode/46.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/darkmode/47.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/darkmode/48.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/darkmode/49.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/darkmode/50.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/lightmode.zip
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/lightmode/01d.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/lightmode/01m.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/lightmode/01n.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/lightmode/02d.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/lightmode/02m.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/lightmode/02n.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/lightmode/03d.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/lightmode/03m.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/lightmode/03n.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/lightmode/04.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/lightmode/05d.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/lightmode/05m.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/lightmode/05n.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/lightmode/06d.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/lightmode/06m.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/lightmode/06n.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/lightmode/07d.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/lightmode/07m.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/lightmode/07n.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/lightmode/08d.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/lightmode/08m.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/lightmode/08n.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/lightmode/09.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/lightmode/10.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/lightmode/11.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/lightmode/12.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/lightmode/13.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/lightmode/14.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/lightmode/15.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/lightmode/20d.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/lightmode/20m.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/lightmode/20n.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/lightmode/21d.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/lightmode/21m.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/lightmode/21n.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/lightmode/22.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/lightmode/23.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/lightmode/24d.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/lightmode/24m.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/lightmode/24n.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/lightmode/25d.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/lightmode/25m.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/lightmode/25n.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/lightmode/26d.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/lightmode/26m.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/lightmode/26n.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/lightmode/27d.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/lightmode/27m.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/lightmode/27n.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/lightmode/28d.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/lightmode/28m.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/lightmode/28n.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/lightmode/29d.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/lightmode/29m.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/lightmode/29n.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/lightmode/30.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/lightmode/31.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/lightmode/32.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/lightmode/33.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/lightmode/34.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/lightmode/40d.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/lightmode/40m.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/lightmode/40n.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/lightmode/41d.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/lightmode/41m.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/lightmode/41n.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/lightmode/42d.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/lightmode/42m.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/lightmode/42n.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/lightmode/43d.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/lightmode/43m.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/lightmode/43n.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/lightmode/44d.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/lightmode/44m.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/lightmode/44n.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/lightmode/45d.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/lightmode/45m.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/lightmode/45n.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/lightmode/46.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/lightmode/47.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/lightmode/48.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/lightmode/49.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/lightmode/50.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/outline/01d.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/outline/01m.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/outline/01n.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/outline/02d.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/outline/02m.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/outline/02n.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/outline/03d.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/outline/03m.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/outline/03n.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/outline/04.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/outline/05d.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/outline/05m.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/outline/05n.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/outline/06d.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/outline/06m.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/outline/06n.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/outline/07d.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/outline/07m.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/outline/07n.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/outline/08d.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/outline/08m.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/outline/08n.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/outline/09.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/outline/10.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/outline/11.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/outline/12.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/outline/13.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/outline/14.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/outline/15.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/outline/20d.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/outline/20m.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/outline/20n.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/outline/21d.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/outline/21m.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/outline/21n.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/outline/22.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/outline/23.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/outline/24d.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/outline/24m.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/outline/24n.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/outline/25d.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/outline/25m.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/outline/25n.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/outline/26d.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/outline/26m.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/outline/26n.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/outline/27d.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/outline/27m.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/outline/27n.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/outline/28d.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/outline/28m.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/outline/28n.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/outline/29d.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/outline/29m.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/outline/29n.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/outline/30.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/outline/31.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/outline/32.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/outline/33.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/outline/34.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/outline/40d.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/outline/40m.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/outline/40n.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/outline/41d.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/outline/41m.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/outline/41n.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/outline/42d.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/outline/42m.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/outline/42n.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/outline/43d.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/outline/43m.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/outline/43n.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/outline/44d.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/outline/44m.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/outline/44n.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/outline/45d.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/outline/45m.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/outline/45n.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/outline/46.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/outline/47.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/outline/48.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/outline/49.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/outline/50.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/shadows/01d.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/shadows/01m.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/shadows/01n.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/shadows/02d.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/shadows/02m.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/shadows/02n.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/shadows/03d.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/shadows/03m.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/shadows/03n.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/shadows/04.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/shadows/05d.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/shadows/05m.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/shadows/05n.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/shadows/06d.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/shadows/06m.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/shadows/06n.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/shadows/07d.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/shadows/07m.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/shadows/07n.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/shadows/08d.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/shadows/08m.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/shadows/08n.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/shadows/09.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/shadows/10.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/shadows/11.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/shadows/12.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/shadows/13.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/shadows/14.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/shadows/15.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/shadows/20d.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/shadows/20m.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/shadows/20n.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/shadows/21d.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/shadows/21m.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/shadows/21n.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/shadows/22.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/shadows/23.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/shadows/24d.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/shadows/24m.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/shadows/24n.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/shadows/25d.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/shadows/25m.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/shadows/25n.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/shadows/26d.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/shadows/26m.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/shadows/26n.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/shadows/27d.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/shadows/27m.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/shadows/27n.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/shadows/28d.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/shadows/28m.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/shadows/28n.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/shadows/29d.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/shadows/29m.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/shadows/29n.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/shadows/30.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/shadows/31.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/shadows/32.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/shadows/33.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/shadows/34.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/shadows/40d.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/shadows/40m.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/shadows/40n.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/shadows/41d.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/shadows/41m.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/shadows/41n.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/shadows/42d.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/shadows/42m.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/shadows/42n.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/shadows/43d.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/shadows/43m.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/shadows/43n.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/shadows/44d.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/shadows/44m.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/shadows/44n.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/shadows/45d.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/shadows/45m.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/shadows/45n.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/shadows/46.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/shadows/47.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/shadows/48.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/shadows/49.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/symbols/shadows/50.svg
+ delete mode 100644 templates/backup/yr-weather-symbols-master (1)/yr-weather-symbols-master/tsconfig.json
+ delete mode 100644 templates/backup/yr-weather-symbols-master (2).zip
+ delete mode 100644 templates/backup/yr-weather-symbols-master.zip
+ delete mode 100644 templates/image.png
+ delete mode 100644 templates/layout.html
+remote: warning: File backup/HittakvUpdateInstallerLatest.exe is 69.13 MB; this is larger than GitHub's recommended maximum file size of 50.00 MB        
+remote: error: Trace: e526087b6d32a6d349cdf79d926eb9dd7afe3fb28daca423b0c090d475a7c3f7        
+remote: error: See https://gh.io/lfs for more information.        
+remote: error: File backup/PowerShell-7.5.0-win-x64.msi is 107.82 MB; this exceeds GitHub's file size limit of 100.00 MB        
+remote: error: File backup/VSCodeUserSetup-x64-1.98.2.exe is 102.53 MB; this exceeds GitHub's file size limit of 100.00 MB        
+remote: error: GH001: Large files detected. You may want to try Git Large File Storage - https://git-lfs.github.com.        
+To https://github.com/torbjornthorbjornson/smart-styrning.git
+ ! [remote rejected] main -> main (pre-receive hook declined)
+fel: misslyckades sända vissa referenser till "https://github.com/torbjornthorbjornson/smart-styrning.git"
