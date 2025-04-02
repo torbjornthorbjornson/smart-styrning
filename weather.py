@@ -18,7 +18,13 @@ db_config = {
 def get_weather_forecast():
     response = requests.get(URL, headers=HEADERS)
     data = response.json()
-    forecasts = data["properties"]["timeseries"][:24]
+    from datetime import date
+
+    today_str = date.today().strftime('%Y-%m-%d')
+    forecasts = [
+        f for f in data["properties"]["timeseries"]
+        if f["time"].startswith(today_str)
+    ]
     forecast_data = {}
     for f in forecasts:
         time = f["time"]
