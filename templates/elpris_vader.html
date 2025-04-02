@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="sv">
 <head>
@@ -8,99 +7,78 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
-    <div class="container">
-        <h1>Elpris & Väder</h1>
-        <div class="nav-link">
-            <a href="/" class="link">← Till startsidan</a>
-        </div>
+    <h1>Elpris & Väder</h1>
+    <a href="/home">← Till startsidan</a>
 
-        <form method="get" action="/elprisvader">
-            <label for="datum">Välj datum:</label>
-            <input type="date" id="datum" name="datum" value="{{ selected_date }}">
-            <button type="submit">Visa</button>
-        </form>
+    <form method="get">
+        <label for="datum">Välj datum:</label>
+        <input type="date" id="datum" name="datum" value="{{ selected_date }}">
+        <button type="submit">Visa</button>
+    </form>
 
-        <!-- Väderikoner -->
-        <div class="weather-icons">
+    {% if weatherdata %}
+    <div class="icon-row">
+        {% for row in weatherdata %}
+            <div class="icon-hour">
+                <img src="{{ url_for('static', filename='icons/svg/' + row.symbol_code + '.svg') }}" onerror="this.style.display='none'">
+                <div>{{ row.timestamp.strftime('%H:%M') }}</div>
+            </div>
+        {% endfor %}
+    </div>
+
+    <div class="chart-container">
+        <canvas id="weatherChart"></canvas>
+    </div>
+    {% endif %}
+
+    {% if weatherdata %}
+    <table>
+        <thead>
+            <tr>
+                <th>Tid</th>
+                <th>Temperatur (°C)</th>
+                <th>Vind (m/s)</th>
+                <th>Symbol</th>
+            </tr>
+        </thead>
+        <tbody>
             {% for row in weatherdata %}
-                <div class="weather-icon-block">
-                    {% if row.symbol_code %}
-                        {% set icon_path = '/static/icons/svg/' + row.symbol_code + '.svg' %}
-                        <img src="{{ icon_path }}" onerror="this.outerHTML='☁️'" alt="{{ row.symbol_code }}">
-                    {% else %}
-                        <div>❓</div>
-                    {% endif %}
-                    <div class="weather-hour">{{ row.timestamp.strftime('%H:%M') }}</div>
-                </div>
+            <tr>
+                <td>{{ row.timestamp.strftime('%H:%M') }}</td>
+                <td>{{ row.temperature }}</td>
+                <td>{{ row.vind }}</td>
+                <td>{{ row.symbol_code }}</td>
+            </tr>
             {% endfor %}
-        </div>
+        </tbody>
+    </table>
+    {% endif %}
 
-        <!-- Grafer -->
-        <canvas id="weatherChart" width="100%" height="40"></canvas>
-        <script>
+    <script>
+        const weatherData = {{ weatherdata | tojson }};
+        if (weatherData && weatherData.length > 0) {
             const ctx = document.getElementById('weatherChart').getContext('2d');
-            const weatherChart = new Chart(ctx, {
+            new Chart(ctx, {
                 type: 'line',
                 data: {
-                    labels: {{ weatherdata | map(attribute='timestamp') | map('strftime', '%H:%M') | list | tojson }},
+                    labels: weatherData.map(row => new Date(row.timestamp).toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' })),
                     datasets: [
                         {
                             label: 'Temperatur (°C)',
-                            data: {{ weatherdata | map(attribute='temperature') | list | tojson }},
+                            data: weatherData.map(row => row.temperature),
                             borderColor: 'red',
-                            backgroundColor: 'rgba(255, 0, 0, 0.1)',
-                            tension: 0.4
+                            tension: 0.3
                         },
                         {
-                            label: 'Vindhastighet (m/s)',
-                            data: {{ weatherdata | map(attribute='wind') | list | tojson }},
+                            label: 'Vindstyrka (m/s)',
+                            data: weatherData.map(row => row.vind),
                             borderColor: 'blue',
-                            backgroundColor: 'rgba(0, 0, 255, 0.1)',
-                            tension: 0.4
+                            tension: 0.3
                         }
                     ]
-                },
-                options: {
-                    responsive: true,
-                    scales: {
-                        x: {
-                            ticks: {
-                                maxRotation: 0,
-                                minRotation: 0
-                            }
-                        }
-                    }
                 }
             });
-        </script>
-
-        <!-- Tabell -->
-        <table>
-            <thead>
-                <tr>
-                    <th>Tid</th>
-                    <th>Temperatur (°C)</th>
-                    <th>Vind (m/s)</th>
-                    <th>Symbol</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for row in weatherdata %}
-                <tr>
-                    <td>{{ row.timestamp.strftime('%H:%M') }}</td>
-                    <td>{{ "%.2f" | format(row.temperature) }}</td>
-                    <td>{{ "%.1f" | format(row.wind) }}</td>
-                    <td>
-                        {% if row.symbol_code %}
-                            <img src="/static/icons/svg/{{ row.symbol_code }}.svg" onerror="this.outerHTML='☁️'" alt="{{ row.symbol_code }}" width="24">
-                        {% else %}
-                            ❓
-                        {% endif %}
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
+        }
+    </script>
 </body>
 </html>
