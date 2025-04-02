@@ -1,84 +1,122 @@
-<!DOCTYPE html>
-<html lang="sv">
-<head>
-    <meta charset="UTF-8">
-    <title>Elpris & Väder</title>
-    <link rel="stylesheet" href="/static/styles.css">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-</head>
-<body>
-    <h1>Elpris & Väder</h1>
-    <a href="/home">← Till startsidan</a>
 
-    <form method="get">
-        <label for="datum">Välj datum:</label>
-        <input type="date" id="datum" name="datum" value="{{ selected_date }}">
-        <button type="submit">Visa</button>
-    </form>
+{% extends "layout.html" %}
 
-    {% if weatherdata %}
-    <div class="icon-row">
-        {% for row in weatherdata %}
-            <div class="icon-hour">
-                <img src="{{ url_for('static', filename='icons/svg/' + row.symbol_code + '.svg') }}" onerror="this.style.display='none'">
-                <div>{{ row.timestamp.strftime('%H:%M') }}</div>
-            </div>
-        {% endfor %}
+{% block content %}
+<h2>Elpris & Väder</h2>
+
+<a href="{{ url_for('home') }}">← Till startsidan</a><br><br>
+
+<form method="get">
+  <label for="datum">Välj datum:</label>
+  <input type="date" id="datum" name="datum" value="{{ selected_date }}">
+  <button type="submit">Visa</button>
+</form>
+
+<!-- Ikonrad ovanför grafen -->
+<div class="icon-row">
+  {% for row in weatherdata %}
+    <div class="icon-cell">
+      {% set icon_path = 'weather-icons/' + row.symbol_code + '.svg' %}
+      <img src="{{ url_for('static', filename=icon_path) }}" alt="{{ row.symbol_code }}"
+           title="{{ row.symbol_code }}"
+           onerror="this.outerHTML='❓'" class="weather-icon">
+      <div class="icon-hour">{{ row.timestamp.strftime('%H:%M') }}</div>
     </div>
+  {% endfor %}
+</div>
 
-    <div class="chart-container">
-        <canvas id="weatherChart"></canvas>
-    </div>
-    {% endif %}
+<canvas id="weatherChart" width="100%" height="40"></canvas>
 
-    {% if weatherdata %}
-    <table>
-        <thead>
-            <tr>
-                <th>Tid</th>
-                <th>Temperatur (°C)</th>
-                <th>Vind (m/s)</th>
-                <th>Symbol</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for row in weatherdata %}
-            <tr>
-                <td>{{ row.timestamp.strftime('%H:%M') }}</td>
-                <td>{{ row.temperature }}</td>
-                <td>{{ row.vind }}</td>
-                <td>{{ row.symbol_code }}</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-    {% endif %}
+<table>
+  <thead>
+    <tr>
+      <th>Tid</th>
+      <th>Temperatur (°C)</th>
+      <th>Vind (m/s)</th>
+      <th>Symbol</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for row in weatherdata %}
+    <tr>
+      <td>{{ row.timestamp.strftime('%H:%M') }}</td>
+      <td>{{ row.temperature }}</td>
+      <td>{{ row.vind }}</td>
+      <td>
+        {% set icon_path = 'weather-icons/' + row.symbol_code + '.svg' %}
+        <img src="{{ url_for('static', filename=icon_path) }}" alt="{{ row.symbol_code }}"
+             title="{{ row.symbol_code }}"
+             onerror="this.outerHTML='❓'" class="weather-icon-small">
+        {{ row.symbol_code }}
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
 
-    <script>
-        const weatherData = {{ weatherdata | tojson }};
-        if (weatherData && weatherData.length > 0) {
-            const ctx = document.getElementById('weatherChart').getContext('2d');
-            new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: weatherData.map(row => row.tid_label),
-                    datasets: [
-                        {
-                            label: 'Temperatur (°C)',
-                            data: weatherData.map(row => row.temperature),
-                            borderColor: 'red',
-                            tension: 0.3
-                        },
-                        {
-                            label: 'Vind (m/s)',
-                            data: weatherData.map(row => row.vind),
-                            borderColor: 'blue',
-                            tension: 0.3
-                        }
-                    ]
-                }
-            });
+<script>
+const ctx = document.getElementById('weatherChart').getContext('2d');
+const weatherChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+        labels: {{ labels|tojson }},
+        datasets: [
+            {
+                label: 'Temperatur (°C)',
+                data: {{ temperature|tojson }},
+                borderColor: 'red',
+                backgroundColor: 'transparent',
+                tension: 0.3
+            },
+            {
+                label: 'Vind (m/s)',
+                data: {{ vind|tojson }},
+                borderColor: 'blue',
+                backgroundColor: 'transparent',
+                tension: 0.3
+            }
+        ]
+    },
+    options: {
+        responsive: true,
+        scales: {
+            x: {
+                ticks: { autoSkip: false }
+            },
+            y: {
+                beginAtZero: true
+            }
         }
-    </script>
-</body>
-</html>
+    }
+});
+</script>
+
+<style>
+.icon-row {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  margin: 20px 0;
+}
+.icon-cell {
+  text-align: center;
+  width: 40px;
+  font-size: 12px;
+}
+.weather-icon {
+  width: 32px;
+  height: 32px;
+}
+.weather-icon-small {
+  width: 24px;
+  height: 24px;
+  vertical-align: middle;
+}
+.icon-hour {
+  font-size: 10px;
+  margin-top: 4px;
+}
+</style>
+
+{% endblock %}
