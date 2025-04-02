@@ -61,7 +61,7 @@
             new Chart(ctx, {
                 type: 'line',
                 data: {
-                    labels: weatherData.map(row => new Date(row.timestamp).toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' })),
+                    labels: weatherData.map(row => row.tid_label),
                     datasets: [
                         {
                             label: 'Temperatur (°C)',
@@ -70,7 +70,7 @@
                             tension: 0.3
                         },
                         {
-                            label: 'Vindstyrka (m/s)',
+                            label: 'Vind (m/s)',
                             data: weatherData.map(row => row.vind),
                             borderColor: 'blue',
                             tension: 0.3
