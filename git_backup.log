@@ -418,3 +418,9 @@ To https://github.com/torbjornthorbjornson/smart-styrning.git
  1 file changed, 25 insertions(+)
 To https://github.com/torbjornthorbjornson/smart-styrning.git
    7edb009..4406673  main -> main
+[main 1e2f1a2] Automatisk backup: 2025-04-02 10:00
+ 4 files changed, 138 insertions(+), 167 deletions(-)
+ delete mode 100644 templates/elpris_vader.backup_20250401_231325.html
+ create mode 100644 templates/elpris_vader.bak_20250402_095349.html
+To https://github.com/torbjornthorbjornson/smart-styrning.git
+   4406673..1e2f1a2  main -> main
