@@ -379,3 +379,9 @@ To https://github.com/torbjornthorbjornson/smart-styrning.git
  1 file changed, 4 insertions(+)
 To https://github.com/torbjornthorbjornson/smart-styrning.git
    89de172..72be139  main -> main
+[main 8648798] Automatisk backup: 2025-04-02 09:00
+ 3 files changed, 60 insertions(+), 1 deletion(-)
+ delete mode 100644 static/icons/svg/clearsky_day.svg
+ create mode 100644 static/icons/svg/styles.css
+To https://github.com/torbjornthorbjornson/smart-styrning.git
+   72be139..8648798  main -> main
