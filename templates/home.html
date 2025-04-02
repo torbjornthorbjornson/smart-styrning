@@ -2,19 +2,15 @@
 <html lang="sv">
 <head>
     <meta charset="UTF-8">
-    <title>Smart fastighetsstyrning</title>
-    <link rel="stylesheet" href="/static/styles.css">
+    <title>Startsida</title>
 </head>
 <body>
-    <h1>Välkommen till Torbjörns fantastiska fastighetsstyrning</h1>
-
-    <p>Systemet presenterar väderprognos, elpris och driftstrategi för fastigheter i Sverige.</p>
-
-    <div class="button-container">
-        <a href="{{ url_for('elprisvader') }}">Elpris & Väder</a>
-        <a href="{{ url_for('dokumentation') }}">Dokumentation</a>
-        <a href="{{ url_for('vision') }}">Vision</a>
-        <a href="{{ url_for('gitlog') }}">Git-logg</a>
-    </div>
+    <h1>Smart fastighetsstyrning</h1>
+    <ul>
+        <li><a href="/elprisvader">Elpris & Väder</a></li>
+        <li><a href="/vision">Vision</a></li>
+        <li><a href="/gitlog">Git-logg</a></li>
+        <li><a href="/dokumentation">Dokumentation</a></li>
+    </ul>
 </body>
 </html>

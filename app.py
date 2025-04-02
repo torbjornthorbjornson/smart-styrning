@@ -1,4 +1,3 @@
-
 from flask import Flask, render_template, request
 import pymysql
 from datetime import datetime, timedelta
@@ -6,92 +5,105 @@ import os
 
 app = Flask(__name__)
 
-# Register a custom Jinja filter for formatting datetime
-@app.template_filter('datetimeformat')
-def datetimeformat(value, format='%H:%M'):
-    return value.strftime(format)
+def read_db_config():
+    config_path = os.path.expanduser('~/.my.cnf')
+    config = {}
+    with open(config_path) as f:
+        for line in f:
+            if line.startswith('user'):
+                config['user'] = line.strip().split('=')[1]
+            elif line.startswith('password'):
+                config['password'] = line.strip().split('=')[1]
+    return config
 
-# Route: startsida
-@app.route('/')
-def home():
-    return render_template('home.html')
-
-# Route: elpris och väder
-@app.route('/elprisvader')
-def elprisvader():
+def get_weather_data(selected_date):
+    config = read_db_config()
+    connection = pymysql.connect(
+        host='localhost',
+        user=config['user'],
+        password=config['password'],
+        database='smart_styrning',
+        cursorclass=pymysql.cursors.DictCursor
+    )
     try:
-        selected_date = request.args.get('date')
-        if selected_date:
-            selected_date_obj = datetime.strptime(selected_date, "%Y-%m-%d")
+        with connection.cursor() as cursor:
+            start_date = selected_date
+            end_date = selected_date + timedelta(days=1)
+            cursor.execute("""
+                SELECT * FROM weather
+                WHERE timestamp >= %s AND timestamp < %s
+                ORDER BY timestamp
+            """, (start_date, end_date))
+            weather_rows = cursor.fetchall()
+    finally:
+        connection.close()
+
+    # Skapa en lista med 24 timmar
+    full_weather = []
+    for hour in range(24):
+        match = next((row for row in weather_rows if row['timestamp'].hour == hour), None)
+        if match:
+            full_weather.append(match)
         else:
-            selected_date_obj = datetime.utcnow()
-            selected_date = selected_date_obj.strftime("%Y-%m-%d")
+            full_weather.append({
+                'timestamp': datetime.combine(selected_date, datetime.min.time()) + timedelta(hours=hour),
+                'temperature': None,
+                'vind': None,
+                'symbol_code': 'na'
+            })
+    return full_weather
 
-        conn = pymysql.connect(
-            host='localhost',
-            database='smart_styrning',
-            read_default_file=os.path.expanduser("~/.my.cnf")
-        )
-        cursor = conn.cursor()
+def get_electricity_data(selected_date):
+    config = read_db_config()
+    connection = pymysql.connect(
+        host='localhost',
+        user=config['user'],
+        password=config['password'],
+        database='smart_styrning',
+        cursorclass=pymysql.cursors.DictCursor
+    )
+    try:
+        with connection.cursor() as cursor:
+            start_date = selected_date
+            end_date = selected_date + timedelta(days=1)
+            cursor.execute("""
+                SELECT * FROM electricity_prices
+                WHERE datetime >= %s AND datetime < %s
+                ORDER BY datetime
+            """, (start_date, end_date))
+            electricity_rows = cursor.fetchall()
+    finally:
+        connection.close()
 
-        query_weather = """
-            SELECT timestamp, temperature, vind, symbol_code 
-            FROM weather 
-            WHERE timestamp >= %s AND timestamp < DATE_ADD(%s, INTERVAL 1 DAY)
-            ORDER BY timestamp
-        """
-        cursor.execute(query_weather, (selected_date, selected_date))
-        weather_rows = cursor.fetchall()
+    return electricity_rows
 
-        query_prices = """
-            SELECT datetime, price 
-            FROM electricity_prices 
-            WHERE datetime >= %s AND datetime < DATE_ADD(%s, INTERVAL 1 DAY)
-            ORDER BY datetime
-        """
-        cursor.execute(query_prices, (selected_date, selected_date))
-        price_rows = cursor.fetchall()
+@app.route('/elprisvader')
+def elpris_vader():
+    date_str = request.args.get('date')
+    if date_str:
+        selected_date = datetime.strptime(date_str, '%Y-%m-%d').date()
+    else:
+        selected_date = datetime.utcnow().date()
 
-        cursor.close()
-        conn.close()
+    weather = get_weather_data(selected_date)
+    elpriser = get_electricity_data(selected_date)
 
-        weatherdata = [
-            {
-                "tid": row[0],
-                "temperature": row[1],
-                "vind": row[2],
-                "symbol": row[3]
-            }
-            for row in weather_rows
-        ]
+    # Medelvärden
+    temps = [row['temperature'] for row in weather if row['temperature'] is not None]
+    winds = [row['vind'] for row in weather if row['vind'] is not None]
+    priser = [row['price'] for row in elpriser if row['price'] is not None]
 
-        pricedata = [
-            {
-                "tid": row[0],
-                "pris": row[1]
-            }
-            for row in price_rows
-        ]
+    avg_temp = round(sum(temps)/len(temps), 1) if temps else None
+    avg_wind = round(sum(winds)/len(winds), 1) if winds else None
+    avg_price = round(sum(priser)/len(priser), 2) if priser else None
 
-        return render_template("elpris_vader.html", weatherdata=weatherdata, pricedata=pricedata, selected_date=selected_date)
-
-    except Exception as e:
-        return f"Fel vid hämtning av data: {e}"
-
-# Route: dokumentation
-@app.route('/dokumentation')
-def dokumentation():
-    return render_template('dokumentation.html')
-
-# Route: vision
-@app.route('/vision')
-def vision():
-    return render_template('vision.html')
-
-# Route: gitlog
-@app.route('/gitlog')
-def gitlog():
-    return render_template('gitlog.html')
+    return render_template('elpris_vader.html',
+                           weather=weather,
+                           elpriser=elpriser,
+                           avg_temp=avg_temp,
+                           avg_wind=avg_wind,
+                           avg_price=avg_price,
+                           selected_date=selected_date)
 
 if __name__ == '__main__':
-    app.run(debug=True, port=8000)
+    app.run(debug=True, host='0.0.0.0', port=8000)

@@ -1,117 +1,84 @@
-
 <!DOCTYPE html>
 <html lang="sv">
 <head>
     <meta charset="UTF-8">
     <title>Elpris & Väder</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="/static/styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
-    <h1>📊 Elpris & 🌦️ Väder</h1>
+    <h1>Elpris & Väder</h1>
+    <a href="/home">← Till startsidan</a>
 
-    <form method="get" action="{{ url_for('elprisvader') }}">
-        <label for="date">Välj datum:</label>
-        <input type="date" id="date" name="date" value="{{ selected_date.strftime('%Y-%m-%d') if selected_date else '' }}">
+    <form method="get">
+        <label for="datum">Välj datum:</label>
+        <input type="date" id="datum" name="datum" value="{{ selected_date }}">
         <button type="submit">Visa</button>
     </form>
 
-    {% if error %}
-        <p style="color: red;">Fel vid hämtning av data: {{ error }}</p>
-    {% endif %}
-
-    {% if weather_data and electricity_data %}
-        <div class="chart-container">
-            <canvas id="weatherChart"></canvas>
-            <div class="icon-row">
-                {% for item in weather_data %}
-                    <div class="icon">
-                        {% set icon_path = url_for('static', filename='icons/svg/' + item.symbol_code + '.svg') %}
-                        <img src="{{ icon_path }}" onerror="this.outerHTML='{{ symbol_emojis.get(item.symbol_code, '❓') }}'">
-                    </div>
-                {% endfor %}
+    {% if weatherdata %}
+    <div class="icon-row">
+        {% for row in weatherdata %}
+            <div class="icon-hour">
+                <img src="{{ url_for('static', filename='icons/svg/' + row.symbol_code + '.svg') }}" onerror="this.style.display='none'">
+                <div>{{ row.timestamp[11:16] }}</div>
             </div>
-        </div>
+        {% endfor %}
+    </div>
 
-        <div class="chart-container">
-            <canvas id="elprisChart"></canvas>
-        </div>
-
-        <table>
-            <thead>
-                <tr>
-                    <th>Tid</th>
-                    <th>Temp (°C)</th>
-                    <th>Vind (m/s)</th>
-                    <th>Symbol</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for row in weather_data %}
-                    <tr>
-                        <td>{{ row.timestamp|datetimeformat }}</td>
-                        <td>{{ row.temperature }}</td>
-                        <td>{{ row.vind }}</td>
-                        <td>
-                            {% set icon_path = url_for('static', filename='icons/svg/' + row.symbol_code + '.svg') %}
-                            <img src="{{ icon_path }}" onerror="this.outerHTML='{{ symbol_emojis.get(row.symbol_code, '❓') }}'" height="24">
-                        </td>
-                    </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-
-        <h3>📈 Medelvärden</h3>
-        <p>🌡️ Temperatur: {{ medel_temperature|round(1) }} °C</p>
-        <p>💨 Vind: {{ medel_vind|round(1) }} m/s</p>
-        <p>⚡ Elpris: {{ medel_price|round(2) }} kr/kWh</p>
+    <div class="chart-container">
+        <canvas id="weatherChart"></canvas>
+    </div>
     {% endif %}
 
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    {% if weatherdata %}
+    <table>
+        <thead>
+            <tr>
+                <th>Tid</th>
+                <th>Temperatur (°C)</th>
+                <th>Vind (m/s)</th>
+                <th>Symbol</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in weatherdata %}
+            <tr>
+                <td>{{ row.timestamp[11:16] }}</td>
+                <td>{{ row.temperature }}</td>
+                <td>{{ row.wind_speed }}</td>
+                <td>{{ row.symbol_code }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% endif %}
+
     <script>
-        const weatherData = {{ weather_data_json|safe }};
-        const electricityData = {{ electricity_data_json|safe }};
-
-        const weatherCtx = document.getElementById('weatherChart').getContext('2d');
-        new Chart(weatherCtx, {
-            type: 'line',
-            data: {
-                labels: weatherData.map(row => row.timestamp),
-                datasets: [
-                    {
-                        label: '🌡️ Temperatur (°C)',
-                        data: weatherData.map(row => row.temperature),
-                        yAxisID: 'y1'
-                    },
-                    {
-                        label: '💨 Vind (m/s)',
-                        data: weatherData.map(row => row.vind),
-                        yAxisID: 'y2'
-                    }
-                ]
-            },
-            options: {
-                responsive: true,
-                scales: {
-                    y1: { type: 'linear', position: 'left', title: { display: true, text: 'Temperatur (°C)' } },
-                    y2: { type: 'linear', position: 'right', title: { display: true, text: 'Vind (m/s)' }, grid: { drawOnChartArea: false } }
+        const weatherData = {{ weatherdata | tojson }};
+        if (weatherData && weatherData.length > 0) {
+            const ctx = document.getElementById('weatherChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: weatherData.map(row => row.timestamp.substring(11, 16)),
+                    datasets: [
+                        {
+                            label: 'Temperatur (°C)',
+                            data: weatherData.map(row => row.temperature),
+                            borderColor: 'red',
+                            tension: 0.3
+                        },
+                        {
+                            label: 'Vindstyrka (m/s)',
+                            data: weatherData.map(row => row.wind_speed),
+                            borderColor: 'blue',
+                            tension: 0.3
+                        }
+                    ]
                 }
-            }
-        });
-
-        const priceCtx = document.getElementById('elprisChart').getContext('2d');
-        new Chart(priceCtx, {
-            type: 'line',
-            data: {
-                labels: electricityData.map(row => row.datetime),
-                datasets: [{
-                    label: '⚡ Elpris (kr/kWh)',
-                    data: electricityData.map(row => row.price)
-                }]
-            },
-            options: {
-                responsive: true
-            }
-        });
+            });
+        }
     </script>
 </body>
 </html>
