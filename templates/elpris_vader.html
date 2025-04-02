@@ -1,34 +1,25 @@
 
 {% extends "layout.html" %}
 {% block content %}
+<h1>Elpris & Väder {{ selected_date }}</h1>
 
-<h2>Elpris & Väder</h2>
-<a href="{{ url_for('home') }}">← Till startsidan</a><br><br>
-
-<form method="get">
-  <label for="datum">Välj datum:</label>
-  <input type="date" id="datum" name="datum" value="{{ selected_date }}">
-  <button type="submit">Visa</button>
-</form>
-
-<!-- Ikonrad -->
-<div class="icon-row">
+<!-- Väderikoner över grafen -->
+<div style="display: flex; justify-content: space-between; padding: 10px 0;">
   {% for row in weatherdata %}
-    <div class="icon-cell">
+    <div style="text-align: center; width: 4%;">
       {% set icon_path = 'weather-icons/' + row.symbol_code + '.svg' %}
-      <img src="{{ url_for('static', filename=icon_path) }}" alt="{{ row.symbol_code }}"
-           title="{{ row.symbol_code }}" onerror="this.outerHTML='❓'" class="weather-icon">
-      <div class="icon-hour">{{ row.timestamp.strftime('%H:%M') }}</div>
+      <img src="{{ url_for('static', filename=icon_path) }}"
+           onerror="this.outerHTML='☁️'" width="30" height="30">
+      <div style="font-size: 10px;">{{ row.timestamp.strftime('%H') }}</div>
     </div>
   {% endfor %}
 </div>
 
 <!-- Vädergraf -->
-<h3>Temperatur & Vind</h3>
-<canvas id="weatherChart" width="100%" height="40"></canvas>
+<canvas id="weatherChart"></canvas>
 
 <!-- Vädertabell -->
-<h3 style="margin-top:40px;">Väderdata</h3>
+<h3>Väderdata</h3>
 <table>
   <thead>
     <tr>
@@ -40,127 +31,108 @@
   </thead>
   <tbody>
     {% for row in weatherdata %}
-    <tr>
-      <td>{{ row.timestamp.strftime('%H:%M') }}</td>
-      <td>{{ row.temperature }}</td>
-      <td>{{ row.vind }}</td>
-      <td>
-        {% set icon_path = 'weather-icons/' + row.symbol_code + '.svg' %}
-        <img src="{{ url_for('static', filename=icon_path) }}" alt="{{ row.symbol_code }}"
-             title="{{ row.symbol_code }}" onerror="this.outerHTML='❓'" class="weather-icon-small">
-        {{ row.symbol_code }}
-      </td>
-    </tr>
+      <tr>
+        <td>{{ row.timestamp.strftime('%H:%M') }}</td>
+        <td>{{ row.temperature }}</td>
+        <td>{{ row.vind }}</td>
+        <td>
+          <img src="{{ url_for('static', filename='weather-icons/' + row.symbol_code + '.svg') }}"
+               onerror="this.outerHTML='❓'" width="25" height="25">
+        </td>
+      </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+<!-- Elprisgraf -->
+<h3>Elpris</h3>
+<canvas id="elprisChart"></canvas>
+
+<!-- Elpristabell -->
+<h3>Elpristabell</h3>
+<table>
+  <thead>
+    <tr><th>Tid</th><th>Pris (kr/kWh)</th></tr>
+  </thead>
+  <tbody>
+    {% for p in elprisdata %}
+      <tr>
+        <td>{{ p.datetime.strftime('%H:%M') }}</td>
+        <td>{{ p.price }}</td>
+      </tr>
     {% endfor %}
   </tbody>
 </table>
 
 <!-- Medelvärden -->
-<h3 style="margin-top:40px;">Medelvärden</h3>
+<h3>Medelvärden</h3>
 <ul>
-  <li>🌡️ Temperatur: {{ medel_temperature }} °C</li>
-  <li>💨 Vind: {{ medel_vind }} m/s</li>
-  <li>⚡ Elpris: {{ medel_elpris }} öre/kWh</li>
+  <li>Temperatur: {{ medel_temp }} °C</li>
+  <li>Vind: {{ medel_vind }} m/s</li>
+  <li>Elpris: {{ medel_elpris }} kr/kWh</li>
 </ul>
 
-<!-- Elprisgraf -->
-<h3 style="margin-top:40px;">Elpris</h3>
-{% if elprisdata %}
-<canvas id="elprisChart" width="100%" height="40"></canvas>
-{% else %}
-<p style="color: red;">⚠️ Ingen elprisdata tillgänglig för valt datum.</p>
-{% endif %}
-
-<!-- Elpristabell -->
-{% if elprisdata %}
-<table>
-  <thead>
-    <tr>
-      <th>Tid</th>
-      <th>Pris (öre/kWh)</th>
-    </tr>
-  </thead>
-  <tbody>
-    {% for row in elprisdata %}
-    <tr>
-      <td>{{ row.datetime.strftime('%H:%M') }}</td>
-      <td>{{ row.price }}</td>
-    </tr>
-    {% endfor %}
-  </tbody>
-</table>
-{% else %}
-<p style="color: red;">⚠️ Inga elpriser att visa.</p>
-{% endif %}
-
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-const ctx1 = document.getElementById('weatherChart').getContext('2d');
-new Chart(ctx1, {
-    type: 'line',
-    data: {
-        labels: {{ labels|tojson }},
-        datasets: [
-            {
-                label: 'Temperatur (°C)',
-                data: {{ temperature|tojson }},
-                borderColor: 'red',
-                tension: 0.3
-            },
-            {
-                label: 'Vind (m/s)',
-                data: {{ vind|tojson }},
-                borderColor: 'blue',
-                tension: 0.3
-            }
-        ]
-    }
-});
+  const weatherLabels = {{ weatherdata|map(attribute='timestamp')|map('strftime', '%H:%M')|list }};
+  const temperaturData = {{ weatherdata|map(attribute='temperature')|list }};
+  const vindData = {{ weatherdata|map(attribute='vind')|list }};
 
-{% if elprisdata %}
-const ctx2 = document.getElementById('elprisChart').getContext('2d');
-new Chart(ctx2, {
+  const weatherChart = new Chart(document.getElementById("weatherChart"), {
+    type: "line",
+    data: {
+      labels: weatherLabels,
+      datasets: [
+        {
+          label: "Temperatur (°C)",
+          data: temperaturData,
+          borderWidth: 2,
+          yAxisID: 'y',
+        },
+        {
+          label: "Vind (m/s)",
+          data: vindData,
+          borderWidth: 2,
+          yAxisID: 'y1',
+        },
+      ],
+    },
+    options: {
+      responsive: true,
+      interaction: {
+        mode: 'index',
+        intersect: false,
+      },
+      stacked: false,
+      scales: {
+        y: {
+          type: 'linear',
+          position: 'left',
+        },
+        y1: {
+          type: 'linear',
+          position: 'right',
+          grid: { drawOnChartArea: false },
+        }
+      }
+    }
+  });
+
+  const elprisLabels = {{ elprisdata|map(attribute='datetime')|map('strftime', '%H:%M')|list }};
+  const elprisValues = {{ elprisdata|map(attribute='price')|list }};
+  const elprisChart = new Chart(document.getElementById("elprisChart"), {
     type: 'line',
     data: {
-        labels: {{ elpris_labels|tojson }},
-        datasets: [
-            {
-                label: 'Elpris (öre/kWh)',
-                data: {{ elpris_values|tojson }},
-                borderColor: 'green',
-                tension: 0.3
-            }
-        ]
+      labels: elprisLabels,
+      datasets: [{
+        label: 'Elpris (kr/kWh)',
+        data: elprisValues,
+        borderWidth: 2
+      }]
+    },
+    options: {
+      responsive: true
     }
-});
-{% endif %}
+  });
 </script>
-
-<style>
-.icon-row {
-  display: flex;
-  justify-content: space-between;
-  flex-wrap: nowrap;
-  overflow-x: auto;
-  margin: 20px 0;
-}
-.icon-cell {
-  text-align: center;
-  width: 40px;
-  font-size: 12px;
-}
-.weather-icon {
-  width: 32px;
-  height: 32px;
-}
-.weather-icon-small {
-  width: 24px;
-  height: 24px;
-  vertical-align: middle;
-}
-.icon-hour {
-  font-size: 10px;
-  margin-top: 4px;
-}
-</style>
-
 {% endblock %}
