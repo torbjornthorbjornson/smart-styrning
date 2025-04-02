@@ -1,7 +1,6 @@
 from flask import Flask, render_template, request
 import mysql.connector
 from datetime import datetime
-import os
 
 app = Flask(__name__)
 
@@ -19,6 +18,9 @@ def elprisvader():
     conn.close()
 
     for row in weather_data:
-        row['tid_label'] = row['timestamp'].strftime('%H')  # timme som sträng
+        row['tid_label'] = row['timestamp'].strftime('%H')  # t.ex. '00', '01', ...
 
     return render_template("elpris_vader.html", selected_date=selected_date, weatherdata=weather_data)
+
+if __name__ == "__main__":
+    app.run(host='0.0.0.0', port=8000, debug=True)
