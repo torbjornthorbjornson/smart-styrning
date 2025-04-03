@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!<!DOCTYPE html>
 <html lang="sv">
 <head>
     <meta charset="UTF-8">
@@ -52,4 +52,17 @@
     </style>
 </head>
 <body>
-    <h1>Välkommen till Torbjörns fantastiska
+    <h1>Välkommen till Torbjörns fantastiska fastighetsstyrning</h1>
+
+    <p>Systemet presenterar väderprognos, elpris och driftstrategi för fastigheter i Sverige.</p>
+
+    <div class="button-container">
+        <a href="{{ url_for('elprisvader') }}">Elpris & Väder</a>
+        <a href="{{ url_for('dokumentation') }}">Dokumentation</a>
+        <a href="{{ url_for('vision') }}">Vision</a>
+        <a href="{{ url_for('gitlog') }}">Git-logg</a>
+    </div>
+
+    <a href="/" class="back-button">Tillbaka till startsidan</a>
+</body>
+</html>
