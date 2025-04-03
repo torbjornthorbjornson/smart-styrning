@@ -818,3 +818,16 @@ remote: error: GH001: Large files detected. You may want to try Git Large File S
 To https://github.com/torbjornthorbjornson/smart-styrning.git
  ! [remote rejected] main -> main (pre-receive hook declined)
 fel: misslyckades sända vissa referenser till "https://github.com/torbjornthorbjornson/smart-styrning.git"
+[main 56cd33b] Automatisk backup: 2025-04-03 11:30
+ 4 files changed, 1377 insertions(+), 23 deletions(-)
+ create mode 100755 importera_eldagar.sh
+ mode change 100755 => 100644 spotpris.py
+remote: warning: File backup/HittakvUpdateInstallerLatest.exe is 69.13 MB; this is larger than GitHub's recommended maximum file size of 50.00 MB        
+remote: error: Trace: 85b982560d1f2f1b5a89a132ea0aca88f42e1e245b019c0ae080f5b296f93711        
+remote: error: See https://gh.io/lfs for more information.        
+remote: error: File backup/PowerShell-7.5.0-win-x64.msi is 107.82 MB; this exceeds GitHub's file size limit of 100.00 MB        
+remote: error: File backup/VSCodeUserSetup-x64-1.98.2.exe is 102.53 MB; this exceeds GitHub's file size limit of 100.00 MB        
+remote: error: GH001: Large files detected. You may want to try Git Large File Storage - https://git-lfs.github.com.        
+To https://github.com/torbjornthorbjornson/smart-styrning.git
+ ! [remote rejected] main -> main (pre-receive hook declined)
+fel: misslyckades sända vissa referenser till "https://github.com/torbjornthorbjornson/smart-styrning.git"
