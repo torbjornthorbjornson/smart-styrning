@@ -24,9 +24,16 @@ def vision():
 def dokumentation():
     return render_template("dokumentation.html")
 
-@app.route("/gitlog")
+@app.route('/gitlog')
 def gitlog():
-    return render_template("gitlog.html")
+    # Läs loggfilen
+    with open('/home/runerova/smartweb/git_backup.log', 'r') as log_file:
+        log_data = log_file.read()
+
+    # Skicka loggen till mallen
+    return render_template('gitlog.html', log=log_data)
+
+
 
 @app.route("/elprisvader")
 def elprisvader():
