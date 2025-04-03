@@ -4,6 +4,53 @@
     <meta charset="UTF-8">
     <title>Smart fastighetsstyrning</title>
     <link rel="stylesheet" href="/static/styles.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f9;
+            text-align: center;
+            padding: 20px;
+        }
+
+        h1 {
+            color: #333;
+        }
+
+        .button-container {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+
+        .button-container a {
+            background-color: #4CAF50;
+            color: white;
+            padding: 15px 32px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            border-radius: 4px;
+            transition: background-color 0.3s ease;
+        }
+
+        .button-container a:hover {
+            background-color: #45a049;
+        }
+
+        .back-button {
+            margin-top: 20px;
+            font-size: 14px;
+            display: block;
+            text-decoration: none;
+            color: #007bff;
+        }
+
+        .back-button:hover {
+            text-decoration: underline;
+        }
+    </style>
 </head>
 <body>
     <h1>Välkommen till Torbjörns fantastiska fastighetsstyrning</h1>
@@ -16,5 +63,7 @@
         <a href="{{ url_for('vision') }}">Vision</a>
         <a href="{{ url_for('gitlog') }}">Git-logg</a>
     </div>
+
+    <a href="/" class="back-button">Tillbaka till startsidan</a>
 </body>
 </html>

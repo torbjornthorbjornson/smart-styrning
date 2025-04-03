@@ -1,0 +1,914 @@
+[main c4f7cac] Automatisk backup: 2025-04-01 20:30
+ 6 files changed, 278 insertions(+), 14 deletions(-)
+ create mode 100644 git_backup.log
+ create mode 100644 git_backup/app.py.bak_gitlog
+ create mode 100644 index.html
+ create mode 100644 templates/gitlog.html
+To https://github.com/torbjornthorbjornson/smart-styrning.git
+   351c099..c4f7cac  main -> main
+[main ab006ea] Automatisk backup: 2025-04-01 20:30
+ 1 file changed, 8 insertions(+)
+To https://github.com/torbjornthorbjornson/smart-styrning.git
+   c4f7cac..ab006ea  main -> main
+[main f5e38cf] Automatisk backup: 2025-04-01 21:00
+ 6 files changed, 283 insertions(+), 248 deletions(-)
+ create mode 100644 app.py.backup_20250401_203032
+To https://github.com/torbjornthorbjornson/smart-styrning.git
+   ab006ea..f5e38cf  main -> main
+[main 9c6194a] Automatisk backup: 2025-04-01 21:00
+ 1 file changed, 5 insertions(+)
+To https://github.com/torbjornthorbjornson/smart-styrning.git
+   f5e38cf..9c6194a  main -> main
+[main 93a3c4e] Automatisk backup: 2025-04-01 21:30
+ 2 files changed, 84 insertions(+)
+ create mode 100644 app.py.backup_20250401_212105
+To https://github.com/torbjornthorbjornson/smart-styrning.git
+   9c6194a..93a3c4e  main -> main
+[main 843e84a] Automatisk backup: 2025-04-01 21:30
+ 1 file changed, 5 insertions(+)
+To https://github.com/torbjornthorbjornson/smart-styrning.git
+   93a3c4e..843e84a  main -> main
+[main 8a47c94] Automatisk backup: 2025-04-01 22:00
+ 7 files changed, 57 insertions(+), 57 deletions(-)
+ create mode 100644 git_backup/git_backup.log
+ create mode 100644 templates/elpris_vader.html
+ delete mode 100644 templates/index.html
+To https://github.com/torbjornthorbjornson/smart-styrning.git
+   843e84a..8a47c94  main -> main
+[main 5410b14] Automatisk backup: 2025-04-01 22:00
+ 1 file changed, 7 insertions(+)
+To https://github.com/torbjornthorbjornson/smart-styrning.git
+   8a47c94..5410b14  main -> main
+[main b419435] Automatisk backup: 2025-04-01 22:30
+ 5 files changed, 94 insertions(+), 78 deletions(-)
+ create mode 100644 .run.sh.swp
+To https://github.com/torbjornthorbjornson/smart-styrning.git
+   5410b14..b419435  main -> main
+[main 49799ea] Automatisk backup: 2025-04-01 22:30
+ 1 file changed, 5 insertions(+)
+To https://github.com/torbjornthorbjornson/smart-styrning.git
+   b419435..49799ea  main -> main
+[main 9cdb82c] Automatisk backup: 2025-04-01 23:00
+ 4 files changed, 122 insertions(+), 84 deletions(-)
+To https://github.com/torbjornthorbjornson/smart-styrning.git
+   49799ea..9cdb82c  main -> main
+[main 282cbae] Automatisk backup: 2025-04-01 23:00
+ 1 file changed, 4 insertions(+)
+To https://github.com/torbjornthorbjornson/smart-styrning.git
+   9cdb82c..282cbae  main -> main
+[main b6ab045] Automatisk backup: 2025-04-01 23:30
+ 6 files changed, 281 insertions(+), 120 deletions(-)
+ create mode 100644 app.py.backup_20250401_231249
+ create mode 100644 templates/elpris_vader.backup_20250401_231325.html
+To https://github.com/torbjornthorbjornson/smart-styrning.git
+   282cbae..b6ab045  main -> main
+[main fb034ee] Automatisk backup: 2025-04-01 23:30
+ 1 file changed, 6 insertions(+)
+To https://github.com/torbjornthorbjornson/smart-styrning.git
+   b6ab045..fb034ee  main -> main
+[main a1e4b58] Automatisk backup: 2025-04-02 00:00
+ 5 files changed, 137 insertions(+), 82 deletions(-)
+ create mode 100644 templates/layout.html
+To https://github.com/torbjornthorbjornson/smart-styrning.git
+   fb034ee..a1e4b58  main -> main
+[main c4f86f4] Automatisk backup: 2025-04-02 00:00
+ 1 file changed, 5 insertions(+)
+To https://github.com/torbjornthorbjornson/smart-styrning.git
+   a1e4b58..c4f86f4  main -> main
+[main 2106d0a] Automatisk backup: 2025-04-02 00:30
+ 4 files changed, 96 insertions(+), 96 deletions(-)
+To https://github.com/torbjornthorbjornson/smart-styrning.git
+   c4f86f4..2106d0a  main -> main
+[main a486ac5] Automatisk backup: 2025-04-02 00:30
+ 1 file changed, 4 insertions(+)
+To https://github.com/torbjornthorbjornson/smart-styrning.git
+   2106d0a..a486ac5  main -> main
+[main bafe81e] Automatisk backup: 2025-04-02 01:00
+ 5 files changed, 137 insertions(+), 152 deletions(-)
+To https://github.com/torbjornthorbjornson/smart-styrning.git
+   a486ac5..bafe81e  main -> main
+[main f685c1f] Automatisk backup: 2025-04-02 01:00
+ 1 file changed, 4 insertions(+)
+To https://github.com/torbjornthorbjornson/smart-styrning.git
+   bafe81e..f685c1f  main -> main
+[main 487de70] Automatisk backup: 2025-04-02 01:30
+ 87 files changed, 170 insertions(+), 90 deletions(-)
+ rename static/{weather-icons => icons/svg}/01m.svg (100%)
+ rename static/{weather-icons => icons/svg}/02m.svg (100%)
+ rename static/{weather-icons => icons/svg}/03m.svg (100%)
+ rename static/{weather-icons => icons/svg}/05m.svg (100%)
+ rename static/{weather-icons => icons/svg}/06d.svg (100%)
+ rename static/{weather-icons => icons/svg}/06m.svg (100%)
+ rename static/{weather-icons => icons/svg}/06n.svg (100%)
+ rename static/{weather-icons => icons/svg}/07d.svg (100%)
+ rename static/{weather-icons => icons/svg}/07m.svg (100%)
+ rename static/{weather-icons => icons/svg}/07n.svg (100%)
+ rename static/{weather-icons => icons/svg}/08d.svg (100%)
+ rename static/{weather-icons => icons/svg}/08m.svg (100%)
+ rename static/{weather-icons => icons/svg}/08n.svg (100%)
+ rename static/{weather-icons => icons/svg}/12.svg (100%)
+ rename static/{weather-icons => icons/svg}/14.svg (100%)
+ rename static/{weather-icons => icons/svg}/20d.svg (100%)
+ rename static/{weather-icons => icons/svg}/20m.svg (100%)
+ rename static/{weather-icons => icons/svg}/20n.svg (100%)
+ rename static/{weather-icons => icons/svg}/21d.svg (100%)
+ rename static/{weather-icons => icons/svg}/21m.svg (100%)
+ rename static/{weather-icons => icons/svg}/21n.svg (100%)
+ rename static/{weather-icons => icons/svg}/22.svg (100%)
+ rename static/{weather-icons => icons/svg}/23.svg (100%)
+ rename static/{weather-icons => icons/svg}/24d.svg (100%)
+ rename static/{weather-icons => icons/svg}/24m.svg (100%)
+ rename static/{weather-icons => icons/svg}/24n.svg (100%)
+ rename static/{weather-icons => icons/svg}/25d.svg (100%)
+ rename static/{weather-icons => icons/svg}/25m.svg (100%)
+ rename static/{weather-icons => icons/svg}/25n.svg (100%)
+ rename static/{weather-icons => icons/svg}/26d.svg (100%)
+ rename static/{weather-icons => icons/svg}/26m.svg (100%)
+ rename static/{weather-icons => icons/svg}/26n.svg (100%)
+ rename static/{weather-icons => icons/svg}/27d.svg (100%)
+ rename static/{weather-icons => icons/svg}/27m.svg (100%)
+ rename static/{weather-icons => icons/svg}/27n.svg (100%)
+ rename static/{weather-icons => icons/svg}/28d.svg (100%)
+ rename static/{weather-icons => icons/svg}/28m.svg (100%)
+ rename static/{weather-icons => icons/svg}/28n.svg (100%)
+ rename static/{weather-icons => icons/svg}/29d.svg (100%)
+ rename static/{weather-icons => icons/svg}/29m.svg (100%)
+ rename static/{weather-icons => icons/svg}/29n.svg (100%)
+ rename static/{weather-icons => icons/svg}/30.svg (100%)
+ rename static/{weather-icons => icons/svg}/31.svg (100%)
+ rename static/{weather-icons => icons/svg}/32.svg (100%)
+ rename static/{weather-icons => icons/svg}/33.svg (100%)
+ rename static/{weather-icons => icons/svg}/34.svg (100%)
+ rename static/{weather-icons => icons/svg}/40d.svg (100%)
+ rename static/{weather-icons => icons/svg}/40m.svg (100%)
+ rename static/{weather-icons => icons/svg}/40n.svg (100%)
+ rename static/{weather-icons => icons/svg}/41d.svg (100%)
+ rename static/{weather-icons => icons/svg}/41m.svg (100%)
+ rename static/{weather-icons => icons/svg}/41n.svg (100%)
+ rename static/{weather-icons => icons/svg}/42d.svg (100%)
+ rename static/{weather-icons => icons/svg}/42m.svg (100%)
+ rename static/{weather-icons => icons/svg}/42n.svg (100%)
+ rename static/{weather-icons => icons/svg}/43d.svg (100%)
+ rename static/{weather-icons => icons/svg}/43m.svg (100%)
+ rename static/{weather-icons => icons/svg}/43n.svg (100%)
+ rename static/{weather-icons => icons/svg}/44d.svg (100%)
+ rename static/{weather-icons => icons/svg}/44m.svg (100%)
+ rename static/{weather-icons => icons/svg}/44n.svg (100%)
+ rename static/{weather-icons => icons/svg}/45d.svg (100%)
+ rename static/{weather-icons => icons/svg}/45m.svg (100%)
+ rename static/{weather-icons => icons/svg}/45n.svg (100%)
+ rename static/{weather-icons => icons/svg}/47.svg (100%)
+ rename static/{weather-icons => icons/svg}/48.svg (100%)
+ rename static/{weather-icons => icons/svg}/49.svg (100%)
+ rename static/{weather-icons => icons/svg}/50.svg (100%)
+ rename static/{weather-icons => icons/svg}/clearsky_day.svg (100%)
+ rename static/{weather-icons => icons/svg}/clearsky_night.svg (100%)
+ rename static/{weather-icons => icons/svg}/cloudy.svg (100%)
+ rename static/{weather-icons => icons/svg}/fair_day.svg (100%)
+ rename static/{weather-icons => icons/svg}/fair_night.svg (100%)
+ rename static/{weather-icons => icons/svg}/fog.svg (100%)
+ rename static/{weather-icons => icons/svg}/heavyrain.svg (100%)
+ rename static/{weather-icons => icons/svg}/lightrain.svg (100%)
+ rename static/{weather-icons => icons/svg}/partlycloudy_day.svg (100%)
+ rename static/{weather-icons => icons/svg}/partlycloudy_night.svg (100%)
+ rename static/{weather-icons => icons/svg}/rain.svg (100%)
+ rename static/{weather-icons => icons/svg}/rainshowers_day.svg (100%)
+ rename static/{weather-icons => icons/svg}/rainshowers_night.svg (100%)
+ rename static/{weather-icons => icons/svg}/snow.svg (100%)
+ rename static/{weather-icons => icons/svg}/thunderstorm.svg (100%)
+To https://github.com/torbjornthorbjornson/smart-styrning.git
+   f685c1f..487de70  main -> main
+[main 8f12983] Automatisk backup: 2025-04-02 01:30
+ 1 file changed, 87 insertions(+)
+To https://github.com/torbjornthorbjornson/smart-styrning.git
+   487de70..8f12983  main -> main
+[main 12d7bb9] Automatisk backup: 2025-04-02 02:00
+ 4 files changed, 26 insertions(+), 9 deletions(-)
+To https://github.com/torbjornthorbjornson/smart-styrning.git
+   8f12983..12d7bb9  main -> main
+[main da5f9ae] Automatisk backup: 2025-04-02 02:00
+ 1 file changed, 4 insertions(+)
+To https://github.com/torbjornthorbjornson/smart-styrning.git
+   12d7bb9..da5f9ae  main -> main
+[main 6e3f3d6] Automatisk backup: 2025-04-02 02:30
+ 87 files changed, 64 insertions(+), 2862 deletions(-)
+ delete mode 100644 static/icons/svg/01m.svg
+ delete mode 100644 static/icons/svg/02m.svg
+ delete mode 100644 static/icons/svg/03m.svg
+ delete mode 100644 static/icons/svg/05m.svg
+ delete mode 100644 static/icons/svg/06d.svg
+ delete mode 100644 static/icons/svg/06m.svg
+ delete mode 100644 static/icons/svg/06n.svg
+ delete mode 100644 static/icons/svg/07d.svg
+ delete mode 100644 static/icons/svg/07m.svg
+ delete mode 100644 static/icons/svg/07n.svg
+ delete mode 100644 static/icons/svg/08d.svg
+ delete mode 100644 static/icons/svg/08m.svg
+ delete mode 100644 static/icons/svg/08n.svg
+ delete mode 100644 static/icons/svg/12.svg
+ delete mode 100644 static/icons/svg/14.svg
+ delete mode 100644 static/icons/svg/20d.svg
+ delete mode 100644 static/icons/svg/20m.svg
+ delete mode 100644 static/icons/svg/20n.svg
+ delete mode 100644 static/icons/svg/21d.svg
+ delete mode 100644 static/icons/svg/21m.svg
+ delete mode 100644 static/icons/svg/21n.svg
+ delete mode 100644 static/icons/svg/22.svg
+ delete mode 100644 static/icons/svg/23.svg
+ delete mode 100644 static/icons/svg/24d.svg
+ delete mode 100644 static/icons/svg/24m.svg
+ delete mode 100644 static/icons/svg/24n.svg
+ delete mode 100644 static/icons/svg/25d.svg
+ delete mode 100644 static/icons/svg/25m.svg
+ delete mode 100644 static/icons/svg/25n.svg
+ delete mode 100644 static/icons/svg/26d.svg
+ delete mode 100644 static/icons/svg/26m.svg
+ delete mode 100644 static/icons/svg/26n.svg
+ delete mode 100644 static/icons/svg/27d.svg
+ delete mode 100644 static/icons/svg/27m.svg
+ delete mode 100644 static/icons/svg/27n.svg
+ delete mode 100644 static/icons/svg/28d.svg
+ delete mode 100644 static/icons/svg/28m.svg
+ delete mode 100644 static/icons/svg/28n.svg
+ delete mode 100644 static/icons/svg/29d.svg
+ delete mode 100644 static/icons/svg/29m.svg
+ delete mode 100644 static/icons/svg/29n.svg
+ delete mode 100644 static/icons/svg/30.svg
+ delete mode 100644 static/icons/svg/31.svg
+ delete mode 100644 static/icons/svg/32.svg
+ delete mode 100644 static/icons/svg/33.svg
+ delete mode 100644 static/icons/svg/34.svg
+ delete mode 100644 static/icons/svg/40d.svg
+ delete mode 100644 static/icons/svg/40m.svg
+ delete mode 100644 static/icons/svg/40n.svg
+ delete mode 100644 static/icons/svg/41d.svg
+ delete mode 100644 static/icons/svg/41m.svg
+ delete mode 100644 static/icons/svg/41n.svg
+ delete mode 100644 static/icons/svg/42d.svg
+ delete mode 100644 static/icons/svg/42m.svg
+ delete mode 100644 static/icons/svg/42n.svg
+ delete mode 100644 static/icons/svg/43d.svg
+ delete mode 100644 static/icons/svg/43m.svg
+ delete mode 100644 static/icons/svg/43n.svg
+ delete mode 100644 static/icons/svg/44d.svg
+ delete mode 100644 static/icons/svg/44m.svg
+ delete mode 100644 static/icons/svg/44n.svg
+ delete mode 100644 static/icons/svg/45d.svg
+ delete mode 100644 static/icons/svg/45m.svg
+ delete mode 100644 static/icons/svg/45n.svg
+ delete mode 100644 static/icons/svg/47.svg
+ delete mode 100644 static/icons/svg/48.svg
+ delete mode 100644 static/icons/svg/49.svg
+ delete mode 100644 static/icons/svg/50.svg
+ delete mode 100644 static/icons/svg/clearsky_night.svg
+ delete mode 100644 static/icons/svg/cloudy.svg
+ delete mode 100644 static/icons/svg/fair_day.svg
+ delete mode 100644 static/icons/svg/fair_night.svg
+ delete mode 100644 static/icons/svg/fog.svg
+ delete mode 100644 static/icons/svg/heavyrain.svg
+ delete mode 100644 static/icons/svg/lightrain.svg
+ delete mode 100644 static/icons/svg/partlycloudy_day.svg
+ delete mode 100644 static/icons/svg/partlycloudy_night.svg
+ delete mode 100644 static/icons/svg/rain.svg
+ delete mode 100644 static/icons/svg/rainshowers_day.svg
+ delete mode 100644 static/icons/svg/rainshowers_night.svg
+ delete mode 100644 static/icons/svg/snow.svg
+ delete mode 100644 static/icons/svg/thunderstorm.svg
+ delete mode 100644 static/styles.css
+To https://github.com/torbjornthorbjornson/smart-styrning.git
+   da5f9ae..6e3f3d6  main -> main
+[main 8cc5fc1] Automatisk backup: 2025-04-02 02:30
+ 1 file changed, 87 insertions(+)
+To https://github.com/torbjornthorbjornson/smart-styrning.git
+   6e3f3d6..8cc5fc1  main -> main
+[main 9c46a25] Automatisk backup: 2025-04-02 03:00
+ 1 file changed, 4 insertions(+)
+To https://github.com/torbjornthorbjornson/smart-styrning.git
+   8cc5fc1..9c46a25  main -> main
+[main 11abc82] Automatisk backup: 2025-04-02 03:00
+ 1 file changed, 4 insertions(+)
+To https://github.com/torbjornthorbjornson/smart-styrning.git
+   9c46a25..11abc82  main -> main
+[main a3e0e41] Automatisk backup: 2025-04-02 03:30
+ 1 file changed, 4 insertions(+)
+To https://github.com/torbjornthorbjornson/smart-styrning.git
+   11abc82..a3e0e41  main -> main
+[main a290c3f] Automatisk backup: 2025-04-02 03:30
+ 1 file changed, 4 insertions(+)
+To https://github.com/torbjornthorbjornson/smart-styrning.git
+   a3e0e41..a290c3f  main -> main
+[main 9c1e487] Automatisk backup: 2025-04-02 04:00
+ 1 file changed, 4 insertions(+)
+To https://github.com/torbjornthorbjornson/smart-styrning.git
+   a290c3f..9c1e487  main -> main
+[main aa74cec] Automatisk backup: 2025-04-02 04:00
+ 1 file changed, 4 insertions(+)
+To https://github.com/torbjornthorbjornson/smart-styrning.git
+   9c1e487..aa74cec  main -> main
+[main ca65448] Automatisk backup: 2025-04-02 04:30
+ 1 file changed, 4 insertions(+)
+To https://github.com/torbjornthorbjornson/smart-styrning.git
+   aa74cec..ca65448  main -> main
+[main 8c6e39e] Automatisk backup: 2025-04-02 04:30
+ 1 file changed, 4 insertions(+)
+To https://github.com/torbjornthorbjornson/smart-styrning.git
+   ca65448..8c6e39e  main -> main
+[main 6a58c08] Automatisk backup: 2025-04-02 05:00
+ 1 file changed, 4 insertions(+)
+To https://github.com/torbjornthorbjornson/smart-styrning.git
+   8c6e39e..6a58c08  main -> main
+[main 35c4f6d] Automatisk backup: 2025-04-02 05:00
+ 1 file changed, 4 insertions(+)
+To https://github.com/torbjornthorbjornson/smart-styrning.git
+   6a58c08..35c4f6d  main -> main
+[main 84d790b] Automatisk backup: 2025-04-02 05:30
+ 1 file changed, 4 insertions(+)
+To https://github.com/torbjornthorbjornson/smart-styrning.git
+   35c4f6d..84d790b  main -> main
+[main 8950cbe] Automatisk backup: 2025-04-02 05:30
+ 1 file changed, 4 insertions(+)
+To https://github.com/torbjornthorbjornson/smart-styrning.git
+   84d790b..8950cbe  main -> main
+[main b0899b0] Automatisk backup: 2025-04-02 06:00
+ 4 files changed, 8 insertions(+)
+ delete mode 100644 .run.sh.swp
+ create mode 100755 run.sh.save.1
+To https://github.com/torbjornthorbjornson/smart-styrning.git
+   8950cbe..b0899b0  main -> main
+[main a397926] Automatisk backup: 2025-04-02 06:00
+ 1 file changed, 6 insertions(+)
+To https://github.com/torbjornthorbjornson/smart-styrning.git
+   b0899b0..a397926  main -> main
+[main 194251b] Automatisk backup: 2025-04-02 06:30
+ 1 file changed, 4 insertions(+)
+To https://github.com/torbjornthorbjornson/smart-styrning.git
+   a397926..194251b  main -> main
+[main 17c38e0] Automatisk backup: 2025-04-02 06:30
+ 1 file changed, 4 insertions(+)
+To https://github.com/torbjornthorbjornson/smart-styrning.git
+   194251b..17c38e0  main -> main
+[main ec68431] Automatisk backup: 2025-04-02 07:00
+ 1 file changed, 4 insertions(+)
+To https://github.com/torbjornthorbjornson/smart-styrning.git
+   17c38e0..ec68431  main -> main
+[main e5474c3] Automatisk backup: 2025-04-02 07:00
+ 1 file changed, 4 insertions(+)
+To https://github.com/torbjornthorbjornson/smart-styrning.git
+   ec68431..e5474c3  main -> main
+[main eeb182c] Automatisk backup: 2025-04-02 07:30
+ 1 file changed, 4 insertions(+)
+To https://github.com/torbjornthorbjornson/smart-styrning.git
+   e5474c3..eeb182c  main -> main
+[main 483dd27] Automatisk backup: 2025-04-02 07:30
+ 1 file changed, 4 insertions(+)
+To https://github.com/torbjornthorbjornson/smart-styrning.git
+   eeb182c..483dd27  main -> main
+[main 7249870] Automatisk backup: 2025-04-02 08:00
+ 1 file changed, 4 insertions(+)
+To https://github.com/torbjornthorbjornson/smart-styrning.git
+   483dd27..7249870  main -> main
+[main 26aedc0] Automatisk backup: 2025-04-02 08:00
+ 1 file changed, 4 insertions(+)
+To https://github.com/torbjornthorbjornson/smart-styrning.git
+   7249870..26aedc0  main -> main
+[main 89de172] Automatisk backup: 2025-04-02 08:30
+ 1 file changed, 4 insertions(+)
+To https://github.com/torbjornthorbjornson/smart-styrning.git
+   26aedc0..89de172  main -> main
+[main 72be139] Automatisk backup: 2025-04-02 08:30
+ 1 file changed, 4 insertions(+)
+To https://github.com/torbjornthorbjornson/smart-styrning.git
+   89de172..72be139  main -> main
+[main 8648798] Automatisk backup: 2025-04-02 09:00
+ 3 files changed, 60 insertions(+), 1 deletion(-)
+ delete mode 100644 static/icons/svg/clearsky_day.svg
+ create mode 100644 static/icons/svg/styles.css
+To https://github.com/torbjornthorbjornson/smart-styrning.git
+   72be139..8648798  main -> main
+[main fa86e32] Automatisk backup: 2025-04-02 09:00
+ 1 file changed, 6 insertions(+)
+To https://github.com/torbjornthorbjornson/smart-styrning.git
+   8648798..fa86e32  main -> main
+[main 7edb009] Automatisk backup: 2025-04-02 09:30
+ 22 files changed, 24 insertions(+)
+ create mode 100644 static/icons/svg/clearsky_day.svg
+ create mode 100644 static/icons/svg/clearsky_night.svg
+ create mode 100644 static/icons/svg/cloudy.svg
+ create mode 100644 static/icons/svg/fair_day.svg
+ create mode 100644 static/icons/svg/fair_night.svg
+ create mode 100644 static/icons/svg/fog.svg
+ create mode 100644 static/icons/svg/heavyrain.svg
+ create mode 100644 static/icons/svg/heavysnow.svg
+ create mode 100644 static/icons/svg/lightrain.svg
+ create mode 100644 static/icons/svg/lightsnow.svg
+ create mode 100644 static/icons/svg/partlycloudy_day.svg
+ create mode 100644 static/icons/svg/partlycloudy_night.svg
+ create mode 100644 static/icons/svg/rain.svg
+ create mode 100644 static/icons/svg/rainshowers_day.svg
+ create mode 100644 static/icons/svg/rainshowers_night.svg
+ create mode 100644 static/icons/svg/sleet.svg
+ create mode 100644 static/icons/svg/snow.svg
+ create mode 100644 static/icons/svg/snowshowers_day.svg
+ create mode 100644 static/icons/svg/snowshowers_night.svg
+ create mode 100644 static/icons/svg/thunderstorm.svg
+ rename static/{icons/svg => }/styles.css (100%)
+To https://github.com/torbjornthorbjornson/smart-styrning.git
+   fa86e32..7edb009  main -> main
+[main 4406673] Automatisk backup: 2025-04-02 09:30
+ 1 file changed, 25 insertions(+)
+To https://github.com/torbjornthorbjornson/smart-styrning.git
+   7edb009..4406673  main -> main
+[main 1e2f1a2] Automatisk backup: 2025-04-02 10:00
+ 4 files changed, 138 insertions(+), 167 deletions(-)
+ delete mode 100644 templates/elpris_vader.backup_20250401_231325.html
+ create mode 100644 templates/elpris_vader.bak_20250402_095349.html
+To https://github.com/torbjornthorbjornson/smart-styrning.git
+   4406673..1e2f1a2  main -> main
+[main 0497083] Automatisk backup: 2025-04-02 10:00
+ 1 file changed, 6 insertions(+)
+To https://github.com/torbjornthorbjornson/smart-styrning.git
+   1e2f1a2..0497083  main -> main
+[main fd93e45] Automatisk backup: 2025-04-02 10:30
+ 2 files changed, 58 insertions(+), 76 deletions(-)
+To https://github.com/torbjornthorbjornson/smart-styrning.git
+   0497083..fd93e45  main -> main
+[main c79d4ac] Automatisk backup: 2025-04-02 10:30
+ 1 file changed, 4 insertions(+)
+To https://github.com/torbjornthorbjornson/smart-styrning.git
+   fd93e45..c79d4ac  main -> main
+[main 0753ecc] Automatisk backup: 2025-04-02 11:00
+ 4 files changed, 54 insertions(+), 73 deletions(-)
+To https://github.com/torbjornthorbjornson/smart-styrning.git
+   c79d4ac..0753ecc  main -> main
+[main 082a953] Automatisk backup: 2025-04-02 11:00
+ 1 file changed, 4 insertions(+)
+To https://github.com/torbjornthorbjornson/smart-styrning.git
+   0753ecc..082a953  main -> main
+[main f8519de] Automatisk backup: 2025-04-02 11:30
+ 3 files changed, 70 insertions(+), 3 deletions(-)
+ create mode 100644 weather.py
+To https://github.com/torbjornthorbjornson/smart-styrning.git
+   082a953..f8519de  main -> main
+[main 476d366] Automatisk backup: 2025-04-02 11:30
+ 1 file changed, 5 insertions(+)
+To https://github.com/torbjornthorbjornson/smart-styrning.git
+   f8519de..476d366  main -> main
+[main 31f323b] Automatisk backup: 2025-04-02 12:00
+ 3 files changed, 34 insertions(+), 8 deletions(-)
+To https://github.com/torbjornthorbjornson/smart-styrning.git
+   476d366..31f323b  main -> main
+[main 23eface] Automatisk backup: 2025-04-02 12:00
+ 1 file changed, 4 insertions(+)
+To https://github.com/torbjornthorbjornson/smart-styrning.git
+   31f323b..23eface  main -> main
+[main 00dcba9] Automatisk backup: 2025-04-02 12:30
+ 3 files changed, 98 insertions(+), 79 deletions(-)
+To https://github.com/torbjornthorbjornson/smart-styrning.git
+   23eface..00dcba9  main -> main
+[main 3bef99d] Automatisk backup: 2025-04-02 12:30
+ 1 file changed, 4 insertions(+)
+To https://github.com/torbjornthorbjornson/smart-styrning.git
+   00dcba9..3bef99d  main -> main
+[main defa076] Automatisk backup: 2025-04-02 13:00
+ 1 file changed, 4 insertions(+)
+To https://github.com/torbjornthorbjornson/smart-styrning.git
+   3bef99d..defa076  main -> main
+[main e60c371] Automatisk backup: 2025-04-02 13:00
+ 1 file changed, 4 insertions(+)
+To https://github.com/torbjornthorbjornson/smart-styrning.git
+   defa076..e60c371  main -> main
+[main c343cfb] Automatisk backup: 2025-04-02 13:30
+ 1 file changed, 4 insertions(+)
+To https://github.com/torbjornthorbjornson/smart-styrning.git
+   e60c371..c343cfb  main -> main
+[main 71f6e6f] Automatisk backup: 2025-04-02 13:30
+ 1 file changed, 4 insertions(+)
+To https://github.com/torbjornthorbjornson/smart-styrning.git
+   c343cfb..71f6e6f  main -> main
+[main 4937072] Automatisk backup: 2025-04-02 14:00
+ 1 file changed, 4 insertions(+)
+To https://github.com/torbjornthorbjornson/smart-styrning.git
+   71f6e6f..4937072  main -> main
+[main 911466b] Automatisk backup: 2025-04-02 14:00
+ 1 file changed, 4 insertions(+)
+To https://github.com/torbjornthorbjornson/smart-styrning.git
+   4937072..911466b  main -> main
+[main f419b5a] Automatisk backup: 2025-04-02 14:30
+ 1 file changed, 4 insertions(+)
+To https://github.com/torbjornthorbjornson/smart-styrning.git
+   911466b..f419b5a  main -> main
+[main b85bf22] Automatisk backup: 2025-04-02 14:30
+ 1 file changed, 4 insertions(+)
+To https://github.com/torbjornthorbjornson/smart-styrning.git
+   f419b5a..b85bf22  main -> main
+[main 5991220] Automatisk backup: 2025-04-02 15:00
+ 1 file changed, 4 insertions(+)
+To https://github.com/torbjornthorbjornson/smart-styrning.git
+   b85bf22..5991220  main -> main
+[main 056e6be] Automatisk backup: 2025-04-02 15:00
+ 1 file changed, 4 insertions(+)
+To https://github.com/torbjornthorbjornson/smart-styrning.git
+   5991220..056e6be  main -> main
+[main 0de37a9] Automatisk backup: 2025-04-02 15:30
+ 1 file changed, 4 insertions(+)
+To https://github.com/torbjornthorbjornson/smart-styrning.git
+   056e6be..0de37a9  main -> main
+[main 8f7a5f5] Automatisk backup: 2025-04-02 15:30
+ 1 file changed, 4 insertions(+)
+To https://github.com/torbjornthorbjornson/smart-styrning.git
+   0de37a9..8f7a5f5  main -> main
+[main 9b129a8] Automatisk backup: 2025-04-02 16:00
+ 1 file changed, 4 insertions(+)
+To https://github.com/torbjornthorbjornson/smart-styrning.git
+   8f7a5f5..9b129a8  main -> main
+[main 58c92c2] Automatisk backup: 2025-04-02 16:00
+ 1 file changed, 4 insertions(+)
+To https://github.com/torbjornthorbjornson/smart-styrning.git
+   9b129a8..58c92c2  main -> main
+[main 9883b29] Automatisk backup: 2025-04-02 16:30
+ 1 file changed, 4 insertions(+)
+To https://github.com/torbjornthorbjornson/smart-styrning.git
+   58c92c2..9883b29  main -> main
+[main 0c65422] Automatisk backup: 2025-04-02 16:30
+ 1 file changed, 4 insertions(+)
+To https://github.com/torbjornthorbjornson/smart-styrning.git
+   9883b29..0c65422  main -> main
+[main eb376db] Automatisk backup: 2025-04-02 17:00
+ 1 file changed, 4 insertions(+)
+To https://github.com/torbjornthorbjornson/smart-styrning.git
+   0c65422..eb376db  main -> main
+[main bbf2d15] Automatisk backup: 2025-04-02 17:00
+ 1 file changed, 4 insertions(+)
+To https://github.com/torbjornthorbjornson/smart-styrning.git
+   eb376db..bbf2d15  main -> main
+[main 60d1f43] Automatisk backup: 2025-04-02 17:30
+ 1 file changed, 4 insertions(+)
+To https://github.com/torbjornthorbjornson/smart-styrning.git
+   bbf2d15..60d1f43  main -> main
+[main e22e9df] Automatisk backup: 2025-04-02 17:30
+ 1 file changed, 4 insertions(+)
+To https://github.com/torbjornthorbjornson/smart-styrning.git
+   60d1f43..e22e9df  main -> main
+[main b887772] Automatisk backup: 2025-04-02 18:00
+ 1 file changed, 4 insertions(+)
+To https://github.com/torbjornthorbjornson/smart-styrning.git
+   e22e9df..b887772  main -> main
+[main 2b8d5f2] Automatisk backup: 2025-04-02 18:00
+ 1 file changed, 4 insertions(+)
+To https://github.com/torbjornthorbjornson/smart-styrning.git
+   b887772..2b8d5f2  main -> main
+[main a1428e0] Automatisk backup: 2025-04-02 18:30
+ 1 file changed, 4 insertions(+)
+To https://github.com/torbjornthorbjornson/smart-styrning.git
+   2b8d5f2..a1428e0  main -> main
+[main af4d513] Automatisk backup: 2025-04-02 18:30
+ 1 file changed, 4 insertions(+)
+To https://github.com/torbjornthorbjornson/smart-styrning.git
+   a1428e0..af4d513  main -> main
+[main a800c94] Automatisk backup: 2025-04-02 19:00
+ 1 file changed, 4 insertions(+)
+To https://github.com/torbjornthorbjornson/smart-styrning.git
+   af4d513..a800c94  main -> main
+[main 7d4c195] Automatisk backup: 2025-04-02 19:00
+ 1 file changed, 4 insertions(+)
+To https://github.com/torbjornthorbjornson/smart-styrning.git
+   a800c94..7d4c195  main -> main
+[main 91e2b05] Automatisk backup: 2025-04-02 19:30
+ 1 file changed, 4 insertions(+)
+To https://github.com/torbjornthorbjornson/smart-styrning.git
+   7d4c195..91e2b05  main -> main
+[main b65678a] Automatisk backup: 2025-04-02 19:30
+ 1 file changed, 4 insertions(+)
+To https://github.com/torbjornthorbjornson/smart-styrning.git
+   91e2b05..b65678a  main -> main
+[main 33b7e78] Automatisk backup: 2025-04-02 20:00
+ 3 files changed, 119 insertions(+), 134 deletions(-)
+ delete mode 100644 templates/elpris_vader.bak_20250402_095349.html
+To https://github.com/torbjornthorbjornson/smart-styrning.git
+   b65678a..33b7e78  main -> main
+[main 3beeafd] Automatisk backup: 2025-04-02 20:00
+ 1 file changed, 5 insertions(+)
+To https://github.com/torbjornthorbjornson/smart-styrning.git
+   33b7e78..3beeafd  main -> main
+[main 338bcb5] Automatisk backup: 2025-04-02 20:30
+ 2 files changed, 57 insertions(+), 26 deletions(-)
+To https://github.com/torbjornthorbjornson/smart-styrning.git
+   3beeafd..338bcb5  main -> main
+[main baad623] Automatisk backup: 2025-04-02 20:30
+ 1 file changed, 4 insertions(+)
+To https://github.com/torbjornthorbjornson/smart-styrning.git
+   338bcb5..baad623  main -> main
+[main d94ff2f] Automatisk backup: 2025-04-02 21:00
+ 36 files changed, 393 insertions(+), 20 deletions(-)
+ delete mode 100644 static/icons/svg/clearsky_day.svg
+ delete mode 100644 static/icons/svg/clearsky_night.svg
+ delete mode 100644 static/icons/svg/cloudy.svg
+ delete mode 100644 static/icons/svg/fair_day.svg
+ delete mode 100644 static/icons/svg/fair_night.svg
+ delete mode 100644 static/icons/svg/fog.svg
+ delete mode 100644 static/icons/svg/heavyrain.svg
+ delete mode 100644 static/icons/svg/heavysnow.svg
+ delete mode 100644 static/icons/svg/lightrain.svg
+ delete mode 100644 static/icons/svg/lightsnow.svg
+ delete mode 100644 static/icons/svg/partlycloudy_day.svg
+ delete mode 100644 static/icons/svg/partlycloudy_night.svg
+ delete mode 100644 static/icons/svg/rain.svg
+ delete mode 100644 static/icons/svg/rainshowers_day.svg
+ delete mode 100644 static/icons/svg/rainshowers_night.svg
+ delete mode 100644 static/icons/svg/sleet.svg
+ delete mode 100644 static/icons/svg/snow.svg
+ delete mode 100644 static/icons/svg/snowshowers_day.svg
+ delete mode 100644 static/icons/svg/snowshowers_night.svg
+ delete mode 100644 static/icons/svg/thunderstorm.svg
+ create mode 100644 static/weather-icons/clearsky_day.svg
+ create mode 100644 static/weather-icons/clearsky_night.svg
+ create mode 100644 static/weather-icons/cloudy.svg
+ create mode 100644 static/weather-icons/fair_day.svg
+ create mode 100644 static/weather-icons/fair_night.svg
+ create mode 100644 static/weather-icons/fog.svg
+ create mode 100644 static/weather-icons/heavyrain.svg
+ create mode 100644 static/weather-icons/lightrain.svg
+ create mode 100644 static/weather-icons/partlycloudy_day.svg
+ create mode 100644 static/weather-icons/partlycloudy_night.svg
+ create mode 100644 static/weather-icons/rain.svg
+ create mode 100644 static/weather-icons/rainshowers_day.svg
+ create mode 100644 static/weather-icons/rainshowers_night.svg
+ create mode 100644 static/weather-icons/snow.svg
+ create mode 100644 static/weather-icons/thunderstorm.svg
+To https://github.com/torbjornthorbjornson/smart-styrning.git
+   baad623..d94ff2f  main -> main
+[main d442e3c] Automatisk backup: 2025-04-02 21:00
+ 1 file changed, 39 insertions(+)
+To https://github.com/torbjornthorbjornson/smart-styrning.git
+   d94ff2f..d442e3c  main -> main
+[main 8935de2] Automatisk backup: 2025-04-02 21:30
+ 4 files changed, 117 insertions(+), 52 deletions(-)
+To https://github.com/torbjornthorbjornson/smart-styrning.git
+   d442e3c..8935de2  main -> main
+[main 8956212] Automatisk backup: 2025-04-03 08:00
+ 19 files changed, 604 insertions(+), 68 deletions(-)
+ create mode 100644 static/weather-icons/clearsky_day.svg
+ create mode 100644 static/weather-icons/clearsky_night.svg
+ create mode 100644 static/weather-icons/cloudy.svg
+ create mode 100644 static/weather-icons/fair_day.svg
+ create mode 100644 static/weather-icons/fair_night.svg
+ create mode 100644 static/weather-icons/fog.svg
+ create mode 100644 static/weather-icons/heavyrain.svg
+ create mode 100644 static/weather-icons/lightrain.svg
+ create mode 100644 static/weather-icons/partlycloudy_day.svg
+ create mode 100644 static/weather-icons/partlycloudy_night.svg
+ create mode 100644 static/weather-icons/rain.svg
+ create mode 100644 static/weather-icons/rainshowers_day.svg
+ create mode 100644 static/weather-icons/rainshowers_night.svg
+ create mode 100644 static/weather-icons/snow.svg
+ create mode 100644 static/weather-icons/thunderstorm.svg
+remote: warning: File backup/HittakvUpdateInstallerLatest.exe is 69.13 MB; this is larger than GitHub's recommended maximum file size of 50.00 MB        
+remote: error: Trace: b4b376830d744ebd821e8e4e32103f44997415e61ec7cac588fbbbd16f16a48c        
+remote: error: See https://gh.io/lfs for more information.        
+remote: error: File backup/PowerShell-7.5.0-win-x64.msi is 107.82 MB; this exceeds GitHub's file size limit of 100.00 MB        
+remote: error: File backup/VSCodeUserSetup-x64-1.98.2.exe is 102.53 MB; this exceeds GitHub's file size limit of 100.00 MB        
+remote: error: GH001: Large files detected. You may want to try Git Large File Storage - https://git-lfs.github.com.        
+To https://github.com/torbjornthorbjornson/smart-styrning.git
+ ! [remote rejected] main -> main (pre-receive hook declined)
+fel: misslyckades sända vissa referenser till "https://github.com/torbjornthorbjornson/smart-styrning.git"
+[main 0b86419] Automatisk backup: 2025-04-03 08:00
+ 1 file changed, 26 insertions(+)
+remote: warning: File backup/HittakvUpdateInstallerLatest.exe is 69.13 MB; this is larger than GitHub's recommended maximum file size of 50.00 MB        
+remote: error: Trace: 62a898f3621272e912c10c67e9b06fe05bfe5bae465c2bd4dcee0bbe6dc8a407        
+remote: error: See https://gh.io/lfs for more information.        
+remote: error: File backup/VSCodeUserSetup-x64-1.98.2.exe is 102.53 MB; this exceeds GitHub's file size limit of 100.00 MB        
+remote: error: File backup/PowerShell-7.5.0-win-x64.msi is 107.82 MB; this exceeds GitHub's file size limit of 100.00 MB        
+remote: error: GH001: Large files detected. You may want to try Git Large File Storage - https://git-lfs.github.com.        
+To https://github.com/torbjornthorbjornson/smart-styrning.git
+ ! [remote rejected] main -> main (pre-receive hook declined)
+fel: misslyckades sända vissa referenser till "https://github.com/torbjornthorbjornson/smart-styrning.git"
+[main aad530f] Automatisk backup: 2025-04-03 08:30
+ 1 file changed, 61 insertions(+), 72 deletions(-)
+remote: warning: File backup/HittakvUpdateInstallerLatest.exe is 69.13 MB; this is larger than GitHub's recommended maximum file size of 50.00 MB        
+remote: error: Trace: df8a5eb6aa3bdcb79bc70c9e71e1252480649e8f4d82da98514655fd37007f10        
+remote: error: See https://gh.io/lfs for more information.        
+remote: error: File backup/PowerShell-7.5.0-win-x64.msi is 107.82 MB; this exceeds GitHub's file size limit of 100.00 MB        
+remote: error: File backup/VSCodeUserSetup-x64-1.98.2.exe is 102.53 MB; this exceeds GitHub's file size limit of 100.00 MB        
+remote: error: GH001: Large files detected. You may want to try Git Large File Storage - https://git-lfs.github.com.        
+To https://github.com/torbjornthorbjornson/smart-styrning.git
+ ! [remote rejected] main -> main (pre-receive hook declined)
+fel: misslyckades sända vissa referenser till "https://github.com/torbjornthorbjornson/smart-styrning.git"
+[main 1dc1204] Automatisk backup: 2025-04-03 08:30
+ 1 file changed, 11 insertions(+)
+remote: warning: File backup/HittakvUpdateInstallerLatest.exe is 69.13 MB; this is larger than GitHub's recommended maximum file size of 50.00 MB        
+remote: error: Trace: d5e1269a18ed9ca60368455bd2d875dfbee04226eb2acaf1b1501bff6121d29f        
+remote: error: See https://gh.io/lfs for more information.        
+remote: error: File backup/PowerShell-7.5.0-win-x64.msi is 107.82 MB; this exceeds GitHub's file size limit of 100.00 MB        
+remote: error: File backup/VSCodeUserSetup-x64-1.98.2.exe is 102.53 MB; this exceeds GitHub's file size limit of 100.00 MB        
+remote: error: GH001: Large files detected. You may want to try Git Large File Storage - https://git-lfs.github.com.        
+To https://github.com/torbjornthorbjornson/smart-styrning.git
+ ! [remote rejected] main -> main (pre-receive hook declined)
+fel: misslyckades sända vissa referenser till "https://github.com/torbjornthorbjornson/smart-styrning.git"
+[main 810084e] Automatisk backup: 2025-04-03 09:00
+ 3 files changed, 171 insertions(+), 61 deletions(-)
+ create mode 100644 backup/app_stabil_20250403_0830.py
+remote: warning: File backup/HittakvUpdateInstallerLatest.exe is 69.13 MB; this is larger than GitHub's recommended maximum file size of 50.00 MB        
+remote: error: Trace: 954deb4e347be0df623e25f5b740c4112c670c7b6ed38fdf482fd02de9079584        
+remote: error: See https://gh.io/lfs for more information.        
+remote: error: File backup/PowerShell-7.5.0-win-x64.msi is 107.82 MB; this exceeds GitHub's file size limit of 100.00 MB        
+remote: error: File backup/VSCodeUserSetup-x64-1.98.2.exe is 102.53 MB; this exceeds GitHub's file size limit of 100.00 MB        
+remote: error: GH001: Large files detected. You may want to try Git Large File Storage - https://git-lfs.github.com.        
+To https://github.com/torbjornthorbjornson/smart-styrning.git
+ ! [remote rejected] main -> main (pre-receive hook declined)
+fel: misslyckades sända vissa referenser till "https://github.com/torbjornthorbjornson/smart-styrning.git"
+[main ccee173] Automatisk backup: 2025-04-03 09:00
+ 1 file changed, 12 insertions(+)
+remote: warning: File backup/HittakvUpdateInstallerLatest.exe is 69.13 MB; this is larger than GitHub's recommended maximum file size of 50.00 MB        
+remote: error: Trace: ce1a555ef48463974c72bc5559233a0370cd37d3e698b6bf096cba84b5e6599a        
+remote: error: See https://gh.io/lfs for more information.        
+remote: error: File backup/VSCodeUserSetup-x64-1.98.2.exe is 102.53 MB; this exceeds GitHub's file size limit of 100.00 MB        
+remote: error: File backup/PowerShell-7.5.0-win-x64.msi is 107.82 MB; this exceeds GitHub's file size limit of 100.00 MB        
+remote: error: GH001: Large files detected. You may want to try Git Large File Storage - https://git-lfs.github.com.        
+To https://github.com/torbjornthorbjornson/smart-styrning.git
+ ! [remote rejected] main -> main (pre-receive hook declined)
+fel: misslyckades sända vissa referenser till "https://github.com/torbjornthorbjornson/smart-styrning.git"
+[main a908502] Automatisk backup: 2025-04-03 09:30
+ 1 file changed, 11 insertions(+)
+remote: warning: File backup/HittakvUpdateInstallerLatest.exe is 69.13 MB; this is larger than GitHub's recommended maximum file size of 50.00 MB        
+remote: error: Trace: b7ad23f1295793bd1d3340be6646fe2a967f38e8194953ebe449e1e4fd578e4c        
+remote: error: See https://gh.io/lfs for more information.        
+remote: error: File backup/PowerShell-7.5.0-win-x64.msi is 107.82 MB; this exceeds GitHub's file size limit of 100.00 MB        
+remote: error: File backup/VSCodeUserSetup-x64-1.98.2.exe is 102.53 MB; this exceeds GitHub's file size limit of 100.00 MB        
+remote: error: GH001: Large files detected. You may want to try Git Large File Storage - https://git-lfs.github.com.        
+To https://github.com/torbjornthorbjornson/smart-styrning.git
+ ! [remote rejected] main -> main (pre-receive hook declined)
+fel: misslyckades sända vissa referenser till "https://github.com/torbjornthorbjornson/smart-styrning.git"
+[main 3a77c10] Automatisk backup: 2025-04-03 09:30
+ 1 file changed, 11 insertions(+)
+remote: warning: File backup/HittakvUpdateInstallerLatest.exe is 69.13 MB; this is larger than GitHub's recommended maximum file size of 50.00 MB        
+remote: error: Trace: ca8771a4cecb241fbaf2c45aef2b902ddbfb0b25e0872ae9764a7065d0882610        
+remote: error: See https://gh.io/lfs for more information.        
+remote: error: File backup/PowerShell-7.5.0-win-x64.msi is 107.82 MB; this exceeds GitHub's file size limit of 100.00 MB        
+remote: error: File backup/VSCodeUserSetup-x64-1.98.2.exe is 102.53 MB; this exceeds GitHub's file size limit of 100.00 MB        
+remote: error: GH001: Large files detected. You may want to try Git Large File Storage - https://git-lfs.github.com.        
+To https://github.com/torbjornthorbjornson/smart-styrning.git
+ ! [remote rejected] main -> main (pre-receive hook declined)
+fel: misslyckades sända vissa referenser till "https://github.com/torbjornthorbjornson/smart-styrning.git"
+[main afc2a8e] Automatisk backup: 2025-04-03 10:00
+ 1 file changed, 11 insertions(+)
+remote: warning: File backup/HittakvUpdateInstallerLatest.exe is 69.13 MB; this is larger than GitHub's recommended maximum file size of 50.00 MB        
+remote: error: Trace: f02bf048dbf0b01bc041595b1ce25a9d5bd70f83dcbacdb9ce4782e9d555c9a1        
+remote: error: See https://gh.io/lfs for more information.        
+remote: error: File backup/PowerShell-7.5.0-win-x64.msi is 107.82 MB; this exceeds GitHub's file size limit of 100.00 MB        
+remote: error: File backup/VSCodeUserSetup-x64-1.98.2.exe is 102.53 MB; this exceeds GitHub's file size limit of 100.00 MB        
+remote: error: GH001: Large files detected. You may want to try Git Large File Storage - https://git-lfs.github.com.        
+To https://github.com/torbjornthorbjornson/smart-styrning.git
+ ! [remote rejected] main -> main (pre-receive hook declined)
+fel: misslyckades sända vissa referenser till "https://github.com/torbjornthorbjornson/smart-styrning.git"
+[main 0a9a558] Automatisk backup: 2025-04-03 10:00
+ 1 file changed, 11 insertions(+)
+remote: warning: File backup/HittakvUpdateInstallerLatest.exe is 69.13 MB; this is larger than GitHub's recommended maximum file size of 50.00 MB        
+remote: error: Trace: 11078b1408bdb21438e7a5146e7d58922105c9a5b49b20af11d121256cd2a916        
+remote: error: See https://gh.io/lfs for more information.        
+remote: error: File backup/PowerShell-7.5.0-win-x64.msi is 107.82 MB; this exceeds GitHub's file size limit of 100.00 MB        
+remote: error: File backup/VSCodeUserSetup-x64-1.98.2.exe is 102.53 MB; this exceeds GitHub's file size limit of 100.00 MB        
+remote: error: GH001: Large files detected. You may want to try Git Large File Storage - https://git-lfs.github.com.        
+To https://github.com/torbjornthorbjornson/smart-styrning.git
+ ! [remote rejected] main -> main (pre-receive hook declined)
+fel: misslyckades sända vissa referenser till "https://github.com/torbjornthorbjornson/smart-styrning.git"
+[main 2dffa66] Automatisk backup: 2025-04-03 10:30
+ 2 files changed, 45 insertions(+)
+ create mode 100755 spotpris.py
+remote: warning: File backup/HittakvUpdateInstallerLatest.exe is 69.13 MB; this is larger than GitHub's recommended maximum file size of 50.00 MB        
+remote: error: Trace: aa0a384a9dbb42a2eb8d47353f8bfb4e39a6ea847b1c4d79e9e41110ecbc395e        
+remote: error: See https://gh.io/lfs for more information.        
+remote: error: File backup/PowerShell-7.5.0-win-x64.msi is 107.82 MB; this exceeds GitHub's file size limit of 100.00 MB        
+remote: error: File backup/VSCodeUserSetup-x64-1.98.2.exe is 102.53 MB; this exceeds GitHub's file size limit of 100.00 MB        
+remote: error: GH001: Large files detected. You may want to try Git Large File Storage - https://git-lfs.github.com.        
+To https://github.com/torbjornthorbjornson/smart-styrning.git
+ ! [remote rejected] main -> main (pre-receive hook declined)
+fel: misslyckades sända vissa referenser till "https://github.com/torbjornthorbjornson/smart-styrning.git"
+[main 652aca8] Automatisk backup: 2025-04-03 10:30
+ 1 file changed, 12 insertions(+)
+remote: warning: File backup/HittakvUpdateInstallerLatest.exe is 69.13 MB; this is larger than GitHub's recommended maximum file size of 50.00 MB        
+remote: error: Trace: bc649f1cc5b2cc4b4360af262ec239e618c8a0910dd6ae6ab4e6b71d3fe56d65        
+remote: error: See https://gh.io/lfs for more information.        
+remote: error: File backup/VSCodeUserSetup-x64-1.98.2.exe is 102.53 MB; this exceeds GitHub's file size limit of 100.00 MB        
+remote: error: File backup/PowerShell-7.5.0-win-x64.msi is 107.82 MB; this exceeds GitHub's file size limit of 100.00 MB        
+remote: error: GH001: Large files detected. You may want to try Git Large File Storage - https://git-lfs.github.com.        
+To https://github.com/torbjornthorbjornson/smart-styrning.git
+ ! [remote rejected] main -> main (pre-receive hook declined)
+fel: misslyckades sända vissa referenser till "https://github.com/torbjornthorbjornson/smart-styrning.git"
+[main cda90a5] Automatisk backup: 2025-04-03 11:00
+ 3 files changed, 18 insertions(+)
+ create mode 100644 spotpris_error.log
+ create mode 100644 spotpris_info.log
+remote: warning: File backup/HittakvUpdateInstallerLatest.exe is 69.13 MB; this is larger than GitHub's recommended maximum file size of 50.00 MB        
+remote: error: Trace: 68f85baf53f7d139ceccc8630915b290c20f921ff746cc665247a79aaae31391        
+remote: error: See https://gh.io/lfs for more information.        
+remote: error: File backup/PowerShell-7.5.0-win-x64.msi is 107.82 MB; this exceeds GitHub's file size limit of 100.00 MB        
+remote: error: File backup/VSCodeUserSetup-x64-1.98.2.exe is 102.53 MB; this exceeds GitHub's file size limit of 100.00 MB        
+remote: error: GH001: Large files detected. You may want to try Git Large File Storage - https://git-lfs.github.com.        
+To https://github.com/torbjornthorbjornson/smart-styrning.git
+ ! [remote rejected] main -> main (pre-receive hook declined)
+fel: misslyckades sända vissa referenser till "https://github.com/torbjornthorbjornson/smart-styrning.git"
+[main 5f668a8] Automatisk backup: 2025-04-03 11:00
+ 1 file changed, 13 insertions(+)
+remote: warning: File backup/HittakvUpdateInstallerLatest.exe is 69.13 MB; this is larger than GitHub's recommended maximum file size of 50.00 MB        
+remote: error: Trace: 72a236016434cdbdd01bfe4aad741e36066eaac9095f61d47f73295c09f1f9d5        
+remote: error: See https://gh.io/lfs for more information.        
+remote: error: File backup/VSCodeUserSetup-x64-1.98.2.exe is 102.53 MB; this exceeds GitHub's file size limit of 100.00 MB        
+remote: error: File backup/PowerShell-7.5.0-win-x64.msi is 107.82 MB; this exceeds GitHub's file size limit of 100.00 MB        
+remote: error: GH001: Large files detected. You may want to try Git Large File Storage - https://git-lfs.github.com.        
+To https://github.com/torbjornthorbjornson/smart-styrning.git
+ ! [remote rejected] main -> main (pre-receive hook declined)
+fel: misslyckades sända vissa referenser till "https://github.com/torbjornthorbjornson/smart-styrning.git"
+[main 56cd33b] Automatisk backup: 2025-04-03 11:30
+ 4 files changed, 1377 insertions(+), 23 deletions(-)
+ create mode 100755 importera_eldagar.sh
+ mode change 100755 => 100644 spotpris.py
+remote: warning: File backup/HittakvUpdateInstallerLatest.exe is 69.13 MB; this is larger than GitHub's recommended maximum file size of 50.00 MB        
+remote: error: Trace: 85b982560d1f2f1b5a89a132ea0aca88f42e1e245b019c0ae080f5b296f93711        
+remote: error: See https://gh.io/lfs for more information.        
+remote: error: File backup/PowerShell-7.5.0-win-x64.msi is 107.82 MB; this exceeds GitHub's file size limit of 100.00 MB        
+remote: error: File backup/VSCodeUserSetup-x64-1.98.2.exe is 102.53 MB; this exceeds GitHub's file size limit of 100.00 MB        
+remote: error: GH001: Large files detected. You may want to try Git Large File Storage - https://git-lfs.github.com.        
+To https://github.com/torbjornthorbjornson/smart-styrning.git
+ ! [remote rejected] main -> main (pre-receive hook declined)
+fel: misslyckades sända vissa referenser till "https://github.com/torbjornthorbjornson/smart-styrning.git"
+På grenen main
+Din gren ligger före "origin/main" med 59 incheckningar.
+  (använd "git push" för att publicera dina lokala incheckningar)
+
+inget att checka in, arbetskatalogen ren
+remote: warning: File backup/HittakvUpdateInstallerLatest.exe is 69.13 MB; this is larger than GitHub's recommended maximum file size of 50.00 MB        
+remote: error: Trace: bf013f0c6c471b1eec60b075fa10cabd714c02eaf4ae518028e41a0904921ab2        
+remote: error: See https://gh.io/lfs for more information.        
+remote: error: File backup/PowerShell-7.5.0-win-x64.msi is 107.82 MB; this exceeds GitHub's file size limit of 100.00 MB        
+remote: error: File backup/VSCodeUserSetup-x64-1.98.2.exe is 102.53 MB; this exceeds GitHub's file size limit of 100.00 MB        
+remote: error: GH001: Large files detected. You may want to try Git Large File Storage - https://git-lfs.github.com.        
+To https://github.com/torbjornthorbjornson/smart-styrning.git
+ ! [remote rejected] main -> main (pre-receive hook declined)
+fel: misslyckades sända vissa referenser till "https://github.com/torbjornthorbjornson/smart-styrning.git"
+[main d511a53] Automatisk backup: 2025-04-03 12:30
+ 1 file changed, 14 insertions(+)
+remote: warning: File backup/HittakvUpdateInstallerLatest.exe is 69.13 MB; this is larger than GitHub's recommended maximum file size of 50.00 MB        
+remote: error: Trace: 40868cbff03b58708933eb32bf75efd3daccf123c2da8d27e9c7bf8a8feb9388        
+remote: error: See https://gh.io/lfs for more information.        
+remote: error: File backup/PowerShell-7.5.0-win-x64.msi is 107.82 MB; this exceeds GitHub's file size limit of 100.00 MB        
+remote: error: File backup/VSCodeUserSetup-x64-1.98.2.exe is 102.53 MB; this exceeds GitHub's file size limit of 100.00 MB        
+remote: error: GH001: Large files detected. You may want to try Git Large File Storage - https://git-lfs.github.com.        
+To https://github.com/torbjornthorbjornson/smart-styrning.git
+ ! [remote rejected] main -> main (pre-receive hook declined)
+fel: misslyckades sända vissa referenser till "https://github.com/torbjornthorbjornson/smart-styrning.git"
+[main b77bd8b] Automatisk backup: 2025-04-03 13:00
+ 1 file changed, 11 insertions(+)
+remote: warning: File backup/HittakvUpdateInstallerLatest.exe is 69.13 MB; this is larger than GitHub's recommended maximum file size of 50.00 MB        
+remote: error: Trace: a26885427798a3ec05e978242eb27f6f81ff9880e22f6edc66356e67af171cde        
+remote: error: See https://gh.io/lfs for more information.        
+remote: error: File backup/PowerShell-7.5.0-win-x64.msi is 107.82 MB; this exceeds GitHub's file size limit of 100.00 MB        
+remote: error: File backup/VSCodeUserSetup-x64-1.98.2.exe is 102.53 MB; this exceeds GitHub's file size limit of 100.00 MB        
+remote: error: GH001: Large files detected. You may want to try Git Large File Storage - https://git-lfs.github.com.        
+To https://github.com/torbjornthorbjornson/smart-styrning.git
+ ! [remote rejected] main -> main (pre-receive hook declined)
+fel: misslyckades sända vissa referenser till "https://github.com/torbjornthorbjornson/smart-styrning.git"
+[main 2748686] Automatisk backup: 2025-04-03 19:30
+ 1 file changed, 16 insertions(+)
+remote: warning: File backup/HittakvUpdateInstallerLatest.exe is 69.13 MB; this is larger than GitHub's recommended maximum file size of 50.00 MB        
+remote: error: Trace: 7768a062d866cdbe577cfcb1af550ea6747c37e782b83ea9ddd6f3fd679ceae1        
+remote: error: See https://gh.io/lfs for more information.        
+remote: error: File backup/PowerShell-7.5.0-win-x64.msi is 107.82 MB; this exceeds GitHub's file size limit of 100.00 MB        
+remote: error: File backup/VSCodeUserSetup-x64-1.98.2.exe is 102.53 MB; this exceeds GitHub's file size limit of 100.00 MB        
+remote: error: GH001: Large files detected. You may want to try Git Large File Storage - https://git-lfs.github.com.        
+To https://github.com/torbjornthorbjornson/smart-styrning.git
+ ! [remote rejected] main -> main (pre-receive hook declined)
+fel: misslyckades sända vissa referenser till "https://github.com/torbjornthorbjornson/smart-styrning.git"
+[main e60f21f] Automatisk backup: 2025-04-03 19:30
+ 1 file changed, 11 insertions(+)
+remote: warning: File backup/HittakvUpdateInstallerLatest.exe is 69.13 MB; this is larger than GitHub's recommended maximum file size of 50.00 MB        
+remote: error: Trace: 213d94c9dd9756db3d59c90de51a4d32ca591842588549714d9584b33694cfc5        
+remote: error: See https://gh.io/lfs for more information.        
+remote: error: File backup/PowerShell-7.5.0-win-x64.msi is 107.82 MB; this exceeds GitHub's file size limit of 100.00 MB        
+remote: error: File backup/VSCodeUserSetup-x64-1.98.2.exe is 102.53 MB; this exceeds GitHub's file size limit of 100.00 MB        
+remote: error: GH001: Large files detected. You may want to try Git Large File Storage - https://git-lfs.github.com.        
+To https://github.com/torbjornthorbjornson/smart-styrning.git
+ ! [remote rejected] main -> main (pre-receive hook declined)
+fel: misslyckades sända vissa referenser till "https://github.com/torbjornthorbjornson/smart-styrning.git"
+[main 916992b] Automatisk backup: 2025-04-03 20:00
+ 2 files changed, 11 insertions(+)
+ create mode 100755 git_tagga_stabil.sh
+remote: warning: File backup/HittakvUpdateInstallerLatest.exe is 69.13 MB; this is larger than GitHub's recommended maximum file size of 50.00 MB        
+remote: error: Trace: 565105ffe203437f3c6552b3ac00530d407d58a4976b6964ebbb8e1b390938cc        
+remote: error: See https://gh.io/lfs for more information.        
+remote: error: File backup/PowerShell-7.5.0-win-x64.msi is 107.82 MB; this exceeds GitHub's file size limit of 100.00 MB        
+remote: error: File backup/VSCodeUserSetup-x64-1.98.2.exe is 102.53 MB; this exceeds GitHub's file size limit of 100.00 MB        
+remote: error: GH001: Large files detected. You may want to try Git Large File Storage - https://git-lfs.github.com.        
+To https://github.com/torbjornthorbjornson/smart-styrning.git
+ ! [remote rejected] main -> main (pre-receive hook declined)
+fel: misslyckades sända vissa referenser till "https://github.com/torbjornthorbjornson/smart-styrning.git"
+[main 1bd7f40] Automatisk backup: 2025-04-03 20:00
+ 2 files changed, 44 insertions(+)
+remote: warning: File backup/HittakvUpdateInstallerLatest.exe is 69.13 MB; this is larger than GitHub's recommended maximum file size of 50.00 MB        
+remote: error: Trace: 5df3879d6ff9549fc492ad11739d0190996e35c39d2f15d44f53ff232b555c2f        
+remote: error: See https://gh.io/lfs for more information.        
+remote: error: File backup/PowerShell-7.5.0-win-x64.msi is 107.82 MB; this exceeds GitHub's file size limit of 100.00 MB        
+remote: error: File backup/VSCodeUserSetup-x64-1.98.2.exe is 102.53 MB; this exceeds GitHub's file size limit of 100.00 MB        
+remote: error: GH001: Large files detected. You may want to try Git Large File Storage - https://git-lfs.github.com.        
+To https://github.com/torbjornthorbjornson/smart-styrning.git
+ ! [remote rejected] main -> main (pre-receive hook declined)
+fel: misslyckades sända vissa referenser till "https://github.com/torbjornthorbjornson/smart-styrning.git"

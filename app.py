@@ -2,6 +2,8 @@
 from flask import Flask, render_template, request
 import pymysql
 from datetime import datetime, timedelta
+import subprocess  # ✅ krävs för gitlog
+import os          # ✅ krävs för gitlog
 
 app = Flask(__name__)
 
@@ -26,7 +28,15 @@ def dokumentation():
 
 @app.route("/gitlog")
 def gitlog():
-    return render_template("gitlog.html")
+    try:
+        logs = subprocess.check_output(
+            ["git", "log", "--pretty=format:%h - %s (%cr)"],
+            cwd=os.path.dirname(__file__),
+            text=True
+        ).splitlines()
+    except Exception as e:
+        logs = [f"❌ Kunde inte läsa gitlog: {e}"]
+    return render_template("gitlog.html", log="\n".join(logs))  # 👈 rätt variabelnamn till gitlog.html
 
 @app.route("/elprisvader")
 def elprisvader():
@@ -39,7 +49,6 @@ def elprisvader():
     try:
         conn = get_connection()
         with conn.cursor() as cursor:
-            # Hämta väderdata
             cursor.execute('''
                 SELECT * FROM weather
                 WHERE timestamp >= %s AND timestamp < DATE_ADD(%s, INTERVAL 1 DAY)
@@ -47,7 +56,6 @@ def elprisvader():
             ''', (selected_date, selected_date))
             weather_data = cursor.fetchall()
 
-            # Hämta elprisdata
             cursor.execute('''
                 SELECT * FROM electricity_prices
                 WHERE datetime >= %s AND datetime < DATE_ADD(%s, INTERVAL 1 DAY)
@@ -55,12 +63,10 @@ def elprisvader():
             ''', (selected_date, selected_date))
             elpris_data = cursor.fetchall()
 
-            # Beräkna medelvärden
             medel_temperature = round(sum(row["temperature"] for row in weather_data) / len(weather_data), 1) if weather_data else "-"
             medel_vind = round(sum(row["vind"] for row in weather_data) / len(weather_data), 1) if weather_data else "-"
             medel_elpris = round(sum(row["price"] for row in elpris_data) / len(elpris_data), 1) if elpris_data else "-"
 
-            # Formatera för grafer
             labels = [row["timestamp"].strftime("%H:%M") for row in weather_data]
             temperature = [row["temperature"] for row in weather_data]
             vind = [row["vind"] for row in weather_data]
