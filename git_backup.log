@@ -645,3 +645,29 @@ To https://github.com/torbjornthorbjornson/smart-styrning.git
  4 files changed, 117 insertions(+), 52 deletions(-)
 To https://github.com/torbjornthorbjornson/smart-styrning.git
    d442e3c..8935de2  main -> main
+[main 8956212] Automatisk backup: 2025-04-03 08:00
+ 19 files changed, 604 insertions(+), 68 deletions(-)
+ create mode 100644 static/weather-icons/clearsky_day.svg
+ create mode 100644 static/weather-icons/clearsky_night.svg
+ create mode 100644 static/weather-icons/cloudy.svg
+ create mode 100644 static/weather-icons/fair_day.svg
+ create mode 100644 static/weather-icons/fair_night.svg
+ create mode 100644 static/weather-icons/fog.svg
+ create mode 100644 static/weather-icons/heavyrain.svg
+ create mode 100644 static/weather-icons/lightrain.svg
+ create mode 100644 static/weather-icons/partlycloudy_day.svg
+ create mode 100644 static/weather-icons/partlycloudy_night.svg
+ create mode 100644 static/weather-icons/rain.svg
+ create mode 100644 static/weather-icons/rainshowers_day.svg
+ create mode 100644 static/weather-icons/rainshowers_night.svg
+ create mode 100644 static/weather-icons/snow.svg
+ create mode 100644 static/weather-icons/thunderstorm.svg
+remote: warning: File backup/HittakvUpdateInstallerLatest.exe is 69.13 MB; this is larger than GitHub's recommended maximum file size of 50.00 MB        
+remote: error: Trace: b4b376830d744ebd821e8e4e32103f44997415e61ec7cac588fbbbd16f16a48c        
+remote: error: See https://gh.io/lfs for more information.        
+remote: error: File backup/PowerShell-7.5.0-win-x64.msi is 107.82 MB; this exceeds GitHub's file size limit of 100.00 MB        
+remote: error: File backup/VSCodeUserSetup-x64-1.98.2.exe is 102.53 MB; this exceeds GitHub's file size limit of 100.00 MB        
+remote: error: GH001: Large files detected. You may want to try Git Large File Storage - https://git-lfs.github.com.        
+To https://github.com/torbjornthorbjornson/smart-styrning.git
+ ! [remote rejected] main -> main (pre-receive hook declined)
+fel: misslyckades sända vissa referenser till "https://github.com/torbjornthorbjornson/smart-styrning.git"
