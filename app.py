@@ -5,84 +5,73 @@ from datetime import datetime, timedelta
 
 app = Flask(__name__)
 
-def get_connection():
-    return pymysql.connect(
-        read_default_file="/home/runerova/.my.cnf",
-        database="smart_styrning",
-        cursorclass=pymysql.cursors.DictCursor
-    )
+# Anslutningsinställningar
+DB_CONFIG = {
+    "host": "localhost",
+    "database": "smart_styrning",
+    "read_default_file": "/home/runerova/.my.cnf"
+}
 
-@app.route("/")
-def home():
-    return render_template("home.html")
+def get_weather_data(date_utc):
+    try:
+        conn = pymysql.connect(**DB_CONFIG)
+        cursor = conn.cursor(pymysql.cursors.DictCursor)
+        query = """
+            SELECT * FROM weather
+            WHERE timestamp >= %s AND timestamp < DATE_ADD(%s, INTERVAL 1 DAY)
+            ORDER BY timestamp
+        """
+        cursor.execute(query, (date_utc, date_utc))
+        rows = cursor.fetchall()
+        conn.close()
+        return rows
+    except Exception as e:
+        print(f"Fel vid hämtning av väderdata: {e}")
+        return []
 
-@app.route("/vision")
-def vision():
-    return render_template("vision.html")
-
-@app.route("/dokumentation")
-def dokumentation():
-    return render_template("dokumentation.html")
-
-@app.route("/gitlog")
-def gitlog():
-    return render_template("gitlog.html")
+def get_elpris_data(date_utc):
+    try:
+        conn = pymysql.connect(**DB_CONFIG)
+        cursor = conn.cursor(pymysql.cursors.DictCursor)
+        query = """
+            SELECT * FROM electricity_prices
+            WHERE datetime >= %s AND datetime < DATE_ADD(%s, INTERVAL 1 DAY)
+            ORDER BY datetime
+        """
+        cursor.execute(query, (date_utc, date_utc))
+        rows = cursor.fetchall()
+        conn.close()
+        return rows
+    except Exception as e:
+        print(f"Fel vid hämtning av elprisdata: {e}")
+        return []
 
 @app.route("/elprisvader")
-def elprisvader():
-    selected_date_str = request.args.get("datum")
-    if selected_date_str:
-        selected_date = datetime.strptime(selected_date_str, "%Y-%m-%d").date()
-    else:
-        selected_date = datetime.utcnow().date()
-
+def elpris_vader():
+    date_str = request.args.get("datum")
     try:
-        conn = get_connection()
-        with conn.cursor() as cursor:
-            # Hämta väderdata
-            cursor.execute('''
-                SELECT * FROM weather
-                WHERE timestamp >= %s AND timestamp < DATE_ADD(%s, INTERVAL 1 DAY)
-                ORDER BY timestamp
-            ''', (selected_date, selected_date))
-            weather_data = cursor.fetchall()
-
-            # Hämta elprisdata
-            cursor.execute('''
-                SELECT * FROM electricity_prices
-                WHERE datetime >= %s AND datetime < DATE_ADD(%s, INTERVAL 1 DAY)
-                ORDER BY datetime
-            ''', (selected_date, selected_date))
-            elpris_data = cursor.fetchall()
-
-            # Beräkna medelvärden
-            medel_temperature = round(sum(row["temperature"] for row in weather_data) / len(weather_data), 1) if weather_data else "-"
-            medel_vind = round(sum(row["vind"] for row in weather_data) / len(weather_data), 1) if weather_data else "-"
-            medel_elpris = round(sum(row["price"] for row in elpris_data) / len(elpris_data), 1) if elpris_data else "-"
-
-            # Formatera för grafer
-            labels = [row["timestamp"].strftime("%H:%M") for row in weather_data]
-            temperature = [row["temperature"] for row in weather_data]
-            vind = [row["vind"] for row in weather_data]
-
-            elpris_labels = [row["datetime"].strftime("%H:%M") for row in elpris_data]
-            elpris_values = [row["price"] for row in elpris_data]
-
-        return render_template("elpris_vader.html",
-                               selected_date=selected_date,
-                               weatherdata=weather_data,
-                               elprisdata=elpris_data,
-                               labels=labels,
-                               temperature=temperature,
-                               vind=vind,
-                               elpris_labels=elpris_labels,
-                               elpris_values=elpris_values,
-                               medel_temperature=medel_temperature,
-                               medel_vind=medel_vind,
-                               medel_elpris=medel_elpris)
-
+        date_utc = datetime.strptime(date_str, "%Y-%m-%d").date() if date_str else datetime.utcnow().date()
     except Exception as e:
-        return f"Fel vid hämtning av data: {e}"
+        print(f"Felaktigt datumformat: {e}")
+        date_utc = datetime.utcnow().date()
 
-if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=8000, debug=True)
+    weatherdata = get_weather_data(date_utc)
+    elprisdata = get_elpris_data(date_utc)
+
+    # Fyll i saknade timmar med tomma värden (för grafernas skull)
+    full_hours = [date_utc + timedelta(hours=i) for i in range(24)]
+    weather_by_hour = {row['timestamp'].replace(tzinfo=None).hour: row for row in weatherdata}
+    elpris_by_hour = {row['datetime'].replace(tzinfo=None).hour: row for row in elprisdata}
+
+    weatherdata_full = []
+    elprisdata_full = []
+    for h in range(24):
+        w = weather_by_hour.get(h, {"timestamp": datetime.combine(date_utc, datetime.min.time()) + timedelta(hours=h), "temperature": None, "vind": None, "symbol_code": None})
+        e = elpris_by_hour.get(h, {"datetime": datetime.combine(date_utc, datetime.min.time()) + timedelta(hours=h), "price": None})
+        weatherdata_full.append(w)
+        elprisdata_full.append(e)
+
+    return render_template("elpris_vader.html", weatherdata=weatherdata_full, elprisdata=elprisdata_full, datum=date_utc)
+
+if __name__ == '__main__':
+    app.run(debug=True, host='0.0.0.0', port=8000)
