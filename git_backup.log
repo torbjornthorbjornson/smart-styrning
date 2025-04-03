@@ -878,3 +878,13 @@ remote: error: GH001: Large files detected. You may want to try Git Large File S
 To https://github.com/torbjornthorbjornson/smart-styrning.git
  ! [remote rejected] main -> main (pre-receive hook declined)
 fel: misslyckades sända vissa referenser till "https://github.com/torbjornthorbjornson/smart-styrning.git"
+På grenen backup_2025-04-03_13-17-39
+inget att checka in, arbetskatalogen ren
+ödesdigert: Den aktuella grenen backup_2025-04-03_13-17-39 har ingen uppströmsgren.
+För att sända aktuell gren och ange fjärrarkiv som uppström använder du
+
+    git push --set-upstream origin backup_2025-04-03_13-17-39
+
+För att detta ska ske automatiskt för grenar som saknar en spårande
+uppströmsgren, se "push.autoSetupRemote" i "git help config".
+
