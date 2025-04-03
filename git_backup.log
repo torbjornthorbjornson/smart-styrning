@@ -1050,3 +1050,13 @@ För att sända aktuell gren och ange fjärrarkiv som uppström använder du
 För att detta ska ske automatiskt för grenar som saknar en spårande
 uppströmsgren, se "push.autoSetupRemote" i "git help config".
 
+[backup_2025-04-03_13-17-39 11289f1] Automatisk backup: 2025-04-03 17:30
+ 1 file changed, 11 insertions(+)
+ödesdigert: Den aktuella grenen backup_2025-04-03_13-17-39 har ingen uppströmsgren.
+För att sända aktuell gren och ange fjärrarkiv som uppström använder du
+
+    git push --set-upstream origin backup_2025-04-03_13-17-39
+
+För att detta ska ske automatiskt för grenar som saknar en spårande
+uppströmsgren, se "push.autoSetupRemote" i "git help config".
+
