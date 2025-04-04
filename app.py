@@ -18,6 +18,38 @@ def get_connection():
 def home():
     return render_template("home.html")
 
+@app.route("/styrning")
+def styrning():
+    selected_date_str = request.args.get("datum")
+    if selected_date_str:
+        selected_date = datetime.strptime(selected_date_str, "%Y-%m-%d").date()
+    else:
+        selected_date = datetime.utcnow().date()
+
+    try:
+        conn = get_connection()
+        with conn.cursor() as cursor:
+            cursor.execute('''
+                SELECT datetime, price FROM electricity_prices
+                WHERE datetime >= %s AND datetime < DATE_ADD(%s, INTERVAL 1 DAY)
+                ORDER BY datetime
+            ''', (selected_date, selected_date))
+            priser = cursor.fetchall()
+
+        labels = [row["datetime"].strftime("%H:%M") for row in priser]
+        values = [float(row["price"]) for row in priser]
+
+        if len(values) >= 3:
+            sorted_prices = sorted(values)
+            gräns = sorted_prices[3]  # t.ex. markera 3 billigaste
+        else:
+            gräns = min(values, default=0)
+
+        return render_template("styrning.html", labels=labels, values=values, gräns=gräns, selected_date=selected_date)
+
+    except Exception as e:
+        return f"Fel vid hämtning av elprisdata: {e}"
+
 @app.route("/vision")
 def vision():
     return render_template("vision.html")

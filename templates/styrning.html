@@ -1,0 +1,105 @@
+<<!DOCTYPE html>
+<html lang="sv">
+<head>
+    <meta charset="UTF-8">
+    <title>Styrning – Billigaste timmarna för drift</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            background-color: #f7f7f7;
+            margin: 0;
+            padding: 20px;
+        }
+        canvas {
+            max-width: 1000px;
+            height: 500px !important;
+            margin: 30px auto;
+        }
+        a {
+            display: block;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h2>Styrning – Billigaste timmarna för drift</h2>
+    <p>Datum: {{ selected_date }}</p>
+    <canvas id="elprisChart"></canvas>
+
+    <p><strong>Valda timmar för styrning:</strong> 
+        {% for i in range(values|length) %}
+            {% if values[i] <= gräns %}
+                {{ labels[i] }}{% if not loop.last %}, {% endif %}
+            {% endif %}
+        {% endfor %}
+    </p>
+
+    <a href="/">← Tillbaka till startsidan</a>
+
+    <script>
+        const ctx = document.getElementById('elprisChart').getContext('2d');
+        const labels = {{ labels | tojson }};
+        const values = {{ values | tojson }};
+        const gräns = {{ gräns }};
+
+        new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: "öre/kWh",
+                    data: values,
+                    backgroundColor: values.map(v => v <= gräns ? 'green' : 'blue'),
+                    datalabels: {
+                        anchor: 'end',
+                        align: 'end',
+                        rotation: -90,
+                        color: '#000',
+                        font: {
+                            weight: 'bold',
+                            size: 33
+                        },
+                        formatter: function(val) {
+                            return val.toFixed(2) + " öre";
+                        }
+                    }
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    datalabels: {
+                        display: true
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: context => context.raw + " öre"
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'öre/kWh'
+                        }
+                    },
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Tidpunkt'
+                        }
+                    }
+                }
+            },
+            plugins: [ChartDataLabels]
+        });
+    </script>
+</body>
+</html>
