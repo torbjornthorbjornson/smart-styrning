@@ -2,8 +2,8 @@
 from flask import Flask, render_template, request
 import pymysql
 from datetime import datetime, timedelta
-import subprocess  # ✅ krävs för gitlog
-import os          # ✅ krävs för gitlog
+import subprocess
+import os
 
 app = Flask(__name__)
 
@@ -36,16 +36,32 @@ def styrning():
             ''', (selected_date, selected_date))
             priser = cursor.fetchall()
 
+            fallback_used = False
+            if not priser:
+                fallback_used = True
+                selected_date = selected_date - timedelta(days=1)
+                cursor.execute('''
+                    SELECT datetime, price FROM electricity_prices
+                    WHERE datetime >= %s AND datetime < DATE_ADD(%s, INTERVAL 1 DAY)
+                    ORDER BY datetime
+                ''', (selected_date, selected_date))
+                priser = cursor.fetchall()
+
         labels = [row["datetime"].strftime("%H:%M") for row in priser]
         values = [float(row["price"]) for row in priser]
 
         if len(values) >= 3:
             sorted_prices = sorted(values)
-            gräns = sorted_prices[3]  # t.ex. markera 3 billigaste
+            gräns = sorted_prices[3]
         else:
             gräns = min(values, default=0)
 
-        return render_template("styrning.html", labels=labels, values=values, gräns=gräns, selected_date=selected_date)
+        return render_template("styrning.html",
+                               labels=labels,
+                               values=values,
+                               gräns=gräns,
+                               selected_date=selected_date,
+                               fallback_used=fallback_used)
 
     except Exception as e:
         return f"Fel vid hämtning av elprisdata: {e}"
@@ -62,14 +78,15 @@ def dokumentation():
 def gitlog():
     try:
         logs = subprocess.check_output(
-            ["git", "log", "--pretty=format:%h - %s (%cr)"],
+            ["/usr/bin/git", "log", "--pretty=format:%h - %s (%cr)"],
             cwd=os.path.dirname(__file__),
             text=True
         ).splitlines()
     except Exception as e:
         logs = [f"❌ Kunde inte läsa gitlog: {e}"]
-    return render_template("gitlog.html", log="\n".join(logs))  # 👈 rätt variabelnamn till gitlog.html
+    return render_template("gitlog.html", log="\n".join(logs))
 
+@app.route("/elprisvader")
 @app.route("/elprisvader")
 def elprisvader():
     selected_date_str = request.args.get("datum")
@@ -81,18 +98,18 @@ def elprisvader():
     try:
         conn = get_connection()
         with conn.cursor() as cursor:
-            cursor.execute('''
+            cursor.execute("""
                 SELECT * FROM weather
                 WHERE timestamp >= %s AND timestamp < DATE_ADD(%s, INTERVAL 1 DAY)
                 ORDER BY timestamp
-            ''', (selected_date, selected_date))
+            """, (selected_date, selected_date))
             weather_data = cursor.fetchall()
 
-            cursor.execute('''
+            cursor.execute("""
                 SELECT * FROM electricity_prices
                 WHERE datetime >= %s AND datetime < DATE_ADD(%s, INTERVAL 1 DAY)
                 ORDER BY datetime
-            ''', (selected_date, selected_date))
+            """, (selected_date, selected_date))
             elpris_data = cursor.fetchall()
 
             medel_temperature = round(sum(row["temperature"] for row in weather_data) / len(weather_data), 1) if weather_data else "-"
@@ -120,7 +137,7 @@ def elprisvader():
                                medel_elpris=medel_elpris)
 
     except Exception as e:
-        return f"Fel vid hämtning av data: {e}"
+        return f"Fel vid hämtning av väderdata: {e}"
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=8000, debug=True)

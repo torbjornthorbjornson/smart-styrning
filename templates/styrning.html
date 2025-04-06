@@ -1,4 +1,5 @@
-<<!DOCTYPE html>
+
+<!DOCTYPE html>
 <html lang="sv">
 <head>
     <meta charset="UTF-8">
@@ -11,22 +12,45 @@
             text-align: center;
             background-color: #f7f7f7;
             margin: 0;
-            padding: 20px;
+            padding: 40px;
+            font-size: 18px;
         }
+
         canvas {
-            max-width: 1000px;
-            height: 500px !important;
-            margin: 30px auto;
+            width: 90vw !important;
+            height: 70vh !important;
+            max-width: 1400px;
+            margin: 40px auto;
+            display: block;
         }
+
         a {
             display: block;
-            margin-top: 20px;
+            margin-top: 30px;
+            font-size: 16px;
+            color: #007bff;
+            text-decoration: none;
+        }
+
+        a:hover {
+            text-decoration: underline;
+        }
+
+        h2 {
+            font-size: 26px;
+        }
+
+        p {
+            font-size: 18px;
         }
     </style>
 </head>
 <body>
     <h2>Styrning – Billigaste timmarna för drift</h2>
     <p>Datum: {{ selected_date }}</p>
+    {% if fallback_used %}
+    <p style="color: red;"><strong>⚠️ Dagens elpriser är inte tillgängliga ännu. Visar istället gårdagens priser.</strong></p>
+    {% endif %}
     <canvas id="elprisChart"></canvas>
 
     <p><strong>Valda timmar för styrning:</strong> 
@@ -60,7 +84,7 @@
                         color: '#000',
                         font: {
                             weight: 'bold',
-                            size: 33
+                            size: 18
                         },
                         formatter: function(val) {
                             return val.toFixed(2) + " öre";
@@ -71,6 +95,11 @@
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
+                layout: {
+                    padding: {
+                        top: 120
+                    }
+                },
                 plugins: {
                     legend: { display: false },
                     datalabels: {
@@ -85,6 +114,7 @@
                 scales: {
                     y: {
                         beginAtZero: true,
+                        suggestedMax: Math.max(...values) + 0.1,
                         title: {
                             display: true,
                             text: 'öre/kWh'
