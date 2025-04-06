@@ -138,6 +138,10 @@ def elprisvader():
 
     except Exception as e:
         return f"Fel vid hämtning av väderdata: {e}"
+    
+@app.route("/github_versions")
+def github_versions():
+    return render_template("github_versions.html")
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=8000, debug=True)

@@ -1,0 +1,8 @@
+backup/
+*.exe
+*.msi
+*.log
+backup/*.exe
+backup/*.msi
+templates/backup/
+static/icons/svg/

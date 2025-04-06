@@ -1,0 +1,16 @@
+
+# 💾 Skapa stabil återställningspunkt
+git add .
+git commit -m "✅ Stabil version: hemsidan, grafer, ikoner och navigation fungerar 2025-04-03"
+git tag stabil_2025_04_03
+
+# 🔄 Växla tillbaka till main om man råkar hamna i fel läge
+git switch main
+
+# ⏪ Återgå till stabil version (detached HEAD)
+git checkout stabil_2025_04_03
+
+# 🧭 Lista taggar eller commits
+git tag
+git log --oneline --graph --all --decorate
+
