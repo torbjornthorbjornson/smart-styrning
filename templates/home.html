@@ -1,69 +1,36 @@
-<!DOCTYPE html>
-<html lang="sv">
-<head>
-    <meta charset="UTF-8">
-    <title>Smart fastighetsstyrning</title>
-    <link rel="stylesheet" href="/static/styles.css">
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #f4f4f9;
-            text-align: center;
-            padding: 20px;
-        }
+{% extends "base.html" %}
 
-        h1 {
-            color: #333;
-        }
+{% block content %}
+  <!-- Hero-bild -->
+  <section class="hero">
+    <img src="/static/images/stenhus.jpg" alt="Stenhus" class="hero-image" />
+    <p class="hero-text">Smart styrning för framtidens hus – byggda på en solid grund.</p>
+  </section>
 
-        .button-container {
-            display: flex;
-            justify-content: center;
-            gap: 20px;
-            margin-top: 20px;
-            flex-wrap: wrap;
-        }
+  <!-- Status-widget -->
+  <section class="status-widget">
+    <h2>📊 Aktuell status</h2>
+    <ul>
+      <li>💡 Elpris: {{ current_price }} öre/kWh</li>
+      <li>🌡️ Temperatur: {{ current_temp }}°C</li>
+      <li>🌤️ Väder: {{ weather_icon }}</li>
+      <li>🛠️ Drift: {% if is_active %}🟢 Aktiv{% else %}🔴 Vila{% endif %}</li>
+    </ul>
+  </section>
 
-        .button-container a {
-            background-color: #4CAF50;
-            color: white;
-            padding: 15px 32px;
-            text-align: center;
-            text-decoration: none;
-            display: inline-block;
-            border-radius: 4px;
-            transition: background-color 0.3s ease;
-        }
+  <!-- Snabba genvägar -->
+  <section class="quick-links">
+    <h2>🧭 Snabba genvägar</h2>
+    <ul class="icon-links">
+      <li><a href="/elprisvader">🌤️ Elpris & Väder</a></li>
+      <li><a href="/styrning">⚙️ Styrning</a></li>
+      <li><a href="/vision">🌟 Vision</a></li>
+      <li><a href="/gitlog">📜 Git-logg</a></li>
+    </ul>
+  </section>
 
-        .button-container a:hover {
-            background-color: #45a049;
-        }
-
-        .back-button {
-            margin-top: 20px;
-            font-size: 14px;
-            display: block;
-            text-decoration: none;
-            color: #007bff;
-        }
-
-        .back-button:hover {
-            text-decoration: underline;
-        }
-    </style>
-</head>
-<body>
-    <h1>Välkommen till Torbjörns fantastiska fastighetsstyrning</h1>
-
-    <p>Systemet presenterar väderprognos, elpris och driftstrategi för fastigheter i Sverige.</p>
-
-    <div class="button-container">
-        <a href="{{ url_for('elprisvader') }}">Elpris & Väder</a>
-        <a href="{{ url_for('dokumentation') }}">Dokumentation</a>
-        <a href="{{ url_for('vision') }}">Vision</a>
-        <a href="{{ url_for('gitlog') }}">Git-logg</a>
-    </div>
-
-    <a href="/" class="back-button">Tillbaka till startsidan</a>
-</body>
-</html>
+  <!-- Budskap -->
+  <section class="message">
+    <p>🛠️ Byggt för framtiden. Skapat med kärlek till teknik, värme och hållbarhet – precis som husen vi styr.</p>
+  </section>
+{% endblock %}

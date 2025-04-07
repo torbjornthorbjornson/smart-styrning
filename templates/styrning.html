@@ -1,135 +1,93 @@
+{% extends "base.html" %}
 
-<!DOCTYPE html>
-<html lang="sv">
-<head>
-    <meta charset="UTF-8">
-    <title>Styrning – Billigaste timmarna för drift</title>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            text-align: center;
-            background-color: #f7f7f7;
-            margin: 0;
-            padding: 40px;
-            font-size: 18px;
-        }
+{% block content %}
+<h2>Styrning – Billigaste timmarna för drift</h2>
+<p><strong>Datum:</strong> {{ selected_date }}</p>
+{% if fallback_used %}
+  <p style="color:red;">⚠️ Dagens elpriser är inte tillgängliga ännu. Visar istället gårdagens priser.</p>
+{% endif %}
 
-        canvas {
-            width: 90vw !important;
-            height: 70vh !important;
-            max-width: 1400px;
-            margin: 40px auto;
-            display: block;
-        }
+<div class="chart-wrapper">
+  <canvas id="elprisChart"></canvas>
+</div>
 
-        a {
-            display: block;
-            margin-top: 30px;
-            font-size: 16px;
-            color: #007bff;
-            text-decoration: none;
-        }
-
-        a:hover {
-            text-decoration: underline;
-        }
-
-        h2 {
-            font-size: 26px;
-        }
-
-        p {
-            font-size: 18px;
-        }
-    </style>
-</head>
-<body>
-    <h2>Styrning – Billigaste timmarna för drift</h2>
-    <p>Datum: {{ selected_date }}</p>
-    {% if fallback_used %}
-    <p style="color: red;"><strong>⚠️ Dagens elpriser är inte tillgängliga ännu. Visar istället gårdagens priser.</strong></p>
+<p><strong>Valda timmar för styrning:</strong> 
+  {% for i in range(values|length) %}
+    {% if values[i] <= gräns %}
+      {{ labels[i] }}{% if not loop.last %}, {% endif %}
     {% endif %}
-    <canvas id="elprisChart"></canvas>
+  {% endfor %}
+</p>
 
-    <p><strong>Valda timmar för styrning:</strong> 
-        {% for i in range(values|length) %}
-            {% if values[i] <= gräns %}
-                {{ labels[i] }}{% if not loop.last %}, {% endif %}
-            {% endif %}
-        {% endfor %}
-    </p>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
+<script>
+const labels = {{ labels | tojson | default("[]") }};
+const values = {{ values | tojson | default("[]") }};
+const gräns = {{ gräns | default(0) }};
 
-    <a href="/">← Tillbaka till startsidan</a>
+if (labels.length && values.length) {
+  const ctx = document.getElementById('elprisChart').getContext('2d');
+  new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: labels,
+      datasets: [{
+        label: "öre/kWh",
+        data: values,
+        backgroundColor: values.map(v => v <= gräns ? 'green' : 'blue'),
+        datalabels: {
+          anchor: 'end',
+          align: 'end',
+          rotation: -90,
+          color: '#000',
+          font: {
+            weight: 'bold',
+            size: 18
+          },
+          formatter: val => val.toFixed(2) + " öre"
+        }
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      layout: { padding: { top: 120 } },
+      plugins: {
+        legend: { display: false },
+        datalabels: { display: true },
+        tooltip: {
+          callbacks: {
+            label: ctx => ctx.raw + " öre"
+          }
+        }
+      },
+      scales: {
+        y: {
+          beginAtZero: true,
+          suggestedMax: Math.max(...values, 0) + 0.1,
+          title: { display: true, text: 'öre/kWh' }
+        },
+        x: {
+          title: { display: true, text: 'Tidpunkt' }
+        }
+      }
+    },
+    plugins: [ChartDataLabels]
+  });
+}
+</script>
 
-    <script>
-        const ctx = document.getElementById('elprisChart').getContext('2d');
-        const labels = {{ labels | tojson }};
-        const values = {{ values | tojson }};
-        const gräns = {{ gräns }};
-
-        new Chart(ctx, {
-            type: 'bar',
-            data: {
-                labels: labels,
-                datasets: [{
-                    label: "öre/kWh",
-                    data: values,
-                    backgroundColor: values.map(v => v <= gräns ? 'green' : 'blue'),
-                    datalabels: {
-                        anchor: 'end',
-                        align: 'end',
-                        rotation: -90,
-                        color: '#000',
-                        font: {
-                            weight: 'bold',
-                            size: 18
-                        },
-                        formatter: function(val) {
-                            return val.toFixed(2) + " öre";
-                        }
-                    }
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                layout: {
-                    padding: {
-                        top: 120
-                    }
-                },
-                plugins: {
-                    legend: { display: false },
-                    datalabels: {
-                        display: true
-                    },
-                    tooltip: {
-                        callbacks: {
-                            label: context => context.raw + " öre"
-                        }
-                    }
-                },
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        suggestedMax: Math.max(...values) + 0.1,
-                        title: {
-                            display: true,
-                            text: 'öre/kWh'
-                        }
-                    },
-                    x: {
-                        title: {
-                            display: true,
-                            text: 'Tidpunkt'
-                        }
-                    }
-                }
-            },
-            plugins: [ChartDataLabels]
-        });
-    </script>
-</body>
-</html>
+<style>
+.chart-wrapper {
+  max-width: 1000px;
+  margin: 0 auto;
+  height: 500px;
+}
+canvas {
+  width: 100% !important;
+  height: 100% !important;
+  display: block;
+}
+</style>
+{% endblock %}

@@ -1,62 +1,86 @@
-<!DOCTYPE html>
-<html lang="sv">
-<head>
-    <meta charset="UTF-8">
-    <title>Git-versioner</title>
-    <link rel="stylesheet" href="/static/styles.css">
-    <style>
-        body { padding: 2em; font-family: sans-serif; background: #f0f4f8; }
-        h1 { font-size: 2em; margin-bottom: 1em; }
-        .tag-container { background: white; padding: 1em; border-radius: 10px; box-shadow: 0 2px 6px rgba(0,0,0,0.1); }
-        .tag { padding: 0.5em 0; border-bottom: 1px solid #eee; }
-        .tag:last-child { border-bottom: none; }
-        .tag-name { font-weight: bold; color: #007acc; }
-        .commit-msg { color: #444; margin-top: 0.25em; }
-        .date { color: #888; font-size: 0.9em; }
-        a.home-link { display: inline-block; margin-top: 2em; color: #007acc; }
-    </style>
-</head>
-<body>
-    <h1>🔄 Git-versioner (Taggar)</h1>
-    <div id="tags" class="tag-container">
-        <p>Laddar taggar från GitHub...</p>
-    </div>
-    <a href="/" class="home-link">⬅️ Tillbaka till startsidan</a>
+{% extends "base.html" %}
 
-    <script>
-        async function loadTags() {
-            const container = document.getElementById('tags');
-            container.innerHTML = '';
-            try {
-                const repo = 'torbjornthorbjornson/smart-styrning';
-                const tagsRes = await fetch(`https://api.github.com/repos/${repo}/tags`);
-                const tags = await tagsRes.json();
+{% block content %}
+<h1>🔄 Git-versioner (Taggar)</h1>
+<div id="tags" class="tag-container">
+    <p>Laddar taggar från GitHub...</p>
+</div>
+<a href="/" class="home-link">⬅️ Tillbaka till startsidan</a>
 
-                if (!tags.length) {
-                    container.innerHTML = '<p>Inga taggar hittades.</p>';
-                    return;
-                }
+<style>
+    h1 { font-size: 2em; margin-bottom: 1em; text-align: center; }
+    .tag-container {
+        background: white;
+        padding: 1.5em;
+        border-radius: 10px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        max-width: 700px;
+        margin: 2em auto;
+    }
+    .tag {
+        padding: 0.75em 0;
+        border-bottom: 1px solid #eee;
+    }
+    .tag:last-child {
+        border-bottom: none;
+    }
+    .tag-name {
+        font-weight: bold;
+        color: #007acc;
+        font-size: 1.2em;
+    }
+    .commit-msg {
+        color: #333;
+        margin-top: 0.25em;
+        font-style: italic;
+    }
+    .date {
+        color: #888;
+        font-size: 0.9em;
+    }
+    .home-link {
+        display: block;
+        text-align: center;
+        margin-top: 2em;
+        color: #007acc;
+        font-weight: bold;
+        font-size: 1.1em;
+    }
+</style>
 
-                for (const tag of tags) {
-                    const commitRes = await fetch(tag.commit.url);
-                    const commit = await commitRes.json();
+<script>
+    async function loadTags() {
+        const container = document.getElementById('tags');
+        container.innerHTML = '';
+        try {
+            const repo = 'torbjornthorbjornson/smart-styrning';
+            const tagsRes = await fetch(`https://api.github.com/repos/${repo}/tags`);
+            const tags = await tagsRes.json();
 
-                    const div = document.createElement('div');
-                    div.className = 'tag';
-                    div.innerHTML = `
-                        <div class="tag-name">🏷️ ${tag.name}</div>
-                        <div class="commit-msg">${commit.commit.message.split('\n')[0]}</div>
-                        <div class="date">${new Date(commit.commit.author.date).toLocaleString()}</div>
-                    `;
-                    container.appendChild(div);
-                }
-            } catch (err) {
-                container.innerHTML = '<p style="color:red;">Kunde inte hämta taggar.</p>';
-                console.error(err);
+            if (!tags.length) {
+                container.innerHTML = '<p>🚫 Inga taggar hittades.</p>';
+                return;
             }
-        }
 
-        loadTags();
-    </script>
-</body>
-</html>
+            for (const tag of tags) {
+                const commitRes = await fetch(tag.commit.url);
+                const commit = await commitRes.json();
+
+                const div = document.createElement('div');
+                div.className = 'tag';
+                div.innerHTML = `
+                    <div class="tag-name">🏷️ ${tag.name}</div>
+                    <div class="commit-msg">📝 ${commit.commit.message.split('\n')[0]}</div>
+                    <div class="date">📅 ${new Date(commit.commit.author.date).toLocaleString()}</div>
+                `;
+                container.appendChild(div);
+            }
+        } catch (err) {
+            container.innerHTML = '<p style="color:red;">Kunde inte hämta taggar från GitHub 😢</p>';
+            console.error(err);
+        }
+    }
+
+    loadTags();
+</script>
+{% endblock %}

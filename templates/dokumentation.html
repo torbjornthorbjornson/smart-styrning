@@ -1,43 +1,42 @@
-<!DOCTYPE html>
-<html lang="sv">
-<head>
-    <meta charset="UTF-8">
-    <title>Dokumentation - Smart fastighetsstyrning</title>
-    <link rel="stylesheet" href="/static/styles.css">
-    <style>
-        body {
-            font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #f7f9fc;
-            margin: 0;
-            padding: 20px;
-            color: #333;
-        }
-        h1, h2, h3 {
-            color: #2c3e50;
-        }
-        section {
-            background: white;
-            padding: 20px;
-            margin-bottom: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-        }
-        ul {
-            padding-left: 20px;
-        }
-    </style>
-</head>
-<body>
-    <h1>📈 Världens bästa fastighetsstyrning &ndash; Delmål 1</h1>
+{% extends "base.html" %}
 
+{% block content %}
+    <h1>📈 Världens bästa fastighetsstyrning &ndash; Delmål 1</h1>
     <section>
+        <h2>✅ Uppdatering 2025-04-06 – Återställning och förbättring av layout</h2>
+        <ul>
+            <li>🔁 <strong>Navigation och design:</strong> Ny <code>base.html</code> med förbättrad meny, centrering, färg och skuggor.</li>
+            <li>🎨 <strong>Färgkontrast:</strong> Problem med ljus text åtgärdades – nu används mörkare blå länkar i menyn.</li>
+            <li>📚 <strong>Konsekvent struktur:</strong> Menyraden gäller nu för alla sidor (elprisvader, styrning, gitlog, vision, dokumentation, m.fl.).</li>
+        </ul>
+
+        <h3>🧠 Återställning av kritisk sida: <code>elpris_vader.html</code></h3>
+        <ul>
+            <li>✅ Tidigare fungerande version återställd.</li>
+            <li>🌦️ Vädersymboler (SVG) linjeras korrekt med graferna.</li>
+            <li>📈 Temperatur, vind och elpris visas i grafer och tabeller.</li>
+            <li>📊 Medelvärden beräknas och visas längst ner.</li>
+            <li>🙌 Allt är nu stabilt igen – stor lättnad i projektet!</li>
+        </ul>
+
+        <h3>📊 Git-versioner:</h3>
+        <ul>
+            <li><code>github_versions.html</code> visar nu korrekt lista över Git-taggar via GitHub API.</li>
+            <li>Commit-meddelanden och datum laddas automatiskt in.</li>
+        </ul>
+
+        <h3>💾 Git-säkring:</h3>
+        <ul>
+            <li>Alla ändringar dokumenteras.</li>
+            <li>Backups tas på känsliga filer.</li>
+            <li><code>git tag</code> används aktivt för återställningspunkter.</li>
+        </ul>
+    </section>
+
+   
         <h2>🌟 Vision</h2>
         <p>Målet är att skapa världens bästa fastighetsstyrning. Systemet ska vara intelligent, automatiserat, energieffektivt och datadrivet.</p>
     </section>
-<!-- Lägg till före sista </body> -->
-<a href="/" style="display:block; text-align:center; margin-top:30px; font-weight:bold; color:#2c3e50;">⬅️ Tillbaka till startsidan</a>
-</body>
-</html>
 
     <section>
         <h2>✅ Delmål 1 &ndash; Funktioner som ska uppnås (vissa redan klara)</h2>
@@ -105,5 +104,4 @@
         </ul>
         <p><em>Detta är första steget &ndash; men grunden är redan solid.</em></p>
     </section>
-</body>
-</html>
+{% endblock %}

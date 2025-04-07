@@ -1,52 +1,52 @@
 
 body {
-    font-family: Arial, sans-serif;
-    background-color: #f5f6fa;
-    margin: 0;
-    padding: 20px;
-    color: #333;
+  font-family: Arial, sans-serif;
+  margin: 0;
+  background-color: #f2f2f2;
+  color: #333;
 }
-h1 {
-    text-align: center;
+
+nav {
+  background-color: #1c1f26;
+  padding: 1em 2em;
 }
-form {
-    margin-bottom: 20px;
-    text-align: center;
+
+nav ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  gap: 1.5em;
 }
-.icon-row {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    flex-wrap: nowrap;
-    overflow-x: auto;
-    padding: 10px 0;
-    gap: 5px;
+
+nav a {
+  text-decoration: none;
+  font-weight: bold;
+  color: #fff;
 }
-.icon-hour {
-    text-align: center;
-    font-size: 0.8em;
-    width: 50px;
+
+.active a {
+  color: #ffd700;
+  border-bottom: 2px solid #ffd700;
 }
-.icon-hour img {
-    width: 32px;
-    height: 32px;
-    margin-bottom: 2px;
+
+.content {
+  max-width: 1000px;
+  margin: 2em auto;
+  background-color: white;
+  padding: 2em;
+  border-radius: 12px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
 }
+
 .chart-container {
-    width: 100%;
-    max-width: 900px;
-    margin: 20px auto;
+  width: 100%;
+  max-width: 900px;
+  height: 500px;
+  margin: 0 auto;
 }
-table {
-    width: 90%;
-    margin: 0 auto;
-    border-collapse: collapse;
-}
-th, td {
-    padding: 8px;
-    text-align: center;
-    border: 1px solid #ccc;
-}
-thead {
-    background-color: #eee;
+
+canvas {
+  width: 100% !important;
+  height: auto !important;
 }

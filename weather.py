@@ -57,15 +57,14 @@ def save_to_database(weather_data):
 
     for row in weather_data:
         cursor.execute("""
-            SELECT id FROM weather WHERE timestamp = %s
-        """, (row["timestamp"],))
-        if cursor.fetchone():
-            print(f"⏩ Skippad (fanns redan): {row['timestamp']}")
-            continue
-
-        cursor.execute("""
             INSERT INTO weather (city, temperature, vind, timestamp, observation_time, symbol_code)
             VALUES (%s, %s, %s, %s, %s, %s)
+            ON DUPLICATE KEY UPDATE
+                city = VALUES(city),
+                temperature = VALUES(temperature),
+                vind = VALUES(vind),
+                observation_time = VALUES(observation_time),
+                symbol_code = VALUES(symbol_code)
         """, (
             "Alafors",
             row["temperature"],
@@ -75,7 +74,7 @@ def save_to_database(weather_data):
             row["symbol_code"]
         ))
 
-        print(f"{row['timestamp'].isoformat()}: {row['temperature']}°C, Vind: {row['vind']} m/s, Symbol: {row['symbol_code']}")
+        print(f"💾 Sparad eller uppdaterad: {row['timestamp'].isoformat()} ({row['symbol_code']})")
 
     conn.commit()
     conn.close()
