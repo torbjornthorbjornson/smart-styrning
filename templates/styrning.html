@@ -2,9 +2,26 @@
 
 {% block content %}
 <h2>Styrning – Billigaste timmarna för drift</h2>
+
+<form method="get" action="/styrning" style="margin-bottom: 1em;">
+  <label for="datum">Välj datum:</label>
+  <input type="date" id="datum" name="datum" value="{{ selected_date }}">
+  <button type="submit">Visa</button>
+</form>
+
 <p><strong>Datum:</strong> {{ selected_date }}</p>
+
 {% if fallback_used %}
-  <p style="color:red;">⚠️ Dagens elpriser är inte tillgängliga ännu. Visar istället gårdagens priser.</p>
+  <p style="color: orange;">
+    🔶 Morgondagens elpriser är inte tillgängliga ännu.<br>
+    ⏳ De släpps vanligtvis varje dag kl 13:00 av Nordpool (day-ahead).<br>
+    📅 Visar dagens elpriser (2025-04-07).
+  </p>
+{% else %}
+  <p style="color: green;">
+    ✅ Visar aktuella elpriser för idag ({{ selected_date }})<br>
+    📅 Publicerades av Nordpool: {{ date_yesterday }} kl 13:00 (day-ahead)
+  </p>
 {% endif %}
 
 <div class="chart-wrapper">
@@ -43,7 +60,7 @@ if (labels.length && values.length) {
           color: '#000',
           font: {
             weight: 'bold',
-            size: 18
+            size: 16
           },
           formatter: val => val.toFixed(2) + " öre"
         }
