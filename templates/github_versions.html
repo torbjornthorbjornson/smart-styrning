@@ -2,11 +2,30 @@
 
 {% block content %}
 <h1>🔄 Git-versioner (Taggar)</h1>
-<div id="tags" class="tag-container">
-    <p>Laddar taggar från GitHub...</p>
+
+<div class="tag-container">
+    <h3>📦 Lokala Git-taggar (via server)</h3>
+    {% if tags %}
+        {% for tag in tags %}
+        <div class="tag">
+            <div class="tag-name">🏷️ {{ tag.name }}</div>
+            <div class="commit-msg">📝 {{ tag.message }}</div>
+            <div class="date">📅 {{ tag.date }}</div>
+        </div>
+        {% endfor %}
+    {% else %}
+        <p>🚫 Inga lokala taggar hittades.</p>
+    {% endif %}
 </div>
+
+<div class="tag-container">
+    <h3>🌐 Taggar från GitHub (live)</h3>
+    <div id="tags"><p>Laddar taggar från GitHub...</p></div>
+</div>
+
 <a href="/" class="home-link">⬅️ Tillbaka till startsidan</a>
 
+<!-- Din befintliga stil & JavaScript -->
 <style>
     h1 { font-size: 2em; margin-bottom: 1em; text-align: center; }
     .tag-container {

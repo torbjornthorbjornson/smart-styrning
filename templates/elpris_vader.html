@@ -5,7 +5,6 @@
 
 <h2>Elpris & Väder</h2>
 
-
 <form method="get">
   <label for="datum">Välj datum:</label>
   <input type="date" id="datum" name="datum" value="{{ selected_date }}">
@@ -27,7 +26,6 @@
 <!-- Vädergraf -->
 <h3>Temperatur & Vind</h3>
 <canvas id="weatherChart" width="100%" height="40"></canvas>
-
 
 <!-- Vädertabell -->
 <h3 style="margin-top:40px;">Väderdata</h3>
@@ -59,6 +57,20 @@
 
 <!-- Elprisgraf -->
 <h3 style="margin-top:40px;">Elpris</h3>
+{% if fallback_used %}
+  <p style="color: orange;">
+    🔶 Morgondagens elpriser är inte tillgängliga ännu.<br>
+    ⏳ De släpps vanligtvis varje dag kl 13:00 av Nordpool (day-ahead).<br>
+    📅 Visar dagens elpriser ({{ selected_date }}).
+  </p>
+{% else %}
+  <p style="color: green;">
+    ✅ Visar aktuella elpriser för idag ({{ selected_date }})<br>
+    📅 Publicerades av Nordpool: 📅 Publicerades av Nordpool: {{ date_yesterday }} kl 13:00
+
+  </p>
+{% endif %}
+
 {% if elprisdata %}
 <canvas id="elprisChart" width="100%" height="40"></canvas>
 {% else %}
@@ -68,18 +80,18 @@
 <!-- Elpristabell -->
 <h3 style="margin-top:40px;">Elpriser</h3>
 {% if elprisdata %}
-<table>
+<table class="data-table">
   <thead>
     <tr>
       <th>Tid</th>
-      <th>Pris (öre/kWh)</th>
+      <th style="text-align: right;">Pris (öre/kWh)</th>
     </tr>
   </thead>
   <tbody>
     {% for row in elprisdata %}
     <tr>
       <td>{{ row.datetime.strftime('%H:%M') }}</td>
-      <td>{{ row.price }}</td>
+      <td style="text-align: right;">{{ row.price }}</td>
     </tr>
     {% endfor %}
   </tbody>
@@ -87,6 +99,7 @@
 {% else %}
 <p style="color: red;">⚠️ Inga elpriser att visa.</p>
 {% endif %}
+
 
 <!-- Medelvärden -->
 <h3 style="margin-top:40px;">Medelvärden</h3>
@@ -136,34 +149,57 @@ new Chart(ctx2, {
     }
 });
 {% endif %}
-</script>
 
+</script>
 <style>
-.icon-row {
-  display: flex;
-  justify-content: space-between;
-  flex-wrap: nowrap;
-  overflow-x: auto;
-  margin: 20px 0;
-}
-.icon-cell {
-  text-align: center;
-  width: 40px;
-  font-size: 12px;
-}
-.weather-icon {
-  width: 32px;
-  height: 32px;
-}
-.weather-icon-small {
-  width: 24px;
-  height: 24px;
-  vertical-align: middle;
-}
-.icon-hour {
-  font-size: 10px;
-  margin-top: 4px;
-}
-</style>
+  .icon-row {
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    margin: 20px 0;
+  }
+  .icon-cell {
+    text-align: center;
+    width: 40px;
+    font-size: 12px;
+  }
+  .weather-icon {
+    width: 32px;
+    height: 32px;
+  }
+  .weather-icon-small {
+    width: 24px;
+    height: 24px;
+    vertical-align: middle;
+  }
+  .icon-hour {
+    font-size: 10px;
+    margin-top: 4px;
+  }
+  
+  /* 🆕 Tabellstil för elpris – inuti <style>! */
+  .data-table {
+    border-collapse: collapse;
+    width: 100%;
+    margin-top: 10px;
+    font-size: 0.95em;
+  }
+  
+  .data-table th, .data-table td {
+    padding: 8px 16px;
+  }
+  
+  .data-table thead {
+    background-color: #f0f0f0;
+    font-weight: bold;
+    border-bottom: 1px solid #ccc;
+  }
+  
+  .data-table tbody tr:nth-child(odd) {
+    background-color: #fafafa;
+  }
+  </style>
+  
 
 {% endblock %}

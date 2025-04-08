@@ -1,4 +1,3 @@
-
 from flask import Flask, render_template, request
 import pymysql
 from datetime import datetime, timedelta
@@ -74,6 +73,23 @@ def vision():
 def dokumentation():
     return render_template("dokumentation.html")
 
+@app.route("/github_versions")
+def github_versions():
+    try:
+        tags = subprocess.check_output(["git", "tag", "--sort=-creatordate"]).decode().splitlines()
+        tag_data = []
+        for tag in tags:
+            message = subprocess.check_output(["git", "tag", "-n100", tag]).decode().strip()
+            date = subprocess.check_output(["git", "log", "-1", "--format=%cd", tag]).decode().strip()
+            tag_data.append({
+                "name": tag,
+                "message": message,
+                "date": date
+            })
+        return render_template("github_versions.html", tags=tag_data)
+    except Exception as e:
+        return f"Fel vid hämtning av git-taggar: {e}"
+
 @app.route("/gitlog")
 def gitlog():
     try:
@@ -86,7 +102,6 @@ def gitlog():
         logs = [f"❌ Kunde inte läsa gitlog: {e}"]
     return render_template("gitlog.html", log="\n".join(logs))
 
-@app.route("/elprisvader")
 @app.route("/elprisvader")
 def elprisvader():
     selected_date_str = request.args.get("datum")
@@ -112,6 +127,19 @@ def elprisvader():
             """, (selected_date, selected_date))
             elpris_data = cursor.fetchall()
 
+            fallback_used = False
+            if not elpris_data:
+                fallback_used = True
+                selected_date = selected_date - timedelta(days=1)
+                cursor.execute("""
+                    SELECT * FROM electricity_prices
+                    WHERE datetime >= %s AND datetime < DATE_ADD(%s, INTERVAL 1 DAY)
+                    ORDER BY datetime
+                """, (selected_date, selected_date))
+                elpris_data = cursor.fetchall()
+
+            date_yesterday = selected_date - timedelta(days=1)
+
             medel_temperature = round(sum(row["temperature"] for row in weather_data) / len(weather_data), 1) if weather_data else "-"
             medel_vind = round(sum(row["vind"] for row in weather_data) / len(weather_data), 1) if weather_data else "-"
             medel_elpris = round(sum(row["price"] for row in elpris_data) / len(elpris_data), 1) if elpris_data else "-"
@@ -134,14 +162,12 @@ def elprisvader():
                                elpris_values=elpris_values,
                                medel_temperature=medel_temperature,
                                medel_vind=medel_vind,
-                               medel_elpris=medel_elpris)
+                               medel_elpris=medel_elpris,
+                               fallback_used=fallback_used,
+                               date_yesterday=date_yesterday)
 
     except Exception as e:
         return f"Fel vid hämtning av väderdata: {e}"
-    
-@app.route("/github_versions")
-def github_versions():
-    return render_template("github_versions.html")
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=8000, debug=True)
