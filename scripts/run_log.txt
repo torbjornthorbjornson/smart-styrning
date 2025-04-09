@@ -1,0 +1,26 @@
+[2025-04-08 19:00:01 +0200] [65870] [INFO] Starting gunicorn 23.0.0
+[2025-04-08 19:00:01 +0200] [65870] [INFO] Listening at: http://0.0.0.0:8000 (65870)
+[2025-04-08 19:00:01 +0200] [65870] [INFO] Using worker: sync
+[2025-04-08 19:00:01 +0200] [65880] [INFO] Booting worker with pid: 65880
+[2025-04-08 19:00:01 +0200] [65881] [INFO] Booting worker with pid: 65881
+[2025-04-08 19:00:01 +0200] [65882] [INFO] Booting worker with pid: 65882
+[2025-04-08 19:00:01 +0200] [65883] [INFO] Booting worker with pid: 65883
+8000/tcp:            65870 65880 65881 65882 65883
+Killed
+[2025-04-08 20:00:02 +0200] [67288] [INFO] Starting gunicorn 23.0.0
+[2025-04-08 20:00:02 +0200] [67288] [INFO] Listening at: http://0.0.0.0:8000 (67288)
+[2025-04-08 20:00:02 +0200] [67288] [INFO] Using worker: sync
+[2025-04-08 20:00:02 +0200] [67314] [INFO] Booting worker with pid: 67314
+[2025-04-08 20:00:02 +0200] [67315] [INFO] Booting worker with pid: 67315
+[2025-04-08 20:00:02 +0200] [67316] [INFO] Booting worker with pid: 67316
+[2025-04-08 20:00:02 +0200] [67319] [INFO] Booting worker with pid: 67319
+8000/tcp:            67288 67314 67315 67316 67319
+Killed
+[2025-04-08 21:00:02 +0200] [68789] [INFO] Starting gunicorn 23.0.0
+[2025-04-08 21:00:02 +0200] [68789] [INFO] Listening at: http://0.0.0.0:8000 (68789)
+[2025-04-08 21:00:02 +0200] [68789] [INFO] Using worker: sync
+[2025-04-08 21:00:02 +0200] [68815] [INFO] Booting worker with pid: 68815
+[2025-04-08 21:00:02 +0200] [68816] [INFO] Booting worker with pid: 68816
+[2025-04-08 21:00:02 +0200] [68818] [INFO] Booting worker with pid: 68818
+[2025-04-08 21:00:02 +0200] [68819] [INFO] Booting worker with pid: 68819
+Killed

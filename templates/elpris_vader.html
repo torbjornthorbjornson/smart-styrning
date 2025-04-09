@@ -11,6 +11,15 @@
   <button type="submit">Visa</button>
 </form>
 
+<p style="font-weight:bold; color:#333;">
+  Visar väder för: {{ weather_date }}<br>
+  Visar elpris för: {{ selected_date }}
+</p>
+
+{% if fallback_used %}
+  <p style="color:orange;"><strong>⚠️ Morgondagens elpriser har inte publicerats ännu. Visar istället gårdagens ({{ selected_date }})</strong></p>
+{% endif %}
+
 <!-- Ikonrad -->
 <div class="icon-row">
   {% for row in weatherdata %}
@@ -22,6 +31,15 @@
     </div>
   {% endfor %}
 </div>
+
+{% if weatherdata %}
+  <p style="font-weight:bold; color:#333;">
+    🌦️ Väderprognos från MET för {{ weatherdata[0].timestamp.date() }}
+  </p>
+{% else %}
+  <p style="color: orange;">⚠️ Ingen väderdata tillgänglig.</p>
+{% endif %}
+
 
 <!-- Vädergraf -->
 <h3>Temperatur & Vind</h3>

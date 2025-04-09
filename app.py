@@ -113,13 +113,16 @@ def elprisvader():
     try:
         conn = get_connection()
         with conn.cursor() as cursor:
+            # Hämta väder för exakt valt datum
             cursor.execute("""
                 SELECT * FROM weather
                 WHERE timestamp >= %s AND timestamp < DATE_ADD(%s, INTERVAL 1 DAY)
                 ORDER BY timestamp
             """, (selected_date, selected_date))
             weather_data = cursor.fetchall()
+            weather_date = weather_data[0]["timestamp"].date() if weather_data else selected_date
 
+            # Hämta elpris för valt datum
             cursor.execute("""
                 SELECT * FROM electricity_prices
                 WHERE datetime >= %s AND datetime < DATE_ADD(%s, INTERVAL 1 DAY)
@@ -130,15 +133,14 @@ def elprisvader():
             fallback_used = False
             if not elpris_data:
                 fallback_used = True
-                selected_date = selected_date - timedelta(days=1)
+                fallback_date = selected_date - timedelta(days=1)
                 cursor.execute("""
                     SELECT * FROM electricity_prices
                     WHERE datetime >= %s AND datetime < DATE_ADD(%s, INTERVAL 1 DAY)
                     ORDER BY datetime
-                """, (selected_date, selected_date))
+                """, (fallback_date, fallback_date))
                 elpris_data = cursor.fetchall()
-
-            date_yesterday = selected_date - timedelta(days=1)
+                selected_date = fallback_date
 
             medel_temperature = round(sum(row["temperature"] for row in weather_data) / len(weather_data), 1) if weather_data else "-"
             medel_vind = round(sum(row["vind"] for row in weather_data) / len(weather_data), 1) if weather_data else "-"
@@ -147,7 +149,6 @@ def elprisvader():
             labels = [row["timestamp"].strftime("%H:%M") for row in weather_data]
             temperature = [row["temperature"] for row in weather_data]
             vind = [row["vind"] for row in weather_data]
-
             elpris_labels = [row["datetime"].strftime("%H:%M") for row in elpris_data]
             elpris_values = [row["price"] for row in elpris_data]
 
@@ -164,7 +165,7 @@ def elprisvader():
                                medel_vind=medel_vind,
                                medel_elpris=medel_elpris,
                                fallback_used=fallback_used,
-                               date_yesterday=date_yesterday)
+                               weather_date=weather_date)
 
     except Exception as e:
         return f"Fel vid hämtning av väderdata: {e}"
