@@ -25,6 +25,11 @@ def styrning():
     else:
         selected_date = datetime.utcnow().date()
 
+    no_price = False
+    labels = []
+    values = []
+    gräns = 0
+
     try:
         conn = get_connection()
         with conn.cursor() as cursor:
@@ -35,32 +40,24 @@ def styrning():
             ''', (selected_date, selected_date))
             priser = cursor.fetchall()
 
-            fallback_used = False
-            if not priser:
-                fallback_used = True
-                selected_date = selected_date - timedelta(days=1)
-                cursor.execute('''
-                    SELECT datetime, price FROM electricity_prices
-                    WHERE datetime >= %s AND datetime < DATE_ADD(%s, INTERVAL 1 DAY)
-                    ORDER BY datetime
-                ''', (selected_date, selected_date))
-                priser = cursor.fetchall()
-
-        labels = [row["datetime"].strftime("%H:%M") for row in priser]
-        values = [float(row["price"]) for row in priser]
-
-        if len(values) >= 3:
-            sorted_prices = sorted(values)
-            gräns = sorted_prices[3]
+        if not priser:
+            no_price = True
         else:
-            gräns = min(values, default=0)
+            labels = [row["datetime"].strftime("%H:%M") for row in priser]
+            values = [float(row["price"]) for row in priser]
+
+            if len(values) >= 3:
+                sorted_prices = sorted(values)
+                gräns = sorted_prices[3]
+            else:
+                gräns = min(values, default=0)
 
         return render_template("styrning.html",
+                               selected_date=selected_date,
                                labels=labels,
                                values=values,
                                gräns=gräns,
-                               selected_date=selected_date,
-                               fallback_used=fallback_used)
+                               no_price=no_price)
 
     except Exception as e:
         return f"Fel vid hämtning av elprisdata: {e}"
@@ -132,15 +129,8 @@ def elprisvader():
 
             fallback_used = False
             if not elpris_data:
-                fallback_used = True
-                fallback_date = selected_date - timedelta(days=1)
-                cursor.execute("""
-                    SELECT * FROM electricity_prices
-                    WHERE datetime >= %s AND datetime < DATE_ADD(%s, INTERVAL 1 DAY)
-                    ORDER BY datetime
-                """, (fallback_date, fallback_date))
-                elpris_data = cursor.fetchall()
-                selected_date = fallback_date
+               elpris_data = []
+
 
             medel_temperature = round(sum(row["temperature"] for row in weather_data) / len(weather_data), 1) if weather_data else "-"
             medel_vind = round(sum(row["vind"] for row in weather_data) / len(weather_data), 1) if weather_data else "-"

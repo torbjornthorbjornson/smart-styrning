@@ -39,7 +39,13 @@ def fetch_weather_data():
         instant = entry["data"]["instant"]["details"]
         temp = instant.get("air_temperature")
         wind = instant.get("wind_speed")
-        symbol = entry["data"].get("next_1_hours", {}).get("summary", {}).get("symbol_code", "")
+        symbol = (
+            entry["data"].get("next_1_hours", {}).get("summary", {}).get("symbol_code")
+            or entry["data"].get("next_6_hours", {}).get("summary", {}).get("symbol_code")
+            or entry["data"].get("next_12_hours", {}).get("summary", {}).get("symbol_code")
+            or "na"
+      )
+
 
         weather_data.append({
             "timestamp": dt,

@@ -1,5 +1,4 @@
 {% extends "base.html" %}
-
 {% block content %}
 <h2>Styrning – Billigaste timmarna för drift</h2>
 
@@ -9,20 +8,11 @@
   <button type="submit">Visa</button>
 </form>
 
-<p><strong>Datum:</strong> {{ selected_date }}</p>
+<p><strong>Valt datum:</strong> {{ selected_date }}</p>
 
-{% if fallback_used %}
-  <p style="color: orange;">
-    🔶 Morgondagens elpriser är inte tillgängliga ännu.<br>
-    ⏳ De släpps vanligtvis varje dag kl 13:00 av Nordpool (day-ahead).<br>
-    📅 Visar dagens elpriser (2025-04-07).
-  </p>
+{% if no_price %}
+  <p style="color: orange;"><strong>⚠️ Inga elpriser publicerade för {{ selected_date }}.</strong></p>
 {% else %}
-  <p style="color: green;">
-    ✅ Visar aktuella elpriser för idag ({{ selected_date }})<br>
-    📅 Publicerades av Nordpool: {{ date_yesterday }} kl 13:00 (day-ahead)
-  </p>
-{% endif %}
 
 <div class="chart-wrapper">
   <canvas id="elprisChart"></canvas>
@@ -94,6 +84,8 @@ if (labels.length && values.length) {
   });
 }
 </script>
+
+{% endif %}
 
 <style>
 .chart-wrapper {

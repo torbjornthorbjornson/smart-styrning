@@ -13,12 +13,12 @@
 
 <p style="font-weight:bold; color:#333;">
   Visar väder för: {{ weather_date }}<br>
-  Visar elpris för: {{ selected_date }}
 </p>
 
-{% if fallback_used %}
-  <p style="color:orange;"><strong>⚠️ Morgondagens elpriser har inte publicerats ännu. Visar istället gårdagens ({{ selected_date }})</strong></p>
+{% if not elprisdata %}
+  <p style="color:orange;"><strong>⚠️ Inget elpris publicerat för {{ selected_date }}.</strong></p>
 {% endif %}
+
 
 <!-- Ikonrad -->
 <div class="icon-row">
@@ -81,10 +81,14 @@
     ⏳ De släpps vanligtvis varje dag kl 13:00 av Nordpool (day-ahead).<br>
     📅 Visar dagens elpriser ({{ selected_date }}).
   </p>
-{% else %}
+# {% else %}
+
+{% endif %}
+
+{% if elprisdata %}
   <p style="color: green;">
-    ✅ Visar aktuella elpriser för idag ({{ selected_date }})<br>
-    📅 Publicerades av Nordpool: 📅 Publicerades av Nordpool: {{ date_yesterday }} kl 13:00
+    ✅ Visar aktuella elpriser för ({{ selected_date }})<br>
+    📅 Publicerades av Nordpool: 
 
   </p>
 {% endif %}
