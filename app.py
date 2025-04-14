@@ -1,4 +1,5 @@
-from flask import Flask, render_template, request
+from flask import Flask, render_template, url_for, request, redirect
+
 import pymysql
 from datetime import datetime, timedelta
 import subprocess
@@ -73,11 +74,12 @@ def dokumentation():
 @app.route("/github_versions")
 def github_versions():
     try:
-        tags = subprocess.check_output(["git", "tag", "--sort=-creatordate"]).decode().splitlines()
+        git_path = "/usr/bin/git"  # Justerad absolut sökväg
+        tags = subprocess.check_output([git_path, "tag", "--sort=-creatordate"]).decode().splitlines()
         tag_data = []
         for tag in tags:
-            message = subprocess.check_output(["git", "tag", "-n100", tag]).decode().strip()
-            date = subprocess.check_output(["git", "log", "-1", "--format=%cd", tag]).decode().strip()
+            message = subprocess.check_output([git_path, "tag", "-n100", tag]).decode().strip()
+            date = subprocess.check_output([git_path, "log", "-1", "--format=%cd", tag]).decode().strip()
             tag_data.append({
                 "name": tag,
                 "message": message,
@@ -86,6 +88,7 @@ def github_versions():
         return render_template("github_versions.html", tags=tag_data)
     except Exception as e:
         return f"Fel vid hämtning av git-taggar: {e}"
+
 
 @app.route("/gitlog")
 def gitlog():
@@ -159,6 +162,55 @@ def elprisvader():
 
     except Exception as e:
         return f"Fel vid hämtning av väderdata: {e}"
+
+
+
+
+
+
+
+
+@app.route("/create_backup_tag", methods=["POST"])
+def create_backup_tag():
+    try:
+        comment = request.form.get("comment", "").strip()
+        now = datetime.now().strftime("%Y%m%d_%H%M")
+        tag_name = f"backup_{now}"
+        message = f"🔖 Manuell backup {now}" + (f": {comment}" if comment else "")
+        subprocess.check_call(["/usr/bin/git", "tag", "-a", tag_name, "-m", message])
+        return redirect("/github_versions")
+    except Exception as e:
+        return f"Fel vid skapande av git-tag: {e}"
+
+@app.route("/restore_version", methods=["POST"])
+def restore_version():
+    try:
+        tag = request.form.get("tag", "").strip()
+        if not tag:
+            return "Ingen tagg angiven för återställning."
+
+        now = datetime.now().strftime("%Y%m%d_%H%M")
+        backup_tag = f"pre_restore_{tag}_{now}"
+
+        # Skapa backup-tag innan återställning
+        subprocess.check_call(["/usr/bin/git", "tag", "-a", backup_tag, "-m", f"Säkerhetskopia före återställning av {tag}"])
+
+        # Återställ till vald version
+        subprocess.check_call(["/usr/bin/git", "reset", "--hard", tag])
+
+        # Starta om Gunicorn (valfritt)
+        # subprocess.check_call(["sudo", "systemctl", "restart", "smartweb.service"])
+
+        return redirect(url_for("restore_result", tag=tag, backup=backup_tag))
+    except Exception as e:
+        return f"Fel vid återställning: {e}"
+
+@app.route("/restore_result")
+def restore_result():
+    tag = request.args.get("tag")
+    backup_tag = request.args.get("backup")
+    return render_template("restore_result.html", tag=tag, backup_tag=backup_tag)
+
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=8000, debug=True)

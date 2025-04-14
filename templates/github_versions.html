@@ -11,6 +11,12 @@
             <div class="tag-name">🏷️ {{ tag.name }}</div>
             <div class="commit-msg">📝 {{ tag.message }}</div>
             <div class="date">📅 {{ tag.date }}</div>
+        
+<form action="/restore_version" method="post" method="post" onsubmit="return confirm('⚠️ Är du säker att du vill återställa till denna version? Detta kan skriva över ändringar.')">
+    <input type="hidden" name="tag" value="{{ tag.name }}">
+    <button type="submit" style="padding: 0.3em; margin-top: 0.5em; background: #ffdddd; border: 1px solid #aa0000;">⏪ Återställ till denna version</button>
+</form>
+
         </div>
         {% endfor %}
     {% else %}
@@ -21,6 +27,15 @@
 <div class="tag-container">
     <h3>🌐 Taggar från GitHub (live)</h3>
     <div id="tags"><p>Laddar taggar från GitHub...</p></div>
+</div>
+
+
+<div class="tag-container">
+    <h3>🕐 Skapa ny backup-tag</h3>
+    <form action="/create_backup_tag" method="post" style="margin-bottom: 1em;">
+        <input type="text" name="comment" placeholder="Valfri kommentar..." style="width: 80%; padding: 0.5em;">
+        <button type="submit" style="padding: 0.5em;">💾 Skapa backup-tag</button>
+    </form>
 </div>
 
 <a href="/" class="home-link">⬅️ Tillbaka till startsidan</a>
