@@ -208,3 +208,8 @@
 /bin/sh: 1: /home/runerova/smartweb/git_backup.sh: not found
 /bin/sh: 1: /home/runerova/smartweb/git_backup.sh: not found
 /bin/sh: 1: /home/runerova/smartweb/git_backup.sh: not found
+[main 4d34307] Automatisk backup: 2025-04-14 10:00
+ 5 files changed, 123 insertions(+), 4 deletions(-)
+ delete mode 100644 .git_backup.sh.swp
+To https://github.com/torbjornthorbjornson/smart-styrning.git
+   f5aae8b..4d34307  main -> main
