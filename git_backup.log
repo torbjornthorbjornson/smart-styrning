@@ -793,3 +793,10 @@ To https://github.com/torbjornthorbjornson/smart-styrning.git
  2 files changed, 108 insertions(+)
 To https://github.com/torbjornthorbjornson/smart-styrning.git
    544b66c..d7877bd  main -> main
+[main 0479f0a] Automatisk backup: 2025-04-15 22:30
+ 4 files changed, 245 insertions(+)
+ create mode 100644 BACKUP_TESTFIL.txt
+ create mode 100644 TESTFIL_BACKUP.txt
+ create mode 100644 app_full_backup_ready.py
+To https://github.com/torbjornthorbjornson/smart-styrning.git
+   d7877bd..0479f0a  main -> main
