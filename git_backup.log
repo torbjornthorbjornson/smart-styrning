@@ -1196,3 +1196,9 @@ To https://github.com/torbjornthorbjornson/smart-styrning.git
  2 files changed, 108 insertions(+)
 To https://github.com/torbjornthorbjornson/smart-styrning.git
    aa8a503..27ad437  main -> main
+[main ce38782] Automatisk backup: 2025-04-16 23:30
+ 5 files changed, 180 insertions(+)
+ create mode 100644 simulera_vatten.py
+ create mode 100644 templates/vattenstyrning.html
+To https://github.com/torbjornthorbjornson/smart-styrning.git
+   27ad437..ce38782  main -> main
