@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+    <meta charset="UTF-8">
+    <title>Vattenstyrning</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 2em;
+            background-color: #f3faff;
+        }
+        h1 {
+            text-align: center;
+        }
+        .bassang {
+            background: linear-gradient(to top, #00bfff, #ffffff);
+            border: 2px solid #007acc;
+            height: 300px;
+            width: 100px;
+            margin: 1em auto;
+            position: relative;
+        }
+        .vattennivå {
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            background-color: #00bfff;
+            transition: height 0.5s;
+        }
+        .pumpar {
+            display: flex;
+            justify-content: center;
+            margin: 2em 0;
+        }
+        .pump {
+            border: 1px solid #999;
+            background: #e0f7fa;
+            padding: 1em;
+            margin: 0 1em;
+            border-radius: 8px;
+            text-align: center;
+            width: 150px;
+        }
+        .tryck-graf {
+            max-width: 600px;
+            margin: auto;
+        }
+    </style>
+</head>
+<body>
+<h1>💦 Vattenstyrning - Visualisering</h1>
+
+<div class="bassang">
+    <div class="vattennivå" id="vattenNivå" style="height: {{ data['nivå_procent'] }}%;"></div>
+</div>
+<p style="text-align: center;">🔵 Vattennivå i bassäng: {{ data['nivå'] }} liter ({{ data['nivå_procent'] }}%)</p>
+
+<div class="pumpar">
+    <div class="pump">
+        <h3>Huvudborrhål</h3>
+        <p>Driftläge: {% if data['p1'] > 0 %}✅{% else %}⏸️{% endif %}</p>
+        <p>Frekvens: {{ data['p1'] }} Hz</p>
+    </div>
+    <div class="pump">
+        <h3>Borrhål 2</h3>
+        <p>Driftläge: {% if data['p2'] > 0 %}✅{% else %}⏸️{% endif %}</p>
+        <p>Frekvens: {{ data['p2'] }} Hz</p>
+    </div>
+    <div class="pump">
+        <h3>Borrhål 3</h3>
+        <p>Driftläge: {% if data['p3'] > 0 %}✅{% else %}⏸️{% endif %}</p>
+        <p>Frekvens: {{ data['p3'] }} Hz</p>
+    </div>
+</div>
+
+<div class="tryck-graf">
+    <canvas id="tryckChart"></canvas>
+</div>
+
+<script>
+    const ctx = document.getElementById('tryckChart').getContext('2d');
+    const tryckChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: ['Tryck'],
+            datasets: [{
+                label: 'Systemtryck (bar)',
+                data: [{{ data['tryck'] }}],
+                backgroundColor: '#007acc'
+            }]
+        },
+        options: {
+            scales: {
+                y: {
+                    suggestedMin: 0,
+                    suggestedMax: 5
+                }
+            }
+        }
+    });
+</script>
+</body>
+</html>
