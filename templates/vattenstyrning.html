@@ -77,6 +77,11 @@
         </div>
         <div class="etikett">Systemtryck: {{ data['tryck'] }} bar</div>
     </div>
+    <div class="pump-card" style="border-color: #7e57c2;">
+        <h3>Tryckstegrings Pump</h3>
+        <p>Status: ✅ Aktiv</p>
+        <p>Frekvens: {{ data['booster'] }} Hz</p>
+    </div> 
 </div>
 <h2 style="text-align: center;">Pumpar</h2>
 <div style="display: flex; justify-content: center; gap: 2em; margin-top: 2em;">
@@ -95,6 +100,8 @@
         <p>Status: {% if data['p3'] > 0 %}✅ Aktiv{% else %}⏸️ Inaktiv{% endif %}</p>
         <p>Frekvens: {{ data['p3'] }} Hz</p>
     </div>
+    
+      
 </div>
 </body>
 </html>

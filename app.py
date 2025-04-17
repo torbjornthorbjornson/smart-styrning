@@ -133,7 +133,8 @@ def vattenstyrning():
                     "tryck": row[2],
                     "p1": row[3],
                     "p2": row[4],
-                    "p3": row[5]
+                    "p3": row[5],
+                    "booster": row[6]
                 }
 
     return render_template("vattenstyrning.html", data=latest)
