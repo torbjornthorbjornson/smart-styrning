@@ -103,47 +103,8 @@ def gitlog():
         logs = [f"❌ Kunde inte läsa gitlog: {e}"]
     return render_template("gitlog.html", log="\n".join(logs))
 
-@app.route("/vattenstyrning")
-def vattenstyrning():
-    import pymysql
-    import configparser
 
-    # Läs in databasuppgifter från .my.cnf
-    config = configparser.ConfigParser()
-    config.read('/home/runerova/.my.cnf')
-    db_user = config['client']['user']
-    db_password = config['client']['password']
-
-    # Anslut till databasen vattenstyrning
-    conn = pymysql.connect(
-        host="localhost",
-        user=db_user,
-        password=db_password,
-        database="vattenstyrning"
-    )
-
-    latest = {}
-    with conn:
-        with conn.cursor() as cursor:
-            cursor.execute("SELECT * FROM water_status ORDER BY timestamp DESC LIMIT 1")
-            row = cursor.fetchone()
-            if row:
-                latest = {
-                    "nivå": row[1],
-                    "nivå_procent": round(row[1] / 4000 * 100),
-                    "tryck": row[2],
-                    "p1": row[3],
-                    "p2": row[4],
-                    "p3": row[5],
-                    "booster": row[6]
-                }
-
-    return render_template(
-        "vattenstyrning.html",
-        data=latest,
-        cos=math.cos,
-        sin=math.sin
-    )
+    
 
 @app.route("/elprisvader")
 def elprisvader():
