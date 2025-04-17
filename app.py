@@ -163,7 +163,7 @@ def elprisvader():
                                medel_elpris=medel_elpris,
                                fallback_used=fallback_used,
                                weather_date=weather_date)
-
+        
     except Exception as e:
         return f"Fel vid hämtning av väderdata: {e}"
 
@@ -215,6 +215,29 @@ def restore_result():
     backup_tag = request.args.get("backup")
     return render_template("restore_result.html", tag=tag, backup_tag=backup_tag)
 
+@app.route("/vattenstyrning")
+def vattenstyrning():
+    conn = get_connection()
+    latest = {}
+
+    try:
+        with conn.cursor() as cursor:
+            cursor.execute("SELECT * FROM water_status ORDER BY timestamp DESC LIMIT 1")
+            row = cursor.fetchone()
+            if row:
+                latest = {
+                    "nivå": row["level_liters"],
+                    "nivå_procent": round(row["level_liters"] / 4000 * 100),
+                    "tryck": row["system_pressure"],
+                    "p1": row["pump1_freq"],
+                    "p2": row["pump2_freq"],
+                    "p3": row["pump3_freq"],
+                    "booster": row.get("booster_freq", 0.0)
+                }
+    finally:
+        conn.close()
+
+    return render_template("vattenstyrning.html", data=latest)
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=8000, debug=True)
