@@ -82,7 +82,13 @@
                   stroke="#666" stroke-width="1"/>
             {% endfor %}
             <!-- Visare -->
-            <line id="needle" class="needle" x1="50" y1="50" x2="50" y2="15" stroke="red" stroke-width="2"/>
+            <line id="needle" class="needle"
+                   x1="50" y1="50"
+                   x2="{{ 50 + 30 * cos(3.14 * (1 - data['tryck'] / 10)) }}"
+                   y2="{{ 50 + 30 * sin(3.14 * (1 - data['tryck'] / 10)) }}"
+                   stroke="red" stroke-width="2"/>
+      
+
             <circle cx="50" cy="50" r="3" fill="#333"/>
         </svg>
         <div class="etikett">Systemtryck: {{ data['tryck'] }} bar</div>

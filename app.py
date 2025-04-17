@@ -4,6 +4,7 @@ import pymysql
 from datetime import datetime, timedelta
 import subprocess
 import os
+import math
 
 app = Flask(__name__)
 
@@ -137,8 +138,12 @@ def vattenstyrning():
                     "booster": row[6]
                 }
 
-    return render_template("vattenstyrning.html", data=latest)
-
+    return render_template(
+        "vattenstyrning.html",
+        data=latest,
+        cos=math.cos,
+        sin=math.sin
+    )
 
 @app.route("/elprisvader")
 def elprisvader():
