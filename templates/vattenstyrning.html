@@ -1,4 +1,5 @@
-<<!DOCTYPE html>
+
+<!DOCTYPE html>
 <html lang="sv">
 <head>
     <meta charset="UTF-8">
@@ -65,16 +66,15 @@
 <div class="container">
     <div>
         <div class="bassang">
-            <div class="vattennivå" style="height: {{ data['nivå_procent'] }}%;"></div>
+            <div class="vattennivå" style="height: {{ data['nivå_procent']|default(0) }}%;"></div>
         </div>
-        <div class="etikett">Bassängnivå: {{ data['nivå'] }} liter</div>
+        <div class="etikett">Bassängnivå: {{ data['nivå']|default(0) }} liter</div>
     </div>
     <div style="text-align: center;">
-        <svg class="manometer" viewBox="0 0 100 100">
+        <svg class="manometer" viewBox="0 0 100 100" data-tryck="{{ data['tryck']|default(0) }}">
             <circle cx="50" cy="50" r="45" stroke="#333" stroke-width="4" fill="white"/>
             <text x="50" y="95" font-size="8" text-anchor="middle">bar</text>
 
-            <!-- Markeringar -->
             {% for i in range(0, 11) %}
             <line 
                 x1="{{ 50 + 40 * cos(3.14 * (1 - (i/10))) }}" 
@@ -84,46 +84,32 @@
                 stroke="#666" stroke-width="1"/>
             {% endfor %}
 
-            <!-- Visare -->
-            <!-- Visare -->
-         <line id="needle" class="needle"
-         x1="50" y1="50"
-         x2="{{ 50 + 35 * cos(3.14 * (1 - data['tryck'] / 10)) }}"
-         y2="{{ 50 - 35 * sin(3.14 * (1 - data['tryck'] / 10)) }}"
-         stroke="red" stroke-width="2"/>
- 
+            <line id="needle" class="needle" x1="50" y1="50" x2="50" y2="15" stroke="red" stroke-width="2"/>
             <circle cx="50" cy="50" r="3" fill="#333"/>
         </svg>
-        <div class="etikett">Systemtryck: {{ data['tryck'] }} bar</div>
+        <div class="etikett">Systemtryck: {{ data['tryck']|default(0) }} bar</div>
     </div>
     <div class="pump-card">
         <h3 style="font-size: 16px;">Tryckstegrings<br>Pump</h3>
         <p>Status: ✅ Aktiv</p>
-        <p>Frekvens: {{ data['booster'] }} Hz</p>
+        <p>Frekvens: {{ data['booster']|default(0) }} Hz</p>
     </div> 
 </div>
 
 <h2 style="text-align: center;">Pumpar</h2>
 <div style="display: flex; justify-content: center; gap: 2em; margin-top: 2em;">
+    {% for i in range(1, 4) %}
     <div style="border: 1px solid #007acc; padding: 1em; background-color: #e6f2ff; border-radius: 10px; width: 150px; text-align: center;">
-        <h3>Borrhåls Pump 1 Pumphus</h3>
-        <p>Status: {% if data['p1'] > 0 %}✅ Aktiv{% else %}⏸️ Inaktiv{% endif %}</p>
-        <p>Frekvens: {{ data['p1'] }} Hz</p>
+        <h3>Borrhåls Pump {{ i }}</h3>
+        <p>Status: {% if data['p' ~ i]|default(0) > 0 %}✅ Aktiv{% else %}⏸️ Inaktiv{% endif %}</p>
+        <p>Frekvens: {{ data['p' ~ i]|default(0) }} Hz</p>
     </div>
-    <div style="border: 1px solid #28a745; padding: 1em; background-color: #e8f9f0; border-radius: 10px; width: 150px; text-align: center;">
-        <h3>Borrhåls Pump 2 R-H 15</h3>
-        <p>Status: {% if data['p2'] > 0 %}✅ Aktiv{% else %}⏸️ Inaktiv{% endif %}</p>
-        <p>Frekvens: {{ data['p2'] }} Hz</p>
-    </div>
-    <div style="border: 1px solid #ff8800; padding: 1em; background-color: #fff3e6; border-radius: 10px; width: 150px; text-align: center;">
-        <h3>Borrhåls Pump 3 R-H 42</h3>
-        <p>Status: {% if data['p3'] > 0 %}✅ Aktiv{% else %}⏸️ Inaktiv{% endif %}</p>
-        <p>Frekvens: {{ data['p3'] }} Hz</p>
-    </div>
+    {% endfor %}
 </div>
 
 <script>
-    const tryck = {{ data['tryck']|default(0) }};
+    const svg = document.querySelector('.manometer');
+    const tryck = parseFloat(svg.dataset.tryck) || 0;
     const maxBar = 10;
     const angle = (tryck / maxBar) * 180 - 90;
     const needle = document.getElementById('needle');
