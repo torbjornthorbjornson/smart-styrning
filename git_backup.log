@@ -2951,3 +2951,8 @@ To https://github.com/torbjornthorbjornson/smart-styrning.git
  1 file changed, 4 insertions(+)
 To https://github.com/torbjornthorbjornson/smart-styrning.git
    3ff7cef..41c4db0  main -> main
+[main 118115f] Automatisk backup: 2025-04-21 13:00
+ 2 files changed, 6 insertions(+), 2 deletions(-)
+ rename simulera_vatten.py => backend/simulera_vatten.py (93%)
+To https://github.com/torbjornthorbjornson/smart-styrning.git
+   41c4db0..118115f  main -> main
