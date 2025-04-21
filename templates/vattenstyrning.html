@@ -54,7 +54,7 @@
             height: 180px;
         }
         .needle {
-            transform-origin: 50px 50px;
+            transform-origin: 50% 50%;
             transition: transform 0.5s ease-out;
         }
     </style>
@@ -69,29 +69,28 @@
         </div>
         <div class="etikett">Bassängnivå: {{ data['nivå']|default(0) }} liter</div>
     </div>
-    <div style="text-align: center;">
+     <div style="text-align: center;">
         <svg class="manometer" viewBox="0 0 100 100" data-tryck="{{ data['tryck']|default(0) }}">
             <circle cx="50" cy="50" r="45" stroke="#333" stroke-width="4" fill="white"/>
             <text x="50" y="95" font-size="8" text-anchor="middle">bar</text>
 
-            <!-- Graderingsstreck 0–10 bar -->
             {% for i in range(0, 11) %}
-                {% set angle = 225 - (i / 10) * 270 %}
-                {% set rad = angle * 3.14159 / 180 %}
-                <line 
-                    x1="{{ 50 + 38 * cos(rad) }}" 
-                    y1="{{ 50 - 38 * sin(rad) }}" 
-                    x2="{{ 50 + 45 * cos(rad) }}" 
-                    y2="{{ 50 - 45 * sin(rad) }}" 
-                    stroke="#666" stroke-width="1"/>
-                <text x="{{ 50 + 30 * cos(rad) }}" y="{{ 50 - 30 * sin(rad) }}" font-size="4" text-anchor="middle" alignment-baseline="middle">
-                    {{ i }}
-                </text>
-            {% endfor %}
+            {% set angle = 225 - (i / 10) * 270 %}
+            {% set rad = angle * 3.14159 / 180 %}
+            <line 
+                x1="{{ 50 + 38 * cos(rad) }}" 
+                y1="{{ 50 - 38 * sin(rad) }}" 
+                x2="{{ 50 + 45 * cos(rad) }}" 
+                y2="{{ 50 - 45 * sin(rad) }}" 
+                stroke="#666" stroke-width="1"/>
+            <text x="{{ 50 + 32 * cos(rad) }}" y="{{ 50 - 32 * sin(rad) }}" font-size="4" text-anchor="middle" alignment-baseline="middle">
+                {{ i }}
+            </text>
+        {% endfor %}
 
-            <!-- Ny visare som polygon (pilformad) -->
-            <polygon id="needle" class="needle" fill="red" points="50,50 48,51 80,50 48,49"/>
-            <circle cx="50" cy="50" r="3" fill="#333"/>
+        <line id="needle" class="needle" x1="50" y1="50" x2="50" y2="10" stroke="red" stroke-width="2" />
+
+        <circle cx="50" cy="50" r="3" fill="#333"/>
         </svg>
         <div class="etikett">Systemtryck: {{ data['tryck']|default(0) }} bar</div>
     </div>
@@ -113,15 +112,15 @@
     {% endfor %}
 </div>
 
-<script>
-    const svg = document.querySelector('.manometer');
-    const tryck = parseFloat(svg.dataset.tryck) || 0;
+<<script>
+    const tryck = parseFloat(document.querySelector('.manometer').dataset.tryck) || 0;
     const maxBar = 10;
-    const angle = 225 - (tryck / maxBar) * 270;
+    const angle = 225 - (tryck / maxBar) * 270; // Korrekt båge för manometern
     const needle = document.getElementById('needle');
     if (needle) {
         needle.setAttribute('transform', `rotate(${angle}, 50, 50)`);
     }
 </script>
+
 </body>
 </html>
