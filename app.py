@@ -227,7 +227,7 @@ def vattenstyrning():
             if row:
                 latest = {
                     "nivå": row["level_liters"],
-                    "nivå_procent": round(row["level_liters"] / 4000 * 100),
+                    "nivå_procent": round(row["level_liters"] / 10000 * 100),
                     "tryck": row["system_pressure"],
                     "p1": row["pump1_freq"],
                     "p2": row["pump2_freq"],
