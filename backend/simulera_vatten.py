@@ -28,7 +28,7 @@ conn = pymysql.connect(
     host="localhost",
     user=user,
     password=password,
-    database="vattenstyrning"
+    database="smart_styrning"
 )
 
 with conn:
@@ -41,4 +41,4 @@ with conn:
             """, row)
     conn.commit()
 
-print("✅ Simulerad vattendata med booster inskriven!")
+print("✅ Simulerad vattendata inskriven till smart_styrning!")
