@@ -88,7 +88,9 @@
             </text>
         {% endfor %}
 
-        <line id="needle" class="needle" x1="50" y1="50" x2="50" y2="10" stroke="red" stroke-width="2" />
+        <line id="needle" x1="50" y1="50" x2="50" y2="10" stroke="red" stroke-width="2"/>
+
+
 
         <circle cx="50" cy="50" r="3" fill="#333"/>
         </svg>
@@ -112,15 +114,19 @@
     {% endfor %}
 </div>
 
-<<script>
-    const tryck = parseFloat(document.querySelector('.manometer').dataset.tryck) || 0;
+<script>
+    const svg = document.querySelector('.manometer');
+    const tryck = parseFloat(svg.dataset.tryck) || 0;
     const maxBar = 10;
-    const angle = 225 - (tryck / maxBar) * 270; // Korrekt båge för manometern
+    const angle = 225 - (tryck / maxBar) * 270; // 0 bar = 225°, 10 bar = -45°
+
     const needle = document.getElementById('needle');
     if (needle) {
         needle.setAttribute('transform', `rotate(${angle}, 50, 50)`);
     }
 </script>
+
+
 
 </body>
 </html>
