@@ -96,13 +96,16 @@
         </svg>
         <div class="etikett">Systemtryck: {{ data['tryck']|default(0) }} bar</div>
     </div>
-    <div class="pump-card">
-        <h3 style="font-size: 16px;">Tryckstegrings<br>Pump</h3>
-        <p>Status: {% if data['booster']|default(0) > 0 %}✅ Aktiv{% else %}⏸️ Inaktiv{% endif %}</p>
-        <p>Frekvens: {{ data['booster']|default(0) }} Hz</p>
-    </div> 
+        <!-- Tryckstegringspump -->
+        <div class="pump-card">
+            <h3 style="font-size: 16px;">Tryckstegrings<br>Pump</h3>
+            <p>Status: {% if data['booster']|default(0) > 0 %}✅ Aktiv{% else %}⏸️ Inaktiv{% endif %}</p>
+            <p>Frekvens: {{ data['booster']|default(0) }} Hz</p>
+            <p>Flöde: {{ data['flow_booster']|default(0) }} L/s</p>
+        </div>
 </div>
 
+<!-- Borrhåls Pumpar -->
 <h2 style="text-align: center;">Pumpar</h2>
 <div style="display: flex; justify-content: center; gap: 2em; margin-top: 2em;">
     {% for i in range(1, 4) %}
@@ -110,6 +113,7 @@
         <h3>Borrhåls Pump {{ i }}</h3>
         <p>Status: {% if data['p' ~ i]|default(0) > 0 %}✅ Aktiv{% else %}⏸️ Inaktiv{% endif %}</p>
         <p>Frekvens: {{ data['p' ~ i]|default(0) }} Hz</p>
+        <p>Flöde: {{ data['flow_p' ~ i]|default(0) }} L/s</p>
     </div>
     {% endfor %}
 </div>
