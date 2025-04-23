@@ -1,14 +1,11 @@
 {% extends "base.html" %}
 
-{% block title %}Vattenstyrning{% endblock %}
+{% block content %}
+<div class="main-container">
 
-{% block head %}
+<h1>💦 Vattenstyrning Ragnars Hage</h1>
+
 <style>
-    body {
-        font-family: Arial, sans-serif;
-        margin: 2em;
-        background-color: #f3faff;
-    }
     h1 {
         text-align: center;
     }
@@ -54,76 +51,4 @@
         height: 180px;
     }
     .needle {
-        transform-origin: 50% 50%;
-        transition: transform 0.5s ease-out;
-    }
-</style>
-{% endblock %}
-
-{% block content %}
-<h1>💦 Vattenstyrning Ragnars Hage</h1>
-
-<div class="container">
-    <div>
-        <div class="bassang">
-            <div class="vattennivå" style="height: {{ data['nivå_procent']|default(0) }}%;"></div>
-        </div>
-        <div class="etikett">Bassängnivå: {{ data['nivå']|default(0) }} liter</div>
-    </div>
-    <div style="text-align: center;">
-        <svg class="manometer" viewBox="0 0 100 100" data-tryck="{{ data['tryck']|default(0) }}">
-            <circle cx="50" cy="50" r="45" stroke="#333" stroke-width="4" fill="white"/>
-            <text x="50" y="88" font-size="8" text-anchor="middle">bar</text>
-
-            {% for i in range(0, 11) %}
-            {% set angle = 225 - (i / 10) * 270 %}
-            {% set rad = angle * 3.14159 / 180 %}
-            <line 
-                x1="{{ 50 + 38 * cos(rad) }}" 
-                y1="{{ 50 - 38 * sin(rad) }}" 
-                x2="{{ 50 + 45 * cos(rad) }}" 
-                y2="{{ 50 - 45 * sin(rad) }}" 
-                stroke="#666" stroke-width="1"/>
-            <text x="{{ 50 + 32 * cos(rad) }}" y="{{ 50 - 32 * sin(rad) }}" font-size="4" text-anchor="middle">
-                {{ i }}
-            </text>
-            {% endfor %}
-
-            <line id="needle" x1="50" y1="50" x2="50" y2="10" stroke="red" stroke-width="2"/>
-            <circle cx="50" cy="50" r="3" fill="#333"/>
-        </svg>
-        <div class="etikett">Systemtryck: {{ data['tryck']|default(0) }} bar</div>
-    </div>
-    <div class="pump-card">
-        <h3 style="font-size: 16px;">Tryckstegrings<br>Pump</h3>
-        <p>Status: {% if data['booster']|default(0) > 0 %}✅ Aktiv{% else %}⏸️ Inaktiv{% endif %}</p>
-        <p>Frekvens: {{ data['booster']|default(0) }} Hz</p>
-        <p>Flöde: {{ data['flow_booster']|default(0) }} L/s</p>
-    </div> 
-</div>
-
-<h2 style="text-align: center;">Pumpar</h2>
-<div style="display: flex; justify-content: center; gap: 2em; margin-top: 2em;">
-    {% for i in range(1, 4) %}
-    <div style="border: 1px solid #007acc; padding: 1em; background-color: #e6f2ff; border-radius: 10px; width: 150px; text-align: center;">
-        <h3>Borrhåls Pump {{ i }}</h3>
-        <p>Status: {% if data['p' ~ i]|default(0) > 0 %}✅ Aktiv{% else %}⏸️ Inaktiv{% endif %}</p>
-        <p>Frekvens: {{ data['p' ~ i]|default(0) }} Hz</p>
-        <p>Flöde: {{ data['flow_p' ~ i]|default(0) }} L/s</p>
-    </div>
-    {% endfor %}
-</div>
-
-<script>
-    const svg = document.querySelector('.manometer');
-    const tryck = parseFloat(svg?.dataset?.tryck ?? 0);
-    const maxBar = 10;
-    const startVinkel = 225;
-    const spann = 270;
-    const angle = startVinkel + (tryck / maxBar) * spann;
-    const needle = document.getElementById('needle');
-    if (needle) {
-        needle.setAttribute('transform', `rotate(${angle}, 50, 50)`);
-    }
-</script>
-{% endblock %}
+        transform-origin: 50% 50
