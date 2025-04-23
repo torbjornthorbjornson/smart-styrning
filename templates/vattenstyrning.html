@@ -1,54 +1,19 @@
+
 {% extends "base.html" %}
 
 {% block content %}
 
-
 <h1>💦 Vattenstyrning Ragnars Hage</h1>
 
-<style>
-    h1 {
-        text-align: center;
-    }
-    .container {
-        display: flex;
-        justify-content: center;
-        align-items: flex-end;
-        gap: 4em;
-        margin-top: 2em;
-    }
-    .bassang {
-        background: linear-gradient(to top, #00bfff, #ffffff);
-        border: 2px solid #007acc;
-        height: 300px;
-        width: 400px;
-        position: relative;
-        border-radius: 10px;
-    }
-    .vattennivå {
-        position: absolute;
-        bottom: 0;
-        width: 100%;
-        background-color: #00bfff;
-        transition: height 0.5s;
-        border-bottom-left-radius: 8px;
-        border-bottom-right-radius: 8px;
-    }
-    .etikett {
-        text-align: center;
-        margin-top: 0.5em;
-        font-weight: bold;
-    }
-    .pump-card {
-        border: 1px solid #7e57c2;
-        width: 180px;
-        text-align: center;
-        padding: 1em;
-        background-color: #f0e8ff;
-        border-radius: 10px;
-    }
-    .manometer {
-        width: 180px;
-        height: 180px;
-    }
-    .needle {
-        transform-origin: 50% 50
+<!-- Innehållet direkt inuti .content från base.html -->
+<div class="bassang">
+    <div class="vattennivå" style="height: 50%;"></div>
+</div>
+
+<div class="pump-card">
+    <h3>Pump 1</h3>
+    <div class="manometer"></div>
+    <p class="etikett">Status: Aktiv</p>
+</div>
+
+{% endblock %}

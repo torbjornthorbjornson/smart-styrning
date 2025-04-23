@@ -50,3 +50,8 @@ canvas {
   height: auto !important;
 }
 
+.container {
+  max-width: 1000px;
+  margin: 2em auto;
+  padding: 1em;
+}
