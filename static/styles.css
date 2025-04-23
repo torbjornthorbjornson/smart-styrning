@@ -9,8 +9,6 @@ body {
 nav {
   background-color: #1c1f26;
   padding: 1em 2em;
-  width: 100%;
-  box-sizing: border-box;
 }
 
 nav ul {
@@ -39,4 +37,62 @@ nav a {
   padding: 2em;
   border-radius: 12px;
   box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+}
+
+.chart-container {
+  width: 100%;
+  max-width: 900px;
+  height: 500px;
+  margin: 0 auto;
+}
+
+canvas {
+  width: 100% !important;
+  height: auto !important;
+}
+
+
+
+/* Vattenstyrning layout och komponenter */
+.container {
+    display: flex;
+    justify-content: center;
+    align-items: flex-end;
+    gap: 4em;
+    flex-wrap: wrap;
+}
+
+.bassang {
+    background: linear-gradient(to top, #00bfff, #ffffff);
+    border: 2px solid #007acc;
+    height: 300px;
+    width: 400px;
+    position: relative;
+    border-radius: 10px;
+}
+
+.vattennivå {
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+    background-color: #00bfff;
+    transition: height 0.5s;
+    border-bottom-left-radius: 8px;
+    border-bottom-right-radius: 8px;
+}
+
+.pump-card {
+    border: 1px solid #7e57c2;
+    width: 180px;
+    text-align: center;
+    padding: 1em;
+    background-color: #f0e8ff;
+    border-radius: 10px;
+}
+
+.manometer {
+    width: 180px;
+    height: 180px;
+    max-width: 180px;
+    max-height: 180px;
 }
