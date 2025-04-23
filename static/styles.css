@@ -1,3 +1,4 @@
+
 body {
   font-family: Arial, sans-serif;
   margin: 0;
@@ -8,6 +9,8 @@ body {
 nav {
   background-color: #1c1f26;
   padding: 1em 2em;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 nav ul {
@@ -36,22 +39,4 @@ nav a {
   padding: 2em;
   border-radius: 12px;
   box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-}
-
-.chart-container {
-  width: 100%;
-  max-width: 900px;
-  height: 500px;
-  margin: 0 auto;
-}
-
-canvas {
-  width: 100% !important;
-  height: auto !important;
-}
-
-.container {
-  max-width: 1000px;
-  margin: 2em auto;
-  padding: 1em;
 }
