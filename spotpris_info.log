@@ -30566,3 +30566,5 @@
 2025-04-23 05:00:01,445 [INFO] ⏩ Skippad (fanns redan): 2025-04-22 21:00:00
 2025-04-23 05:00:01,445 [INFO] ✅ 0 priser sparade.
 2025-04-23 05:00:01,445 [INFO] ==> spotpris.py klar
+2025-04-23 06:00:01,583 [INFO] ==> spotpris.py startade
+2025-04-23 06:00:01,584 [INFO] Försöker hämta priser från: https://www.elprisetjustnu.se/api/v1/prices/2025/04-23_SE3.json
