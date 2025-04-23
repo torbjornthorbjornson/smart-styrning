@@ -14,12 +14,14 @@
             <li class="{% if request.path == '/' %}active{% endif %}"><a href="/">Hem</a></li>
             <li class="{% if request.path == '/elprisvader' %}active{% endif %}"><a href="/elprisvader">Elpris & Väder</a></li>
             <li class="{% if request.path == '/styrning' %}active{% endif %}"><a href="/styrning">Styrning</a></li>
+            <li class="{% if request.path == '/vattenstyrning' %}active{% endif %}"><a href="/vattenstyrning">Vattenstyrning</a></li>
             <li class="{% if request.path == '/github_versions' %}active{% endif %}"><a href="/github_versions">Git-versioner</a></li>
             <li class="{% if request.path == '/vision' %}active{% endif %}"><a href="/vision">Vision</a></li>
             <li class="{% if request.path == '/dokumentation' %}active{% endif %}"><a href="/dokumentation">Dokumentation</a></li>
             <li class="{% if request.path == '/gitlog' %}active{% endif %}"><a href="/gitlog">Git-logg</a></li>
         </ul>
     </nav>
+    
 
     <div class="content">
         {% block content %}{% endblock %}
