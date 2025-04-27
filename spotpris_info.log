@@ -41450,3 +41450,107 @@
 2025-04-27 18:00:02,696 [INFO] ⏩ Skippad (fanns redan): 2025-04-26 21:00:00
 2025-04-27 18:00:02,696 [INFO] ✅ 0 priser sparade.
 2025-04-27 18:00:02,696 [INFO] ==> spotpris.py klar
+2025-04-27 19:00:01,777 [INFO] ==> spotpris.py startade
+2025-04-27 19:00:01,779 [INFO] Försöker hämta priser från: https://www.elprisetjustnu.se/api/v1/prices/2025/04-27_SE3.json
+2025-04-27 19:00:02,113 [INFO] Dagens priser hämtade framgångsrikt: [{'SEK_per_kWh': 0.38213, 'EUR_per_kWh': 0.03461, 'EXR': 11.040997, 'time_start': '2025-04-27T00:00:00+02:00', 'time_end': '2025-04-27T01:00:00+02:00'}, {'SEK_per_kWh': 0.36237, 'EUR_per_kWh': 0.03282, 'EXR': 11.040997, 'time_start': '2025-04-27T01:00:00+02:00', 'time_end': '2025-04-27T02:00:00+02:00'}] ...
+2025-04-27 19:00:02,115 [INFO] ⏩ Skippad (fanns redan): 2025-04-27 00:00:00
+2025-04-27 19:00:02,115 [INFO] ⏩ Skippad (fanns redan): 2025-04-27 01:00:00
+2025-04-27 19:00:02,115 [INFO] ⏩ Skippad (fanns redan): 2025-04-27 02:00:00
+2025-04-27 19:00:02,116 [INFO] ⏩ Skippad (fanns redan): 2025-04-27 03:00:00
+2025-04-27 19:00:02,116 [INFO] ⏩ Skippad (fanns redan): 2025-04-27 04:00:00
+2025-04-27 19:00:02,116 [INFO] ⏩ Skippad (fanns redan): 2025-04-27 05:00:00
+2025-04-27 19:00:02,116 [INFO] ⏩ Skippad (fanns redan): 2025-04-27 06:00:00
+2025-04-27 19:00:02,116 [INFO] ⏩ Skippad (fanns redan): 2025-04-27 07:00:00
+2025-04-27 19:00:02,116 [INFO] ⏩ Skippad (fanns redan): 2025-04-27 08:00:00
+2025-04-27 19:00:02,117 [INFO] ⏩ Skippad (fanns redan): 2025-04-27 09:00:00
+2025-04-27 19:00:02,117 [INFO] ⏩ Skippad (fanns redan): 2025-04-27 10:00:00
+2025-04-27 19:00:02,117 [INFO] ⏩ Skippad (fanns redan): 2025-04-27 11:00:00
+2025-04-27 19:00:02,117 [INFO] ⏩ Skippad (fanns redan): 2025-04-27 12:00:00
+2025-04-27 19:00:02,117 [INFO] ⏩ Skippad (fanns redan): 2025-04-27 13:00:00
+2025-04-27 19:00:02,117 [INFO] ⏩ Skippad (fanns redan): 2025-04-27 14:00:00
+2025-04-27 19:00:02,118 [INFO] ⏩ Skippad (fanns redan): 2025-04-27 15:00:00
+2025-04-27 19:00:02,118 [INFO] ⏩ Skippad (fanns redan): 2025-04-27 16:00:00
+2025-04-27 19:00:02,118 [INFO] ⏩ Skippad (fanns redan): 2025-04-27 17:00:00
+2025-04-27 19:00:02,118 [INFO] ⏩ Skippad (fanns redan): 2025-04-27 18:00:00
+2025-04-27 19:00:02,118 [INFO] ⏩ Skippad (fanns redan): 2025-04-27 19:00:00
+2025-04-27 19:00:02,118 [INFO] ⏩ Skippad (fanns redan): 2025-04-27 20:00:00
+2025-04-27 19:00:02,118 [INFO] ⏩ Skippad (fanns redan): 2025-04-27 21:00:00
+2025-04-27 19:00:02,119 [WARNING] 🔁 Försöker med gårdagens data istället: 2025-04-26 00:00:00
+2025-04-27 19:00:02,119 [INFO] Försöker hämta priser från: https://www.elprisetjustnu.se/api/v1/prices/2025/04-26_SE3.json
+2025-04-27 19:00:02,546 [INFO] Dagens priser hämtade framgångsrikt: [{'SEK_per_kWh': 0.37753, 'EUR_per_kWh': 0.03419, 'EXR': 11.042239, 'time_start': '2025-04-26T00:00:00+02:00', 'time_end': '2025-04-26T01:00:00+02:00'}, {'SEK_per_kWh': 0.36881, 'EUR_per_kWh': 0.0334, 'EXR': 11.042239, 'time_start': '2025-04-26T01:00:00+02:00', 'time_end': '2025-04-26T02:00:00+02:00'}] ...
+2025-04-27 19:00:02,547 [INFO] ⏩ Skippad (fanns redan): 2025-04-26 00:00:00
+2025-04-27 19:00:02,547 [INFO] ⏩ Skippad (fanns redan): 2025-04-26 01:00:00
+2025-04-27 19:00:02,547 [INFO] ⏩ Skippad (fanns redan): 2025-04-26 02:00:00
+2025-04-27 19:00:02,548 [INFO] ⏩ Skippad (fanns redan): 2025-04-26 03:00:00
+2025-04-27 19:00:02,548 [INFO] ⏩ Skippad (fanns redan): 2025-04-26 04:00:00
+2025-04-27 19:00:02,548 [INFO] ⏩ Skippad (fanns redan): 2025-04-26 05:00:00
+2025-04-27 19:00:02,548 [INFO] ⏩ Skippad (fanns redan): 2025-04-26 06:00:00
+2025-04-27 19:00:02,548 [INFO] ⏩ Skippad (fanns redan): 2025-04-26 07:00:00
+2025-04-27 19:00:02,548 [INFO] ⏩ Skippad (fanns redan): 2025-04-26 08:00:00
+2025-04-27 19:00:02,549 [INFO] ⏩ Skippad (fanns redan): 2025-04-26 09:00:00
+2025-04-27 19:00:02,549 [INFO] ⏩ Skippad (fanns redan): 2025-04-26 10:00:00
+2025-04-27 19:00:02,549 [INFO] ⏩ Skippad (fanns redan): 2025-04-26 11:00:00
+2025-04-27 19:00:02,549 [INFO] ⏩ Skippad (fanns redan): 2025-04-26 12:00:00
+2025-04-27 19:00:02,549 [INFO] ⏩ Skippad (fanns redan): 2025-04-26 13:00:00
+2025-04-27 19:00:02,549 [INFO] ⏩ Skippad (fanns redan): 2025-04-26 14:00:00
+2025-04-27 19:00:02,549 [INFO] ⏩ Skippad (fanns redan): 2025-04-26 15:00:00
+2025-04-27 19:00:02,550 [INFO] ⏩ Skippad (fanns redan): 2025-04-26 16:00:00
+2025-04-27 19:00:02,550 [INFO] ⏩ Skippad (fanns redan): 2025-04-26 17:00:00
+2025-04-27 19:00:02,550 [INFO] ⏩ Skippad (fanns redan): 2025-04-26 18:00:00
+2025-04-27 19:00:02,550 [INFO] ⏩ Skippad (fanns redan): 2025-04-26 19:00:00
+2025-04-27 19:00:02,550 [INFO] ⏩ Skippad (fanns redan): 2025-04-26 20:00:00
+2025-04-27 19:00:02,550 [INFO] ⏩ Skippad (fanns redan): 2025-04-26 21:00:00
+2025-04-27 19:00:02,551 [INFO] ✅ 0 priser sparade.
+2025-04-27 19:00:02,551 [INFO] ==> spotpris.py klar
+2025-04-27 19:00:02,884 [INFO] ==> spotpris.py startade
+2025-04-27 19:00:02,885 [INFO] Försöker hämta priser från: https://www.elprisetjustnu.se/api/v1/prices/2025/04-27_SE3.json
+2025-04-27 19:00:03,090 [INFO] Dagens priser hämtade framgångsrikt: [{'SEK_per_kWh': 0.38213, 'EUR_per_kWh': 0.03461, 'EXR': 11.040997, 'time_start': '2025-04-27T00:00:00+02:00', 'time_end': '2025-04-27T01:00:00+02:00'}, {'SEK_per_kWh': 0.36237, 'EUR_per_kWh': 0.03282, 'EXR': 11.040997, 'time_start': '2025-04-27T01:00:00+02:00', 'time_end': '2025-04-27T02:00:00+02:00'}] ...
+2025-04-27 19:00:03,092 [INFO] ⏩ Skippad (fanns redan): 2025-04-27 00:00:00
+2025-04-27 19:00:03,092 [INFO] ⏩ Skippad (fanns redan): 2025-04-27 01:00:00
+2025-04-27 19:00:03,093 [INFO] ⏩ Skippad (fanns redan): 2025-04-27 02:00:00
+2025-04-27 19:00:03,093 [INFO] ⏩ Skippad (fanns redan): 2025-04-27 03:00:00
+2025-04-27 19:00:03,093 [INFO] ⏩ Skippad (fanns redan): 2025-04-27 04:00:00
+2025-04-27 19:00:03,093 [INFO] ⏩ Skippad (fanns redan): 2025-04-27 05:00:00
+2025-04-27 19:00:03,093 [INFO] ⏩ Skippad (fanns redan): 2025-04-27 06:00:00
+2025-04-27 19:00:03,093 [INFO] ⏩ Skippad (fanns redan): 2025-04-27 07:00:00
+2025-04-27 19:00:03,094 [INFO] ⏩ Skippad (fanns redan): 2025-04-27 08:00:00
+2025-04-27 19:00:03,094 [INFO] ⏩ Skippad (fanns redan): 2025-04-27 09:00:00
+2025-04-27 19:00:03,094 [INFO] ⏩ Skippad (fanns redan): 2025-04-27 10:00:00
+2025-04-27 19:00:03,094 [INFO] ⏩ Skippad (fanns redan): 2025-04-27 11:00:00
+2025-04-27 19:00:03,094 [INFO] ⏩ Skippad (fanns redan): 2025-04-27 12:00:00
+2025-04-27 19:00:03,094 [INFO] ⏩ Skippad (fanns redan): 2025-04-27 13:00:00
+2025-04-27 19:00:03,095 [INFO] ⏩ Skippad (fanns redan): 2025-04-27 14:00:00
+2025-04-27 19:00:03,095 [INFO] ⏩ Skippad (fanns redan): 2025-04-27 15:00:00
+2025-04-27 19:00:03,095 [INFO] ⏩ Skippad (fanns redan): 2025-04-27 16:00:00
+2025-04-27 19:00:03,095 [INFO] ⏩ Skippad (fanns redan): 2025-04-27 17:00:00
+2025-04-27 19:00:03,100 [INFO] ⏩ Skippad (fanns redan): 2025-04-27 18:00:00
+2025-04-27 19:00:03,101 [INFO] ⏩ Skippad (fanns redan): 2025-04-27 19:00:00
+2025-04-27 19:00:03,101 [INFO] ⏩ Skippad (fanns redan): 2025-04-27 20:00:00
+2025-04-27 19:00:03,101 [INFO] ⏩ Skippad (fanns redan): 2025-04-27 21:00:00
+2025-04-27 19:00:03,101 [WARNING] 🔁 Försöker med gårdagens data istället: 2025-04-26 00:00:00
+2025-04-27 19:00:03,101 [INFO] Försöker hämta priser från: https://www.elprisetjustnu.se/api/v1/prices/2025/04-26_SE3.json
+2025-04-27 19:00:03,309 [INFO] Dagens priser hämtade framgångsrikt: [{'SEK_per_kWh': 0.37753, 'EUR_per_kWh': 0.03419, 'EXR': 11.042239, 'time_start': '2025-04-26T00:00:00+02:00', 'time_end': '2025-04-26T01:00:00+02:00'}, {'SEK_per_kWh': 0.36881, 'EUR_per_kWh': 0.0334, 'EXR': 11.042239, 'time_start': '2025-04-26T01:00:00+02:00', 'time_end': '2025-04-26T02:00:00+02:00'}] ...
+2025-04-27 19:00:03,311 [INFO] ⏩ Skippad (fanns redan): 2025-04-26 00:00:00
+2025-04-27 19:00:03,311 [INFO] ⏩ Skippad (fanns redan): 2025-04-26 01:00:00
+2025-04-27 19:00:03,311 [INFO] ⏩ Skippad (fanns redan): 2025-04-26 02:00:00
+2025-04-27 19:00:03,311 [INFO] ⏩ Skippad (fanns redan): 2025-04-26 03:00:00
+2025-04-27 19:00:03,312 [INFO] ⏩ Skippad (fanns redan): 2025-04-26 04:00:00
+2025-04-27 19:00:03,312 [INFO] ⏩ Skippad (fanns redan): 2025-04-26 05:00:00
+2025-04-27 19:00:03,312 [INFO] ⏩ Skippad (fanns redan): 2025-04-26 06:00:00
+2025-04-27 19:00:03,312 [INFO] ⏩ Skippad (fanns redan): 2025-04-26 07:00:00
+2025-04-27 19:00:03,313 [INFO] ⏩ Skippad (fanns redan): 2025-04-26 08:00:00
+2025-04-27 19:00:03,313 [INFO] ⏩ Skippad (fanns redan): 2025-04-26 09:00:00
+2025-04-27 19:00:03,313 [INFO] ⏩ Skippad (fanns redan): 2025-04-26 10:00:00
+2025-04-27 19:00:03,313 [INFO] ⏩ Skippad (fanns redan): 2025-04-26 11:00:00
+2025-04-27 19:00:03,313 [INFO] ⏩ Skippad (fanns redan): 2025-04-26 12:00:00
+2025-04-27 19:00:03,314 [INFO] ⏩ Skippad (fanns redan): 2025-04-26 13:00:00
+2025-04-27 19:00:03,314 [INFO] ⏩ Skippad (fanns redan): 2025-04-26 14:00:00
+2025-04-27 19:00:03,314 [INFO] ⏩ Skippad (fanns redan): 2025-04-26 15:00:00
+2025-04-27 19:00:03,314 [INFO] ⏩ Skippad (fanns redan): 2025-04-26 16:00:00
+2025-04-27 19:00:03,315 [INFO] ⏩ Skippad (fanns redan): 2025-04-26 17:00:00
+2025-04-27 19:00:03,315 [INFO] ⏩ Skippad (fanns redan): 2025-04-26 18:00:00
+2025-04-27 19:00:03,315 [INFO] ⏩ Skippad (fanns redan): 2025-04-26 19:00:00
+2025-04-27 19:00:03,315 [INFO] ⏩ Skippad (fanns redan): 2025-04-26 20:00:00
+2025-04-27 19:00:03,315 [INFO] ⏩ Skippad (fanns redan): 2025-04-26 21:00:00
+2025-04-27 19:00:03,316 [INFO] ✅ 0 priser sparade.
+2025-04-27 19:00:03,316 [INFO] ==> spotpris.py klar
