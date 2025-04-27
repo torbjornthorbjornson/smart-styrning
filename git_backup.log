@@ -5128,3 +5128,6 @@ To https://github.com/torbjornthorbjornson/smart-styrning.git
  1 file changed, 4 insertions(+)
 To https://github.com/torbjornthorbjornson/smart-styrning.git
    e585919..05c7b55  main -> main
+[main 506836b] Automatisk backup: 2025-04-27 05:00
+ 2 files changed, 8 insertions(+)
+ödesdigert: kan inte komma åt "https://github.com/torbjornthorbjornson/smart-styrning.git/": Could not resolve host: github.com
