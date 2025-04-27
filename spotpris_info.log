@@ -40398,3 +40398,15 @@
 2025-04-27 08:00:01,859 [INFO] Försöker hämta priser från: https://www.elprisetjustnu.se/api/v1/prices/2025/04-27_SE3.json
 2025-04-27 08:00:02,859 [INFO] ==> spotpris.py startade
 2025-04-27 08:00:02,860 [INFO] Försöker hämta priser från: https://www.elprisetjustnu.se/api/v1/prices/2025/04-27_SE3.json
+2025-04-27 08:00:16,878 [WARNING] Inga elpriser tillgängliga eller fel uppstod: HTTPSConnectionPool(host='www.elprisetjustnu.se', port=443): Max retries exceeded with url: /api/v1/prices/2025/04-27_SE3.json (Caused by NameResolutionError("<urllib3.connection.HTTPSConnection object at 0x7ffee746ea10>: Failed to resolve 'www.elprisetjustnu.se' ([Errno -3] Temporary failure in name resolution)"))
+2025-04-27 08:00:16,879 [WARNING] 🔁 Försöker med gårdagens data istället: 2025-04-26 00:00:00
+2025-04-27 08:00:16,879 [INFO] Försöker hämta priser från: https://www.elprisetjustnu.se/api/v1/prices/2025/04-26_SE3.json
+2025-04-27 08:00:22,889 [WARNING] Inga elpriser tillgängliga eller fel uppstod: HTTPSConnectionPool(host='www.elprisetjustnu.se', port=443): Max retries exceeded with url: /api/v1/prices/2025/04-27_SE3.json (Caused by NameResolutionError("<urllib3.connection.HTTPSConnection object at 0x7fff01b0a050>: Failed to resolve 'www.elprisetjustnu.se' ([Errno -3] Temporary failure in name resolution)"))
+2025-04-27 08:00:22,890 [WARNING] 🔁 Försöker med gårdagens data istället: 2025-04-26 00:00:00
+2025-04-27 08:00:22,890 [INFO] Försöker hämta priser från: https://www.elprisetjustnu.se/api/v1/prices/2025/04-26_SE3.json
+2025-04-27 08:00:26,897 [WARNING] Inga elpriser tillgängliga eller fel uppstod: HTTPSConnectionPool(host='www.elprisetjustnu.se', port=443): Max retries exceeded with url: /api/v1/prices/2025/04-26_SE3.json (Caused by NameResolutionError("<urllib3.connection.HTTPSConnection object at 0x7ffee74a9510>: Failed to resolve 'www.elprisetjustnu.se' ([Errno -3] Temporary failure in name resolution)"))
+2025-04-27 08:00:26,897 [INFO] ✅ 0 priser sparade.
+2025-04-27 08:00:26,897 [INFO] ==> spotpris.py klar
+2025-04-27 08:00:37,908 [WARNING] Inga elpriser tillgängliga eller fel uppstod: HTTPSConnectionPool(host='www.elprisetjustnu.se', port=443): Max retries exceeded with url: /api/v1/prices/2025/04-26_SE3.json (Caused by NameResolutionError("<urllib3.connection.HTTPSConnection object at 0x7fff01b38c50>: Failed to resolve 'www.elprisetjustnu.se' ([Errno -3] Temporary failure in name resolution)"))
+2025-04-27 08:00:37,908 [INFO] ✅ 0 priser sparade.
+2025-04-27 08:00:37,908 [INFO] ==> spotpris.py klar
