@@ -6120,3 +6120,6 @@ To https://github.com/torbjornthorbjornson/smart-styrning.git
  1 file changed, 4 insertions(+)
 To https://github.com/torbjornthorbjornson/smart-styrning.git
    cd1126a..34ad6a7  main -> main
+[main d495646] Automatisk backup: 2025-04-29 20:00
+ 1 file changed, 4 insertions(+)
+ödesdigert: kan inte komma åt "https://github.com/torbjornthorbjornson/smart-styrning.git/": Failed to connect to github.com port 443 after 5 ms: Couldn't connect to server
