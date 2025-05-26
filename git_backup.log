@@ -16347,3 +16347,12 @@ To https://github.com/torbjornthorbjornson/smart-styrning.git
  1 file changed, 4 insertions(+)
 To https://github.com/torbjornthorbjornson/smart-styrning.git
    305c954..a933b69  main -> main
+[main aa3f8b6] Automatisk backup: 2025-05-26 11:00
+ 2 files changed, 58 insertions(+)
+Remote "origin" does not support the Git LFS locking API. Consider disabling it with:
+  $ git config lfs.https://github.com/torbjornthorbjornson/smart-styrning.git/info/lfs.locksverify false
+Fatal error: We couldn't respond to your request in time. Sorry about that. Please try resubmitting your request and contact us if the problem persists.
+
+Errors logged to '/home/runerova/smartweb/.git/lfs/logs/20250526T110013.956118081.log'.
+Use `git lfs logs last` to view the log.
+fel: misslyckades sända vissa referenser till "https://github.com/torbjornthorbjornson/smart-styrning.git"
