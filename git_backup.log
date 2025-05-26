@@ -16374,3 +16374,12 @@ Fatal error: We couldn't respond to your request in time. Sorry about that. Plea
 Errors logged to '/home/runerova/smartweb/.git/lfs/logs/20250526T113013.838107738.log'.
 Use `git lfs logs last` to view the log.
 fel: misslyckades sända vissa referenser till "https://github.com/torbjornthorbjornson/smart-styrning.git"
+[main 4626861] Automatisk backup: 2025-05-26 11:30
+ 1 file changed, 9 insertions(+)
+Remote "origin" does not support the Git LFS locking API. Consider disabling it with:
+  $ git config lfs.https://github.com/torbjornthorbjornson/smart-styrning.git/info/lfs.locksverify false
+Fatal error: We couldn't respond to your request in time. Sorry about that. Please try resubmitting your request and contact us if the problem persists.
+
+Errors logged to '/home/runerova/smartweb/.git/lfs/logs/20250526T113025.844020508.log'.
+Use `git lfs logs last` to view the log.
+fel: misslyckades sända vissa referenser till "https://github.com/torbjornthorbjornson/smart-styrning.git"
