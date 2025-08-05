@@ -43725,3 +43725,9 @@ To https://github.com/torbjornthorbjornson/smart-styrning.git
  2 files changed, 56 insertions(+)
 To https://github.com/torbjornthorbjornson/smart-styrning.git
    bdaf58b0..b103c85a  main -> main
+[main 686465b1] Automatisk backup: 2025-08-05 16:00
+ 2 files changed, 56 insertions(+)
+remote: Internal Server Error
+To https://github.com/torbjornthorbjornson/smart-styrning.git
+ ! [remote rejected]   main -> main (Internal Server Error)
+fel: misslyckades sända vissa referenser till "https://github.com/torbjornthorbjornson/smart-styrning.git"
