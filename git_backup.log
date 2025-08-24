@@ -51173,3 +51173,9 @@ To https://github.com/torbjornthorbjornson/smart-styrning.git
  1 file changed, 4 insertions(+)
 To https://github.com/torbjornthorbjornson/smart-styrning.git
    43608628..46e63f4d  main -> main
+Packar arkivet automatiskt i bakgrunden för optimal prestanda.
+Se "git help gc" för manuell hushållning.
+[main 17a4a5cf] Automatisk backup: 2025-08-25 01:00
+ 2 files changed, 58 insertions(+)
+To https://github.com/torbjornthorbjornson/smart-styrning.git
+   46e63f4d..17a4a5cf  main -> main
