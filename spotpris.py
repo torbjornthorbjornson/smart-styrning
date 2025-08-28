@@ -62,25 +62,30 @@ def parse_and_save(data, target_date_utc, target_date):
                 timestamp_str = row.get("time_start")
                 if not timestamp_str:
                     continue
-                timestamp = datetime.fromisoformat(timestamp_str)
+
+                # --- ÄNDRING: konvertera alltid till UTC ---
+                timestamp_local = datetime.fromisoformat(timestamp_str)  # med tzinfo (+01:00/+02:00)
+                timestamp_utc = timestamp_local.astimezone(pytz.UTC)
+
+                # Kontroll: datumet i Stockholm måste matcha target_date
                 stockholm = pytz.timezone("Europe/Stockholm")
-                local_date = timestamp.astimezone(stockholm).date()
+                local_date = timestamp_local.astimezone(stockholm).date()
                 if local_date != target_date.date():
-                    print(f"⏩ Skippad: fel datum ({local_date} != {target_date.date()})")
                     logging.info(f"⏩ Skippad: fel datum ({local_date} != {target_date.date()})")
                     continue
+
                 price = row.get("SEK_per_kWh")
                 if price is None:
                     continue
                 try:
                     cursor.execute(
                         "INSERT INTO electricity_prices (datetime, price) VALUES (%s, %s)",
-                        (timestamp, price)
+                        (timestamp_utc, price)
                     )
-                    logging.info(f"💾 Sparat: {timestamp} => {price} kr/kWh")
+                    logging.info(f"💾 Sparat: {timestamp_local} ({timestamp_utc} UTC) => {price} kr/kWh")
                     saved += 1
                 except pymysql.err.IntegrityError:
-                    logging.info(f"⏩ Skippad (fanns redan): {timestamp}")
+                    logging.info(f"⏩ Skippad (fanns redan): {timestamp_utc}")
         conn.commit()
 
     if saved == 23:
