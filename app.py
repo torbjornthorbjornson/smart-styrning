@@ -4,7 +4,7 @@ from datetime import datetime, timedelta, time
 import subprocess
 import os
 import math
-import pytz  # ⬅ tidszoner
+import pytz  # tidszoner
 
 app = Flask(__name__)
 
@@ -15,9 +15,13 @@ def get_connection():
         cursorclass=pymysql.cursors.DictCursor
     )
 
-# Hjälpfunktioner för “svensk dag” => UTC-intervall
+# === Tidszoner och hjälpare för "svensk dag" -> UTC-intervall ===
 STHLM = pytz.timezone("Europe/Stockholm")
 UTC = pytz.UTC
+
+def today_local_date():
+    """Idag som svensk kalenderdag (inte UTC)."""
+    return datetime.now(UTC).astimezone(STHLM).date()
 
 def local_day_to_utc_window(local_date):
     """Tar ett date-objekt i svensk tid och returnerar (utc_start, utc_end) som naiva UTC-datetimes."""
@@ -30,7 +34,7 @@ def utc_naive_to_local_label(dt_utc_naive):
     """Gör en HH:MM-etikett i svensk tid från en naiv UTC-datetime lagrad i DB."""
     return dt_utc_naive.replace(tzinfo=UTC).astimezone(STHLM).strftime("%H:%M")
 
-# --- NYTT: Jinja-filter för att skriva ut tider i svensk HH:MM ---
+# --- Jinja-filter: skriv ut tider i svensk HH:MM ---
 @app.template_filter("svtid")
 def svtid(dt_utc_naive):
     try:
@@ -44,16 +48,25 @@ def home():
 
 @app.route("/styrning")
 def styrning():
+    # Datumval: använd alltid svensk kalenderdag som fallback
     selected_date_str = request.args.get("datum")
     if selected_date_str:
         selected_date = datetime.strptime(selected_date_str, "%Y-%m-%d").date()
     else:
-        selected_date = datetime.utcnow().date()
+        selected_date = today_local_date()
+
+    # Hur många billigaste timmar som ska markeras (kan ändras via ?n=6)
+    try:
+        top_n = int(request.args.get("n", "4"))
+    except ValueError:
+        top_n = 4
+    if top_n < 1:
+        top_n = 1
 
     no_price = False
     labels = []
     values = []
-    gräns = 0
+    gräns = 0.0
 
     try:
         utc_start, utc_end = local_day_to_utc_window(selected_date)
@@ -70,14 +83,17 @@ def styrning():
         if not priser:
             no_price = True
         else:
-            labels = [utc_naive_to_local_label(row["datetime"]) for row in priser]
-            values = [float(row["price"]) for row in priser]
+            # Konvertera etiketter till svensk tid; säkerställ float-värden
+            labels = [utc_naive_to_local_label(row["datetime"]) for row in priser if row.get("price") is not None]
+            values = [float(row["price"]) for row in priser if row.get("price") is not None]
 
-            if len(values) >= 4:
+            if values:
+                # N:e billigaste (1-baserat), klippa till längden om top_n > antal värden
+                idx = min(max(top_n, 1), len(values)) - 1
                 sorted_prices = sorted(values)
-                gräns = sorted_prices[3]
+                gräns = sorted_prices[idx]
             else:
-                gräns = min(values, default=0)
+                gräns = 0.0
 
         return render_template("styrning.html",
                                selected_date=selected_date,
@@ -125,11 +141,12 @@ def gitlog():
 
 @app.route("/elprisvader")
 def elprisvader():
+    # Datumval: använd alltid svensk kalenderdag som fallback
     selected_date_str = request.args.get("datum")
     if selected_date_str:
         selected_date = datetime.strptime(selected_date_str, "%Y-%m-%d").date()
     else:
-        selected_date = datetime.utcnow().date()
+        selected_date = today_local_date()
 
     try:
         utc_start, utc_end = local_day_to_utc_window(selected_date)
