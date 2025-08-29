@@ -52813,3 +52813,9 @@ To https://github.com/torbjornthorbjornson/smart-styrning.git
  2 files changed, 56 insertions(+)
 To https://github.com/torbjornthorbjornson/smart-styrning.git
    926396ac..bf2f8eb9  main -> main
+[main 298da59d] Automatisk backup: 2025-08-29 07:30
+ 6 files changed, 215 insertions(+), 163 deletions(-)
+ create mode 100644 2025-08-28
+ create mode 100644 =
+To https://github.com/torbjornthorbjornson/smart-styrning.git
+   bf2f8eb9..298da59d  main -> main
