@@ -1,7 +1,7 @@
 from flask import Flask, render_template, url_for, request, redirect
-
 import pymysql
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, time
+from zoneinfo import ZoneInfo
 import subprocess
 import os
 import math
@@ -21,11 +21,21 @@ def home():
 
 @app.route("/styrning")
 def styrning():
+    # --- Datumval (visa lokalt dygn som default) ---
     selected_date_str = request.args.get("datum")
+    sth = ZoneInfo("Europe/Stockholm")
+    utc = ZoneInfo("UTC")
+
     if selected_date_str:
         selected_date = datetime.strptime(selected_date_str, "%Y-%m-%d").date()
     else:
-        selected_date = datetime.utcnow().date()
+        selected_date = datetime.now(sth).date()
+
+    # Räkna ut UTC-intervall för det lokala dygnet
+    start_local = datetime(selected_date.year, selected_date.month, selected_date.day, 0, 0, tzinfo=sth)
+    end_local = start_local + timedelta(days=1)
+    start_utc = start_local.astimezone(utc).replace(tzinfo=None)
+    end_utc = end_local.astimezone(utc).replace(tzinfo=None)
 
     no_price = False
     labels = []
@@ -35,31 +45,39 @@ def styrning():
     try:
         conn = get_connection()
         with conn.cursor() as cursor:
-            cursor.execute('''
-                SELECT datetime, price FROM electricity_prices
-                WHERE datetime >= %s AND datetime < DATE_ADD(%s, INTERVAL 1 DAY)
+            cursor.execute("""
+                SELECT datetime, price
+                FROM electricity_prices
+                WHERE datetime >= %s AND datetime < %s
                 ORDER BY datetime
-            ''', (selected_date, selected_date))
+            """, (start_utc, end_utc))
             priser = cursor.fetchall()
 
         if not priser:
             no_price = True
         else:
-            labels = [row["datetime"].strftime("%H:%M") for row in priser]
-            values = [float(row["price"]) for row in priser]
+            # Konvertera varje timme från UTC (naiv) till Stockholm för etiketter
+            for row in priser:
+                # PyMySQL returnerar naiv datetime -> tolka som UTC
+                utc_dt = row["datetime"].replace(tzinfo=utc)
+                local_dt = utc_dt.astimezone(sth)
+                labels.append(local_dt.strftime("%H:%M"))
+                values.append(float(row["price"]))
 
-            if len(values) >= 3:
-                sorted_prices = sorted(values)
-                gräns = sorted_prices[3]
+            # "gräns" = 4:e lägsta priset om det finns >= 4 värden
+            if len(values) >= 4:
+                gräns = sorted(values)[3]
             else:
-                gräns = min(values, default=0)
+                gräns = min(values, default=0.0)
 
-        return render_template("styrning.html",
-                               selected_date=selected_date,
-                               labels=labels,
-                               values=values,
-                               gräns=gräns,
-                               no_price=no_price)
+        return render_template(
+            "styrning.html",
+            selected_date=selected_date,
+            labels=labels,
+            values=values,
+            gräns=gräns,
+            no_price=no_price
+        )
 
     except Exception as e:
         return f"Fel vid hämtning av elprisdata: {e}"
@@ -75,7 +93,7 @@ def dokumentation():
 @app.route("/github_versions")
 def github_versions():
     try:
-        git_path = "/usr/bin/git"  # Justerad absolut sökväg
+        git_path = "/usr/bin/git"
         tags = subprocess.check_output([git_path, "tag", "--sort=-creatordate"]).decode().splitlines()
         tag_data = []
         for tag in tags:
@@ -90,7 +108,6 @@ def github_versions():
     except Exception as e:
         return f"Fel vid hämtning av git-taggar: {e}"
 
-
 @app.route("/gitlog")
 def gitlog():
     try:
@@ -103,21 +120,27 @@ def gitlog():
         logs = [f"❌ Kunde inte läsa gitlog: {e}"]
     return render_template("gitlog.html", log="\n".join(logs))
 
-
-    
-
 @app.route("/elprisvader")
 def elprisvader():
     selected_date_str = request.args.get("datum")
+    sth = ZoneInfo("Europe/Stockholm")
+    utc = ZoneInfo("UTC")
+
     if selected_date_str:
         selected_date = datetime.strptime(selected_date_str, "%Y-%m-%d").date()
     else:
-        selected_date = datetime.utcnow().date()
+        selected_date = datetime.now(sth).date()
+
+    # UTC-intervall för lokala dygnet (för elpris)
+    start_local = datetime(selected_date.year, selected_date.month, selected_date.day, 0, 0, tzinfo=sth)
+    end_local = start_local + timedelta(days=1)
+    start_utc = start_local.astimezone(utc).replace(tzinfo=None)
+    end_utc = end_local.astimezone(utc).replace(tzinfo=None)
 
     try:
         conn = get_connection()
         with conn.cursor() as cursor:
-            # Hämta väder för exakt valt datum
+            # Vädret: lämnar din logik oförändrad (okänt om weather är UTC eller lokalt)
             cursor.execute("""
                 SELECT * FROM weather
                 WHERE timestamp >= %s AND timestamp < DATE_ADD(%s, INTERVAL 1 DAY)
@@ -126,53 +149,50 @@ def elprisvader():
             weather_data = cursor.fetchall()
             weather_date = weather_data[0]["timestamp"].date() if weather_data else selected_date
 
-            # Hämta elpris för valt datum
+            # Elpris: hämta över det lokala dygnet via UTC-intervall
             cursor.execute("""
-                SELECT * FROM electricity_prices
-                WHERE datetime >= %s AND datetime < DATE_ADD(%s, INTERVAL 1 DAY)
+                SELECT datetime, price
+                FROM electricity_prices
+                WHERE datetime >= %s AND datetime < %s
                 ORDER BY datetime
-            """, (selected_date, selected_date))
-            elpris_data = cursor.fetchall()
+            """, (start_utc, end_utc))
+            elpris_data_rows = cursor.fetchall()
 
-            fallback_used = False
-            if not elpris_data:
-               elpris_data = []
+        # Konvertera elpriset till lokal tid för visning
+        elpris_data = []
+        elpris_labels = []
+        elpris_values = []
+        for row in elpris_data_rows:
+            utc_dt = row["datetime"].replace(tzinfo=utc)
+            local_dt = utc_dt.astimezone(sth)
+            elpris_data.append({"datetime": local_dt, "price": row["price"]})
+            elpris_labels.append(local_dt.strftime("%H:%M"))
+            elpris_values.append(row["price"])
 
+        # Medelvärden
+        medel_temperature = round(sum(r["temperature"] for r in weather_data) / len(weather_data), 1) if weather_data else "-"
+        medel_vind = round(sum(r["vind"] for r in weather_data) / len(weather_data), 1) if weather_data else "-"
+        medel_elpris = round(sum(float(r["price"]) for r in elpris_data_rows) / len(elpris_data_rows), 1) if elpris_data_rows else "-"
 
-            medel_temperature = round(sum(row["temperature"] for row in weather_data) / len(weather_data), 1) if weather_data else "-"
-            medel_vind = round(sum(row["vind"] for row in weather_data) / len(weather_data), 1) if weather_data else "-"
-            medel_elpris = round(sum(row["price"] for row in elpris_data) / len(elpris_data), 1) if elpris_data else "-"
+        return render_template(
+            "elpris_vader.html",
+            selected_date=selected_date,
+            weatherdata=weather_data,
+            elprisdata=elpris_data,
+            labels=[r["timestamp"].strftime("%H:%M") for r in weather_data],
+            temperature=[r["temperature"] for r in weather_data],
+            vind=[r["vind"] for r in weather_data],
+            elpris_labels=elpris_labels,
+            elpris_values=elpris_values,
+            medel_temperature=medel_temperature,
+            medel_vind=medel_vind,
+            medel_elpris=medel_elpris,
+            fallback_used=False,
+            weather_date=weather_date
+        )
 
-            labels = [row["timestamp"].strftime("%H:%M") for row in weather_data]
-            temperature = [row["temperature"] for row in weather_data]
-            vind = [row["vind"] for row in weather_data]
-            elpris_labels = [row["datetime"].strftime("%H:%M") for row in elpris_data]
-            elpris_values = [row["price"] for row in elpris_data]
-
-        return render_template("elpris_vader.html",
-                               selected_date=selected_date,
-                               weatherdata=weather_data,
-                               elprisdata=elpris_data,
-                               labels=labels,
-                               temperature=temperature,
-                               vind=vind,
-                               elpris_labels=elpris_labels,
-                               elpris_values=elpris_values,
-                               medel_temperature=medel_temperature,
-                               medel_vind=medel_vind,
-                               medel_elpris=medel_elpris,
-                               fallback_used=fallback_used,
-                               weather_date=weather_date)
-        
     except Exception as e:
-        return f"Fel vid hämtning av väderdata: {e}"
-
-
-
-
-
-
-
+        return f"Fel vid hämtning av väder/elnätsdata: {e}"
 
 @app.route("/create_backup_tag", methods=["POST"])
 def create_backup_tag():
@@ -196,15 +216,8 @@ def restore_version():
         now = datetime.now().strftime("%Y%m%d_%H%M")
         backup_tag = f"pre_restore_{tag}_{now}"
 
-        # Skapa backup-tag innan återställning
         subprocess.check_call(["/usr/bin/git", "tag", "-a", backup_tag, "-m", f"Säkerhetskopia före återställning av {tag}"])
-
-        # Återställ till vald version
         subprocess.check_call(["/usr/bin/git", "reset", "--hard", tag])
-
-        # Starta om Gunicorn (valfritt)
-        # subprocess.check_call(["sudo", "systemctl", "restart", "smartweb.service"])
-
         return redirect(url_for("restore_result", tag=tag, backup=backup_tag))
     except Exception as e:
         return f"Fel vid återställning: {e}"
@@ -220,7 +233,6 @@ MAX_VOLYM = 10000
 def vattenstyrning():
     conn = get_connection()
     latest = {}
-
     try:
         with conn.cursor() as cursor:
             cursor.execute("SELECT * FROM water_status ORDER BY timestamp DESC LIMIT 1")
@@ -238,18 +250,16 @@ def vattenstyrning():
                     "flow_p2": row.get("flow_p2", 0.0),
                     "flow_p3": row.get("flow_p3", 0.0),
                     "flow_booster": row.get("flow_booster", 0.0)
-                }  # Om det inte finns några värden, sätt dem till 0    
-
-
+                }
     finally:
         conn.close()
 
     return render_template(
-    "vattenstyrning.html",
-    data=latest,
-    cos=math.cos,
-    sin=math.sin
-)
+        "vattenstyrning.html",
+        data=latest,
+        cos=math.cos,
+        sin=math.sin
+    )
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=8000, debug=True)
