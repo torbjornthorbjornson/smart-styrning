@@ -18,69 +18,79 @@
   <canvas id="elprisChart"></canvas>
 </div>
 
-<p><strong>Valda timmar för styrning:</strong> 
+<p><strong>Valda timmar för styrning:</strong>
+  {% set first = true %}
   {% for i in range(values|length) %}
     {% if values[i] <= gräns %}
-      {{ labels[i] }}{% if not loop.last %}, {% endif %}
+      {% if not first %}, {% endif %}{{ labels[i] }}{% set first = false %}
     {% endif %}
   {% endfor %}
 </p>
 
+<!-- Chart.js + datalabels -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
+
 <script>
 const labels = {{ labels | tojson | default("[]") }};
 const values = {{ values | tojson | default("[]") }};
-const gräns = {{ gräns | default(0) }};
+const gräns  = {{ gräns  | default(0) }};
+
+// Registrera pluginet (viktigt för att datalabels ska funka)
+Chart.register(ChartDataLabels);
 
 if (labels.length && values.length) {
   const ctx = document.getElementById('elprisChart').getContext('2d');
+
   new Chart(ctx, {
     type: 'bar',
     data: {
       labels: labels,
       datasets: [{
-        label: "öre/kWh",
+        label: "kr/kWh",
         data: values,
         backgroundColor: values.map(v => v <= gräns ? 'green' : 'blue'),
-        datalabels: {
-          anchor: 'end',
-          align: 'end',
-          rotation: -90,
-          color: '#000',
-          font: {
-            weight: 'bold',
-            size: 16
-          },
-          formatter: val => val.toFixed(2) + " Kr"
-        }
       }]
     },
     options: {
       responsive: true,
       maintainAspectRatio: false,
-      layout: { padding: { top: 120 } },
+      layout: { padding: { top: 120 } },   // extra utrymme för etiketter
       plugins: {
         legend: { display: false },
-        datalabels: { display: true },
+        datalabels: {
+          display: true,
+          anchor: 'end',
+          align: 'end',
+          rotation: -90,
+          color: '#000',
+          font: { weight: 'bold', size: 16 },
+          formatter: (val) => {
+            // Svensk formattering med kommatecken
+            return val.toLocaleString('sv-SE', {minimumFractionDigits: 2, maximumFractionDigits: 2}) + " kr";
+          }
+        },
         tooltip: {
           callbacks: {
-            label: ctx => ctx.raw + " Kr"
+            label: (ctx) => {
+              const v = ctx.raw ?? 0;
+              return v.toLocaleString('sv-SE', {minimumFractionDigits: 2, maximumFractionDigits: 2}) + " kr/kWh";
+            }
           }
         }
       },
       scales: {
         y: {
           beginAtZero: true,
-          suggestedMax: Math.max(...values, 0) + 0.1,
-          title: { display: true, text: 'Kr/kWh' }
+          // lite marginal för höga värden så etiketter inte klipps
+          suggestedMax: Math.max(...values, 0) * 1.15,
+          title: { display: true, text: 'kr/kWh' }
         },
         x: {
-          title: { display: true, text: 'Tidpunkt' }
+          title: { display: true, text: 'Tidpunkt (svensk tid)' }
         }
       }
-    },
-    plugins: [ChartDataLabels]
+    }
   });
 }
 </script>

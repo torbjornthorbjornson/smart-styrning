@@ -73,7 +73,7 @@ def styrning():
             labels = [utc_naive_to_local_label(row["datetime"]) for row in priser]
             values = [float(row["price"]) for row in priser]
 
-            if len(values) >= 3:
+            if len(values) >= 4:
                 sorted_prices = sorted(values)
                 gräns = sorted_prices[3]
             else:

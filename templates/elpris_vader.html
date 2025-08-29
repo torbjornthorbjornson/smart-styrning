@@ -1,4 +1,3 @@
-
 {% extends "base.html" %}
 
 {% block content %}
@@ -19,7 +18,6 @@
   <p style="color:orange;"><strong>⚠️ Inget elpris publicerat för {{ selected_date }}.</strong></p>
 {% endif %}
 
-
 <!-- Ikonrad -->
 <div class="icon-row">
   {% for row in weatherdata %}
@@ -27,7 +25,7 @@
       {% set icon_path = 'weather-icons/' + row.symbol_code + '.svg' %}
       <img src="{{ url_for('static', filename=icon_path) }}" alt="{{ row.symbol_code }}"
            title="{{ row.symbol_code }}" onerror="this.outerHTML='❓'" class="weather-icon">
-      <div class="icon-hour">{{ row.timestamp.strftime('%H:%M') }}</div>
+      <div class="icon-hour">{{ row.timestamp|svtid }}</div>
     </div>
   {% endfor %}
 </div>
@@ -39,7 +37,6 @@
 {% else %}
   <p style="color: orange;">⚠️ Ingen väderdata tillgänglig.</p>
 {% endif %}
-
 
 <!-- Vädergraf -->
 <h3>Temperatur & Vind</h3>
@@ -59,7 +56,7 @@
   <tbody>
     {% for row in weatherdata %}
     <tr>
-      <td>{{ row.timestamp.strftime('%H:%M') }}</td>
+      <td>{{ row.timestamp|svtid }}</td>
       <td>{{ row.temperature }}</td>
       <td>{{ row.vind }}</td>
       <td>
@@ -81,22 +78,15 @@
     ⏳ De släpps vanligtvis varje dag kl 13:00 av Nordpool (day-ahead).<br>
     📅 Visar dagens elpriser ({{ selected_date }}).
   </p>
-# {% else %}
-
 {% endif %}
 
 {% if elprisdata %}
   <p style="color: green;">
-    ✅ Visar aktuella elpriser för ({{ selected_date }})<br>
-    📅 Publicerades av Nordpool: 
-
+    ✅ Visar aktuella elpriser för ({{ selected_date }})
   </p>
-{% endif %}
-
-{% if elprisdata %}
-<canvas id="elprisChart" width="100%" height="40"></canvas>
+  <canvas id="elprisChart" width="100%" height="40"></canvas>
 {% else %}
-<p style="color: red;">⚠️ Ingen elprisdata tillgänglig för valt datum.</p>
+  <p style="color: red;">⚠️ Ingen elprisdata tillgänglig för valt datum.</p>
 {% endif %}
 
 <!-- Elpristabell -->
@@ -112,7 +102,7 @@
   <tbody>
     {% for row in elprisdata %}
     <tr>
-      <td>{{ row.datetime.strftime('%H:%M') }}</td>
+      <td>{{ row.datetime|svtid }}</td>
       <td style="text-align: right;">{{ row.price }}</td>
     </tr>
     {% endfor %}
@@ -121,7 +111,6 @@
 {% else %}
 <p style="color: red;">⚠️ Inga elpriser att visa.</p>
 {% endif %}
-
 
 <!-- Medelvärden -->
 <h3 style="margin-top:40px;">Medelvärden</h3>
@@ -171,8 +160,8 @@ new Chart(ctx2, {
     }
 });
 {% endif %}
-
 </script>
+
 <style>
   .icon-row {
     display: flex;
@@ -186,42 +175,13 @@ new Chart(ctx2, {
     width: 40px;
     font-size: 12px;
   }
-  .weather-icon {
-    width: 32px;
-    height: 32px;
-  }
-  .weather-icon-small {
-    width: 24px;
-    height: 24px;
-    vertical-align: middle;
-  }
-  .icon-hour {
-    font-size: 10px;
-    margin-top: 4px;
-  }
-  
-  /* 🆕 Tabellstil för elpris – inuti <style>! */
-  .data-table {
-    border-collapse: collapse;
-    width: 100%;
-    margin-top: 10px;
-    font-size: 0.95em;
-  }
-  
-  .data-table th, .data-table td {
-    padding: 8px 16px;
-  }
-  
-  .data-table thead {
-    background-color: #f0f0f0;
-    font-weight: bold;
-    border-bottom: 1px solid #ccc;
-  }
-  
-  .data-table tbody tr:nth-child(odd) {
-    background-color: #fafafa;
-  }
-  </style>
-  
+  .weather-icon { width: 32px; height: 32px; }
+  .weather-icon-small { width: 24px; height: 24px; vertical-align: middle; }
+  .icon-hour { font-size: 10px; margin-top: 4px; }
+  .data-table { border-collapse: collapse; width: 100%; margin-top: 10px; font-size: 0.95em; }
+  .data-table th, .data-table td { padding: 8px 16px; }
+  .data-table thead { background-color: #f0f0f0; font-weight: bold; border-bottom: 1px solid #ccc; }
+  .data-table tbody tr:nth-child(odd) { background-color: #fafafa; }
+</style>
 
 {% endblock %}
