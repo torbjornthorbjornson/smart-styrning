@@ -52,7 +52,7 @@ if (labels.length && values.length) {
             weight: 'bold',
             size: 16
           },
-          formatter: val => val.toFixed(2) + " öre"
+          formatter: val => val.toFixed(2) + " Kr"
         }
       }]
     },
@@ -65,7 +65,7 @@ if (labels.length && values.length) {
         datalabels: { display: true },
         tooltip: {
           callbacks: {
-            label: ctx => ctx.raw + " öre"
+            label: ctx => ctx.raw + " Kr"
           }
         }
       },
@@ -73,7 +73,7 @@ if (labels.length && values.length) {
         y: {
           beginAtZero: true,
           suggestedMax: Math.max(...values, 0) + 0.1,
-          title: { display: true, text: 'öre/kWh' }
+          title: { display: true, text: 'Kr/kWh' }
         },
         x: {
           title: { display: true, text: 'Tidpunkt' }

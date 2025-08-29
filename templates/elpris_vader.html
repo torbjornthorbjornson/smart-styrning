@@ -106,7 +106,7 @@
   <thead>
     <tr>
       <th>Tid</th>
-      <th style="text-align: right;">Pris (öre/kWh)</th>
+      <th style="text-align: right;">Pris (Kr/kWh)</th>
     </tr>
   </thead>
   <tbody>
@@ -128,7 +128,7 @@
 <ul>
   <li>🌡️ Temperatur: {{ medel_temperature }} °C</li>
   <li>💨 Vind: {{ medel_vind }} m/s</li>
-  <li>⚡ Elpris: {{ medel_elpris }} öre/kWh</li>
+  <li>⚡ Elpris: {{ medel_elpris }} Kr/kWh</li>
 </ul>
 
 <script>
@@ -162,7 +162,7 @@ new Chart(ctx2, {
         labels: {{ elpris_labels|tojson }},
         datasets: [
             {
-                label: 'Elpris (öre/kWh)',
+                label: 'Elpris (Kr/kWh)',
                 data: {{ elpris_values|tojson }},
                 borderColor: 'green',
                 tension: 0.3
