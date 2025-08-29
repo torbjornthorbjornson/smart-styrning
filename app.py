@@ -30,6 +30,14 @@ def utc_naive_to_local_label(dt_utc_naive):
     """Gör en HH:MM-etikett i svensk tid från en naiv UTC-datetime lagrad i DB."""
     return dt_utc_naive.replace(tzinfo=UTC).astimezone(STHLM).strftime("%H:%M")
 
+# --- NYTT: Jinja-filter för att skriva ut tider i svensk HH:MM ---
+@app.template_filter("svtid")
+def svtid(dt_utc_naive):
+    try:
+        return utc_naive_to_local_label(dt_utc_naive)
+    except Exception:
+        return ""
+
 @app.route("/")
 def home():
     return render_template("home.html")
@@ -128,14 +136,14 @@ def elprisvader():
 
         conn = get_connection()
         with conn.cursor() as cursor:
-            # Väder – samma princip: svensk dag som UTC-intervall
+            # Väder – svensk dag som UTC-intervall
             cursor.execute("""
                 SELECT * FROM weather
                 WHERE timestamp >= %s AND timestamp < %s
                 ORDER BY timestamp
             """, (utc_start, utc_end))
             weather_data = cursor.fetchall()
-            weather_date = selected_date  # vi visar valt datum
+            weather_date = selected_date
 
             # Elpris – svensk dag som UTC-intervall
             cursor.execute("""
@@ -154,7 +162,7 @@ def elprisvader():
             medel_vind        = round(sum(row["vind"]        for row in weather_data) / len(weather_data), 1) if weather_data else "-"
             medel_elpris      = round(sum(row["price"]       for row in elpris_data)  / len(elpris_data),  1) if elpris_data else "-"
 
-            # Etiketter i svensk tid
+            # Etiketter i svensk tid (för graferna)
             labels         = [utc_naive_to_local_label(row["timestamp"]) for row in weather_data]
             temperature    = [row["temperature"] for row in weather_data]
             vind           = [row["vind"]        for row in weather_data]
