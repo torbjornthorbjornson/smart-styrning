@@ -5,6 +5,9 @@
 <form method="get" action="/styrning" style="margin-bottom: 1em;">
   <label for="datum">Välj datum:</label>
   <input type="date" id="datum" name="datum" value="{{ selected_date }}">
+
+  <label for="n" style="margin-left: 12px;">Antal billiga timmar (N):</label>
+  <input type="number" id="n" name="n" min="1" max="24" value="{{ top_n }}" style="width: 70px;">
   <button type="submit">Visa</button>
 </form>
 
@@ -18,23 +21,34 @@
   <canvas id="elprisChart"></canvas>
 </div>
 
-<p><strong>Valda timmar för styrning:</strong>
-  {% set first = true %}
-  {% for i in range(values|length) %}
-    {% if values[i] <= gräns %}
-      {% if not first %}, {% endif %}{{ labels[i] }}{% set first = false %}
-    {% endif %}
-  {% endfor %}
+<p><strong>Valda timmar för styrning ({{ top_n }} st, kronologiskt):</strong>
+  {% if selected_labels_chrono %}
+    {{ selected_labels_chrono | join(", ") }}
+  {% else %}-{% endif %}
 </p>
+
+<h3>Trappstege – billigast → dyrast</h3>
+<table class="梯">
+  <thead><tr><th>#</th><th>Tid</th><th style="text-align:right;">Pris (kr/kWh)</th></tr></thead>
+  <tbody>
+    {% for row in sorted_by_price %}
+    <tr>
+      <td>{{ loop.index }}</td>
+      <td>{{ row.label }}</td>
+      <td style="text-align:right;">{{ row.price | float | round(4) }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
 
 <!-- Chart.js + datalabels -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
 
 <script>
-const labels = {{ labels | tojson | default("[]") }};
-const values = {{ values | tojson | default("[]") }};
-const gräns  = {{ gräns  | default(0) }};
+const labels    = {{ labels      | tojson | default("[]") }};
+const values    = {{ values      | tojson | default("[]") }};
+const barColors = {{ bar_colors  | tojson | default("[]") }};
 
 // Registrera pluginet (viktigt för att datalabels ska funka)
 Chart.register(ChartDataLabels);
@@ -49,7 +63,7 @@ if (labels.length && values.length) {
       datasets: [{
         label: "kr/kWh",
         data: values,
-        backgroundColor: values.map(v => v <= gräns ? 'green' : 'blue'),
+        backgroundColor: barColors
       }]
     },
     options: {
@@ -66,15 +80,14 @@ if (labels.length && values.length) {
           color: '#000',
           font: { weight: 'bold', size: 16 },
           formatter: (val) => {
-            // Svensk formattering med kommatecken
-            return val.toLocaleString('sv-SE', {minimumFractionDigits: 2, maximumFractionDigits: 2}) + " kr";
+            return (val ?? 0).toLocaleString('sv-SE', {minimumFractionDigits: 2, maximumFractionDigits: 2}) + " kr";
           }
         },
         tooltip: {
           callbacks: {
             label: (ctx) => {
               const v = ctx.raw ?? 0;
-              return v.toLocaleString('sv-SE', {minimumFractionDigits: 2, maximumFractionDigits: 2}) + " kr/kWh";
+              return v.toLocaleString('sv-SE', {minimumFractionDigits: 4, maximumFractionDigits: 4}) + " kr/kWh";
             }
           }
         }
@@ -82,7 +95,6 @@ if (labels.length && values.length) {
       scales: {
         y: {
           beginAtZero: true,
-          // lite marginal för höga värden så etiketter inte klipps
           suggestedMax: Math.max(...values, 0) * 1.15,
           title: { display: true, text: 'kr/kWh' }
         },
@@ -98,15 +110,11 @@ if (labels.length && values.length) {
 {% endif %}
 
 <style>
-.chart-wrapper {
-  max-width: 1000px;
-  margin: 0 auto;
-  height: 500px;
-}
-canvas {
-  width: 100% !important;
-  height: 100% !important;
-  display: block;
-}
+.chart-wrapper { max-width: 1000px; margin: 0 auto; height: 500px; }
+canvas { width: 100% !important; height: 100% !important; display: block; }
+table.梯 { border-collapse: collapse; width: 100%; margin-top: 10px; font-size: 0.95em; }
+table.梯 th, table.梯 td { padding: 8px 12px; border-bottom: 1px solid #e5e7eb; }
+table.梯 thead th { background: #f7f7f7; }
+table.梯 tbody tr:nth-child(odd) { background: #fbfdff; }
 </style>
 {% endblock %}

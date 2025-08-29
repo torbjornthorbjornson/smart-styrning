@@ -66,7 +66,7 @@ def styrning():
     no_price = False
     labels = []
     values = []
-    gräns = 0.0
+    gräns = 0.0  # maxpriset bland de utvalda timmarna (för info/visning)
 
     try:
         utc_start, utc_end = local_day_to_utc_window(selected_date)
@@ -82,25 +82,52 @@ def styrning():
 
         if not priser:
             no_price = True
+            selected_idx = []
+            bar_colors = []
+            selected_labels_chrono = []
+            sorted_by_price = []
         else:
             # Konvertera etiketter till svensk tid; säkerställ float-värden
             labels = [utc_naive_to_local_label(row["datetime"]) for row in priser if row.get("price") is not None]
             values = [float(row["price"]) for row in priser if row.get("price") is not None]
 
-            if values:
-                # N:e billigaste (1-baserat), klippa till längden om top_n > antal värden
-                idx = min(max(top_n, 1), len(values)) - 1
-                sorted_prices = sorted(values)
-                gräns = sorted_prices[idx]
-            else:
-                gräns = 0.0
+            # Bygg (pris, index)-par och sortera stigande efter pris, därefter timindex för stabilitet
+            pairs = [(values[i], i) for i in range(len(values))]
+            pairs.sort(key=lambda t: (t[0], t[1]))  # (pris, index)
 
-        return render_template("styrning.html",
-                               selected_date=selected_date,
-                               labels=labels,
-                               values=values,
-                               gräns=gräns,
-                               no_price=no_price)
+            # Välj exakt N (eller alla om < N)
+            N = min(max(top_n, 1), len(pairs))
+            chosen = pairs[:N]
+            selected_idx = [i for _, i in chosen]
+            selected_set = set(selected_idx)
+
+            # Färger till stapeldiagrammet: exakt valda timmar = gröna
+            bar_colors = ['green' if i in selected_set else 'blue' for i in range(len(values))]
+
+            # "Tröskel" för info: högsta pris bland de valda
+            gräns = max((values[i] for i in selected_idx), default=0.0)
+
+            # Valda timmar i kronologisk ordning (sorterat på ursprungligt index)
+            selected_labels_chrono = [labels[i] for i in sorted(selected_idx)]
+
+            # Trappstege billigast->dyrast för visning/tabell
+            sorted_by_price = [
+                {"label": labels[i], "price": values[i]}
+                for (p, i) in pairs
+            ]
+
+        return render_template(
+            "styrning.html",
+            selected_date=selected_date,
+            labels=labels,
+            values=values,
+            gräns=gräns,
+            no_price=no_price,
+            top_n=top_n,
+            selected_labels_chrono=selected_labels_chrono,
+            sorted_by_price=sorted_by_price,
+            bar_colors=bar_colors
+        )
 
     except Exception as e:
         return f"Fel vid hämtning av elprisdata: {e}"
