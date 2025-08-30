@@ -5,6 +5,8 @@ import subprocess
 import os
 import math
 import pytz  # tidszoner
+import json
+import urllib.request, urllib.error
 
 app = Flask(__name__)
 
@@ -358,6 +360,120 @@ def api_exo_payload(site_code):
     except Exception as e:
         msg = str(e).replace('"', '\\"')
         return Response(f'{{"error":"{msg}"}}', status=500, mimetype="application/json")
+def post_to_exo(payload_json: str, exo_url: str, token: str | None = None, timeout: int = 20):
+    """POST:a JSON till EXO. Returnerar (status, body-kort)."""
+    data = payload_json.encode("utf-8")
+    req = urllib.request.Request(
+        exo_url, data=data, method="POST",
+        headers={"Content-Type": "application/json"}
+    )
+    if token:
+        req.add_header("Authorization", f"Bearer {token}")
+    with urllib.request.urlopen(req, timeout=timeout) as resp:
+        status = resp.status
+        body = resp.read().decode("utf-8", "ignore")[:2000]
+    return status, body
+
+@app.route("/api/exo_push/<site_code>", methods=["GET", "POST"])
+def api_exo_push(site_code):
+    """
+    Skickar EXO-payload för en site+dag till EXO.
+    Exempel:
+      GET/POST /api/exo_push/C1?day=2025-08-29&build=1&n=4&cheap_pct=-0.30&exp_pct=0.50
+      &dry_run=1  (för att bara visa vad som skulle skickas)
+      &exo_url=https://arrigo.exempel/api/price  (annars används env EXO_URL)
+      &token=hemligt  (annars används env EXO_TOKEN)
+    """
+    # 1) Parametrar
+    day_str = request.args.get("day")
+    if day_str:
+        try:
+            day_local = datetime.strptime(day_str, "%Y-%m-%d").date()
+        except ValueError:
+            return Response('{"error":"invalid day format, use YYYY-MM-DD"}', status=400, mimetype="application/json")
+    else:
+        try:
+            day_local = today_local_date()
+        except Exception:
+            day_local = datetime.utcnow().date()
+
+    build = str(request.args.get("build", "0")).lower() in ("1","true","yes","on")
+    dry_run = str(request.args.get("dry_run", "0")).lower() in ("1","true","yes","on")
+    timeout_sec = int(request.args.get("timeout", "20"))
+
+    n_arg = request.args.get("n")
+    cheap_arg = request.args.get("cheap_pct")
+    exp_arg = request.args.get("exp_pct")
+
+    exo_url = request.args.get("exo_url") or os.environ.get("EXO_URL")
+    token   = request.args.get("token")   or os.environ.get("EXO_TOKEN")
+    if not exo_url:
+        return Response('{"error":"EXO_URL saknas (ange ?exo_url=... eller sätt env EXO_URL)"}',
+                        status=400, mimetype="application/json")
+
+    # 2) Bygg payload i DB (om begärt) och hämta JSON
+    payload = None
+    try:
+        conn = get_connection()
+        with conn.cursor() as cur:
+            # Hämta defaults för site
+            cur.execute("SELECT site_code, tz, default_topn FROM sites WHERE site_code=%s LIMIT 1", (site_code,))
+            site = cur.fetchone()
+            if not site:
+                return Response('{"error":"unknown site"}', status=404, mimetype="application/json")
+
+            top_n = int(n_arg) if n_arg is not None else int(site["default_topn"])
+            cheap_pct = float(cheap_arg) if cheap_arg is not None else -0.30
+            exp_pct   = float(exp_arg)   if exp_arg   is not None else  0.50
+
+            if build:
+                cur.execute("CALL exo_build_payload(%s,%s,%s,%s,%s)", (site_code, day_local, top_n, cheap_pct, exp_pct))
+                conn.commit()
+
+            cur.execute(
+                "SELECT payload_json FROM exo_payloads WHERE site_code=%s AND day_local=%s",
+                (site_code, day_local)
+            )
+            row = cur.fetchone()
+            if row and row.get("payload_json"):
+                payload = row["payload_json"]
+    except Exception as e:
+        msg = str(e).replace('"', '\\"')
+        return Response(f'{{"error":"{msg}"}}', status=500, mimetype="application/json")
+    finally:
+        try:
+            conn.close()
+        except Exception:
+            pass
+
+    if not payload:
+        return Response('{"error":"payload not found for day; try build=1"}', status=404, mimetype="application/json")
+
+    # 3) Skicka (eller torrkör)
+    if dry_run:
+        # visa vart vi skulle skicka + payloaden
+        return Response(json.dumps({
+            "dry_run": True,
+            "target": {"exo_url": exo_url, "has_token": bool(token)},
+            "payload": json.loads(payload)
+        }, ensure_ascii=False), mimetype="application/json")
+
+    try:
+        status, body = post_to_exo(payload, exo_url, token, timeout=timeout_sec)
+        return Response(json.dumps({
+            "sent": True,
+            "http_status": status,
+            "exo_response": body,
+            "site_id": site_code,
+            "day": day_local.strftime("%Y-%m-%d")
+        }, ensure_ascii=False), mimetype="application/json")
+    except urllib.error.HTTPError as e:
+        body = e.read().decode("utf-8", "ignore") if hasattr(e, "read") else ""
+        msg = {"sent": False, "http_status": e.code, "error": str(e), "body": body[:2000]}
+        return Response(json.dumps(msg, ensure_ascii=False), status=502, mimetype="application/json")
+    except Exception as e:
+        msg = {"sent": False, "error": str(e)}
+        return Response(json.dumps(msg, ensure_ascii=False), status=502, mimetype="application/json")
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=8000, debug=True)
