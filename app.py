@@ -291,6 +291,73 @@ def vattenstyrning():
         conn.close()
 
     return render_template("vattenstyrning.html", data=latest, cos=math.cos, sin=math.sin)
+from flask import Response  # högst upp bland imports om inte redan finns
+
+@app.route("/api/exo_payload/<site_code>")
+def api_exo_payload(site_code):
+    """
+    GET /api/exo_payload/<site_code>?day=YYYY-MM-DD&build=1&n=4&cheap_pct=-0.30&exp_pct=0.50
+
+    - day       (valfri): om saknas används svensk kalenderdag (idag).
+    - build     (valfri): "1", "true" => bygg payload (kör våra SQL-procedurer) innan hämtning.
+    - n         (valfri): topp-N timmar (om saknas används sites.default_topn).
+    - cheap_pct (valfri): t.ex. -0.30
+    - exp_pct   (valfri): t.ex. 0.50
+    """
+    day_str = request.args.get("day")
+    if day_str:
+        try:
+            day_local = datetime.strptime(day_str, "%Y-%m-%d").date()
+        except ValueError:
+            return Response('{"error":"invalid day format, use YYYY-MM-DD"}', status=400, mimetype="application/json")
+    else:
+        # använd svensk kalenderdag (du har already today_local_date())
+        try:
+            day_local = today_local_date()
+        except Exception:
+            # fallback om funktionen saknas
+            day_local = datetime.utcnow().date()
+
+    build = str(request.args.get("build", "0")).lower() in ("1", "true", "yes")
+    # Optionala parametrar
+    n_arg = request.args.get("n")
+    cheap_arg = request.args.get("cheap_pct")
+    exp_arg = request.args.get("exp_pct")
+
+    try:
+        conn = get_connection()
+        with conn.cursor() as cur:
+            # Hämta site + default_topn
+            cur.execute("SELECT site_code, tz, default_topn FROM sites WHERE site_code=%s LIMIT 1", (site_code,))
+            site = cur.fetchone()
+            if not site:
+                return Response('{"error":"unknown site"}', status=404, mimetype="application/json")
+
+            top_n = int(n_arg) if n_arg is not None else int(site["default_topn"])
+            cheap_pct = float(cheap_arg) if cheap_arg is not None else -0.30
+            exp_pct   = float(exp_arg)   if exp_arg   is not None else  0.50
+
+            if build:
+                # Bygg / uppdatera allt för dagen
+                cur.execute("CALL exo_build_payload(%s,%s,%s,%s,%s)", (site_code, day_local, top_n, cheap_pct, exp_pct))
+                conn.commit()
+
+            # Hämta lagrad payload
+            cur.execute(
+                "SELECT payload_json FROM exo_payloads WHERE site_code=%s AND day_local=%s",
+                (site_code, day_local)
+            )
+            row = cur.fetchone()
+
+        if row and row.get("payload_json"):
+            return Response(row["payload_json"], mimetype="application/json")
+        else:
+            # Tipsa om att testa build=1
+            return Response('{"error":"payload not found for day; try with build=1"}', status=404, mimetype="application/json")
+
+    except Exception as e:
+        msg = str(e).replace('"', '\\"')
+        return Response(f'{{"error":"{msg}"}}', status=500, mimetype="application/json")
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=8000, debug=True)
