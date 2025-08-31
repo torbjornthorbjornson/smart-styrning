@@ -2,21 +2,27 @@
 # -*- coding: utf-8 -*-
 
 """
-Policy: Alla tider i databasen är UTC-naiva (DATETIME utan tz).
-All logik som rör dygn och timmar görs i Europe/Stockholm.
-In/ut-konverteringar:
-  - API -> lokal tid (SE) -> UTC (naiv) -> DB
-  - Läsning/visning -> UTC (naiv) -> gör aware (UTC) -> konvertera till SE vid behov
+Policy: Tider i databasen är UTC-naiva (DATETIME utan tz).
+All dygnslogik görs i Europe/Stockholm.
+In/ut:
+  - API -> lokal SE (aware) -> UTC (aware) -> ta bort tz (naiv) -> DB
+  - Läsning/visning -> UTC (naiv) -> gör aware (UTC) -> konvertera till SE
 """
 
 import os, sys, json, logging, argparse, requests, pymysql
 from datetime import datetime, date, time as dtime, timedelta
 import pytz
 import configparser
+from typing import Tuple, List, Dict
+
+# ======= KONFIG =======
+LOG_INFO = os.getenv("SPOTPRIS_LOG_INFO", "/home/runerova/smartweb/spotpris_info.log")
+LOG_ERR  = os.getenv("SPOTPRIS_LOG_ERR",  "/home/runerova/smartweb/spotpris_error.log")
+PRICE_ZONE = os.getenv("PRICE_ZONE", "SE3")   # SE1..SE4
+API_BASE = "https://www.elprisetjustnu.se/api/v1/prices"
+# ======================
 
 # ===== Logging =====
-LOG_INFO = "/home/runerova/smartweb/spotpris_info.log"
-LOG_ERR  = "/home/runerova/smartweb/spotpris_error.log"
 os.makedirs(os.path.dirname(LOG_INFO), exist_ok=True)
 logging.basicConfig(
     filename=LOG_INFO,
@@ -29,13 +35,12 @@ err_handler.setFormatter(logging.Formatter("%(asctime)s [%(levelname)s] %(messag
 logging.getLogger().addHandler(err_handler)
 log = logging.getLogger("spotpris")
 
-# ===== Zon / tid =====
+# ===== Tidszoner =====
 STHLM = pytz.timezone("Europe/Stockholm")
 UTC   = pytz.UTC
-PRICE_ZONE = os.getenv("PRICE_ZONE", "SE3")  # SE1..SE4
 
 # ===== DB-config via ~/.my.cnf =====
-def read_db_config():
+def read_db_config() -> Dict:
     cfg = configparser.ConfigParser()
     cfg.read('/home/runerova/.my.cnf')
     return {
@@ -50,22 +55,22 @@ def read_db_config():
 
 DB = read_db_config()
 
-# ===== Hjälpare =====
-def local_day_window_utc(local_day: date):
-    """Bygg [lokal 00:00, 24:00) och konvertera till UTC-naiva gränser för DB-sökning."""
+# ===== Hjälpfunktioner =====
+def local_day_window_utc(local_day: date) -> Tuple[datetime, datetime]:
+    """[lokal 00:00, 24:00) -> UTC-naiva gränser för DB-sökning."""
     start_local = STHLM.localize(datetime.combine(local_day, dtime(0,0)))
     end_local   = start_local + timedelta(days=1)
     return (start_local.astimezone(UTC).replace(tzinfo=None),
             end_local.astimezone(UTC).replace(tzinfo=None))
 
 def is_dst(now_local: datetime) -> bool:
-    """Sant om lokal tid (aware) är i sommartid."""
+    """Sant om lokal aware-tid ligger i sommartid."""
     return bool(now_local.dst())
 
-def choose_target_day(now_local: datetime):
+def choose_target_day(now_local: datetime) -> Tuple[date, str]:
     """
-    Välj vilken dag vi ska fylla.
-    NordPool/EPJN publicerar ~13 CET / ~14 CEST => efter tröskeln hämtar vi imorgon.
+    Nord Pool / EPJN publicerar ~13 CET / ~14 CEST.
+    Efter tröskeln siktar vi på imorgon.
     """
     today = now_local.date()
     threshold_hour = 14 if is_dst(now_local) else 13
@@ -73,7 +78,7 @@ def choose_target_day(now_local: datetime):
         return today + timedelta(days=1), "tomorrow"
     return today, "today"
 
-def count_rows_for_window(utc_start, utc_end) -> int:
+def count_rows_for_window(utc_start: datetime, utc_end: datetime) -> int:
     with pymysql.connect(**DB) as conn, conn.cursor() as cur:
         cur.execute("""
             SELECT COUNT(*) AS n
@@ -84,9 +89,9 @@ def count_rows_for_window(utc_start, utc_end) -> int:
 
 def url_for(day_local: date) -> str:
     # https://www.elprisetjustnu.se/api/v1/prices/YYYY/MM-DD_SE3.json
-    return f"https://www.elprisetjustnu.se/api/v1/prices/{day_local:%Y}/{day_local:%m-%d}_{PRICE_ZONE}.json"
+    return f"{API_BASE}/{day_local:%Y}/{day_local:%m-%d}_{PRICE_ZONE}.json"
 
-def fetch_prices(day_local: date):
+def fetch_prices(day_local: date) -> List[Dict]:
     url = url_for(day_local)
     log.info("🔎 Hämtar priser: %s", url)
     try:
@@ -102,9 +107,9 @@ def fetch_prices(day_local: date):
         log.error("Fel vid hämtning: %s", e)
         return []
 
-def upsert_prices(data, target_day_local: date):
+def upsert_prices(data: List[Dict], target_day_local: date) -> Tuple[int,int,int]:
     """
-    Upsert alla rader som tillhör target_day_local (tolkat i SE).
+    Upsert alla rader som tillhör target_day_local (tolkat i svensk tid).
     Returnerar (inserted, updated, skipped_for_other_day).
     """
     ins = upd = skip_other = 0
@@ -112,18 +117,18 @@ def upsert_prices(data, target_day_local: date):
         return (0,0,0)
 
     with pymysql.connect(**DB) as conn, conn.cursor() as cur:
-        # Säkerställ UTC-session (påverkar TIMESTAMP, inte DATETIME – men skadar inte)
+        # (Påverkar TIMESTAMP, inte DATETIME, men bra hygiene)
         cur.execute("SET time_zone = '+00:00'")
         for row in data:
             ts_str = row.get("time_start")
             if not ts_str:
                 continue
 
-            # Exempel: '2025-08-30T00:00:00+02:00'
-            # fromisoformat hanterar +HH:MM offset. Om offset saknas, anta lokal SE.
-            ts = datetime.fromisoformat(ts_str)
+            # Ex: '2025-08-30T00:00:00+02:00'
+            ts = datetime.fromisoformat(ts_str)  # hanterar ±HH:MM
             ts_local = (STHLM.localize(ts) if ts.tzinfo is None else ts.astimezone(STHLM))
 
+            # Filtrera på den lokala dagen
             if ts_local.date() != target_day_local:
                 skip_other += 1
                 continue
@@ -138,7 +143,7 @@ def upsert_prices(data, target_day_local: date):
                     price = VALUES(price)
             """, (ts_utc_naive, price))
 
-            # rowcount: 1 = insert, 2 = "riktig" update, 0 = unchanged
+            # rowcount: 1 = insert, 2 = update (i denna upsert), 0 = unchanged
             if cur.rowcount == 1:
                 ins += 1
                 log.info("💾 Insert: %sZ => %.5f", ts_utc_naive, price)
@@ -150,14 +155,49 @@ def upsert_prices(data, target_day_local: date):
 
     return (ins, upd, skip_other)
 
+def verify_local_hour_coverage(local_day: date) -> List[int]:
+    """
+    Logga vilka lokala timmar (0..23) som finns i DB för local_day.
+    Returnerar en lista med saknade timmar (kan vara tom).
+    """
+    utc_start, utc_end = local_day_window_utc(local_day)
+    hours_present = set()
+    rows = []
+
+    with pymysql.connect(**DB) as conn, conn.cursor() as cur:
+        cur.execute("""
+            SELECT datetime, price
+            FROM electricity_prices
+            WHERE datetime >= %s AND datetime < %s
+            ORDER BY datetime
+        """, (utc_start, utc_end))
+        rows = cur.fetchall()
+
+    for r in rows:
+        # DB har UTC-naiv -> gör aware i UTC och konvertera till SE
+        dt_loc = UTC.localize(r["datetime"]).astimezone(STHLM)
+        hours_present.add(dt_loc.hour)
+
+    missing = [h for h in range(24) if h not in hours_present]
+    if missing:
+        log.warning("🧭 Lokala timmar saknas för %s: %s", local_day, missing)
+    else:
+        log.info("🧭 Alla 24 lokala timmar finns för %s.", local_day)
+    return missing
+
 # ===== Huvudflöde =====
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--datum", help="YYYY-MM-DD (tvinga viss lokal dag; normalt behövs inte)")
+    parser.add_argument("--zone",  default=PRICE_ZONE, help="Prisområde, t.ex. SE1..SE4 (default från env PRICE_ZONE)")
     args = parser.parse_args()
 
+    # ev. överstyr prisområde från CLI
+    global PRICE_ZONE
+    PRICE_ZONE = args.zone
+
     now_local = datetime.now(STHLM)
-    log.info("==> spotpris.py start (%s)", now_local.strftime("%Y-%m-%d %H:%M"))
+    log.info("==> spotpris.py start (%s) | zone=%s", now_local.strftime("%Y-%m-%d %H:%M"), PRICE_ZONE)
 
     if args.datum:
         try:
@@ -180,25 +220,29 @@ def main():
     log.info("📊 Resultat: inserted=%d, updated=%d, skip_other_day=%d | Rader i DB efter: %d",
              ins, upd, skip_other, have_after)
 
+    # Verifiera lokala timmar (hjälper vid felsökning av 00–01)
+    missing = verify_local_hour_coverage(target_day_local)
+
     # Komplett för dagen (23/24/25 beroende på DST) -> klart
-    if have_after in (23, 24, 25):
-        log.info("✅ %s komplett (%d rader).", target_day_local, have_after)
+    if have_after in (23, 24, 25) and not missing:
+        log.info("✅ %s komplett (%d rader) och alla lokala timmar finns.", target_day_local, have_after)
         log.info("==> spotpris.py klar")
         return 0
 
-    # Om vi siktade på imorgon och det saknas: vänta till nästa körning (ingen fallback).
+    # Om vi siktade på imorgon och det saknas -> vänta till nästa körning (ingen fallback).
     if label == "tomorrow":
         log.warning("⏳ Imorgon ej komplett ännu (%d/24). Väntar till nästa körning.", have_after)
         log.info("==> spotpris.py klar")
         return 0
 
-    # Om vi siktade på idag och det saknas: gör ett försök till (idempotent).
+    # Om vi siktade på idag och det saknas mycket: gör ett extra försök (idempotent).
     if have_after < 23:
         log.warning("⚠️ Dagens data ofullständiga (%d/24). Försöker en gång till.", have_after)
         data2 = fetch_prices(now_local.date())
         ins2, upd2, skip2 = upsert_prices(data2, now_local.date())
         have_final = count_rows_for_window(*local_day_window_utc(now_local.date()))
         log.info("📈 Efter retry: inserted=%d, updated=%d | Rader i DB: %d", ins2, upd2, have_final)
+        verify_local_hour_coverage(now_local.date())
 
     log.info("==> spotpris.py klar")
     return 0
