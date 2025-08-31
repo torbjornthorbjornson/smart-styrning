@@ -1,6 +1,14 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+"""
+Policy: Alla tider i databasen är UTC-naiva (DATETIME utan tz).
+All logik som rör dygn och timmar görs i Europe/Stockholm.
+In/ut-konverteringar:
+  - API -> lokal tid (SE) -> UTC (naiv) -> DB
+  - Läsning/visning -> UTC (naiv) -> gör aware (UTC) -> konvertera till SE vid behov
+"""
+
 import os, sys, json, logging, argparse, requests, pymysql
 from datetime import datetime, date, time as dtime, timedelta
 import pytz
@@ -44,26 +52,26 @@ DB = read_db_config()
 
 # ===== Hjälpare =====
 def local_day_window_utc(local_day: date):
-    """[lokal 00:00, 24:00) -> UTC-naivt intervall"""
+    """Bygg [lokal 00:00, 24:00) och konvertera till UTC-naiva gränser för DB-sökning."""
     start_local = STHLM.localize(datetime.combine(local_day, dtime(0,0)))
     end_local   = start_local + timedelta(days=1)
     return (start_local.astimezone(UTC).replace(tzinfo=None),
             end_local.astimezone(UTC).replace(tzinfo=None))
 
 def is_dst(now_local: datetime) -> bool:
-    # True om vi är i sommartid
-    return bool(STHLM.localize(now_local.replace(tzinfo=None)).dst())
+    """Sant om lokal tid (aware) är i sommartid."""
+    return bool(now_local.dst())
 
-def choose_target_day(now_local: datetime) -> tuple[date, str]:
-    """Välj vilken dag vi ska fylla."""
+def choose_target_day(now_local: datetime):
+    """
+    Välj vilken dag vi ska fylla.
+    NordPool/EPJN publicerar ~13 CET / ~14 CEST => efter tröskeln hämtar vi imorgon.
+    """
     today = now_local.date()
-    tomorrow = today + timedelta(days=1)
-    # Nord Pool publicerar ~13 CET / 14 CEST
     threshold_hour = 14 if is_dst(now_local) else 13
     if now_local.hour >= threshold_hour:
-        return tomorrow, "tomorrow"
-    else:
-        return today, "today"
+        return today + timedelta(days=1), "tomorrow"
+    return today, "today"
 
 def count_rows_for_window(utc_start, utc_end) -> int:
     with pymysql.connect(**DB) as conn, conn.cursor() as cur:
@@ -94,35 +102,34 @@ def fetch_prices(day_local: date):
         log.error("Fel vid hämtning: %s", e)
         return []
 
-def upsert_prices(data, target_day_local: date) -> tuple[int,int,int]:
+def upsert_prices(data, target_day_local: date):
     """
-    Upsert (idempotent) alla rader som tillhör target_day_local i Stockholmstid.
-    Returnerar (inserted, updated, skipped_for_other_day)
+    Upsert alla rader som tillhör target_day_local (tolkat i SE).
+    Returnerar (inserted, updated, skipped_for_other_day).
     """
     ins = upd = skip_other = 0
     if not data:
         return (0,0,0)
 
     with pymysql.connect(**DB) as conn, conn.cursor() as cur:
+        # Säkerställ UTC-session (påverkar TIMESTAMP, inte DATETIME – men skadar inte)
+        cur.execute("SET time_zone = '+00:00'")
         for row in data:
             ts_str = row.get("time_start")
             if not ts_str:
                 continue
 
-            # Ex: '2025-08-30T00:00:00+02:00'
-            ts_local = datetime.fromisoformat(ts_str)
-            if ts_local.tzinfo is None:
-                ts_local = STHLM.localize(ts_local)
-            else:
-                ts_local = ts_local.astimezone(STHLM)
+            # Exempel: '2025-08-30T00:00:00+02:00'
+            # fromisoformat hanterar +HH:MM offset. Om offset saknas, anta lokal SE.
+            ts = datetime.fromisoformat(ts_str)
+            ts_local = (STHLM.localize(ts) if ts.tzinfo is None else ts.astimezone(STHLM))
 
             if ts_local.date() != target_day_local:
-                # Filtrera bort rader som inte hör till mål-dagen (kan hända vid DST/gränsfall)
                 skip_other += 1
                 continue
 
-            ts_utc_naive = ts_local.astimezone(UTC).replace(tzinfo=None)
             price = float(row["SEK_per_kWh"])
+            ts_utc_naive = ts_local.astimezone(UTC).replace(tzinfo=None)
 
             cur.execute("""
                 INSERT INTO electricity_prices (datetime, price)
@@ -131,7 +138,7 @@ def upsert_prices(data, target_day_local: date) -> tuple[int,int,int]:
                     price = VALUES(price)
             """, (ts_utc_naive, price))
 
-            # MySQL/MariaDB: rowcount == 1 => insert, 2 => update
+            # rowcount: 1 = insert, 2 = "riktig" update, 0 = unchanged
             if cur.rowcount == 1:
                 ins += 1
                 log.info("💾 Insert: %sZ => %.5f", ts_utc_naive, price)
@@ -173,22 +180,19 @@ def main():
     log.info("📊 Resultat: inserted=%d, updated=%d, skip_other_day=%d | Rader i DB efter: %d",
              ins, upd, skip_other, have_after)
 
-    # ---- Beslutslogik: INGEN onödig fallback ----
-    # Om vi redan har 24 (eller DST: 23/25) rader för mål-dagen: klart.
-    if have_after in (24, 23, 25):
-        log.info("✅ %s komplett (%d rader). Ingen fallback.", target_day_local, have_after)
+    # Komplett för dagen (23/24/25 beroende på DST) -> klart
+    if have_after in (23, 24, 25):
+        log.info("✅ %s komplett (%d rader).", target_day_local, have_after)
         log.info("==> spotpris.py klar")
         return 0
 
-    # Om det fortfarande saknas rader för mål-dagen:
-    # - Om vi siktade på 'tomorrow' och det saknas -> det betyder troligen att NordPool ännu inte publicerat.
-    #   Då väntar vi till nästa cron-run. Ingen fallback.
+    # Om vi siktade på imorgon och det saknas: vänta till nästa körning (ingen fallback).
     if label == "tomorrow":
-        log.warning("⏳ Imorgon ej komplett ännu (%d/24). Väntar till nästa körning, ingen fallback.", have_after)
+        log.warning("⏳ Imorgon ej komplett ännu (%d/24). Väntar till nästa körning.", have_after)
         log.info("==> spotpris.py klar")
         return 0
 
-    # - Om vi siktade på 'today' och vi saknar rader (kan vara nätfel) – prova hämta 'today' igen direkt (idempotent).
+    # Om vi siktade på idag och det saknas: gör ett försök till (idempotent).
     if have_after < 23:
         log.warning("⚠️ Dagens data ofullständiga (%d/24). Försöker en gång till.", have_after)
         data2 = fetch_prices(now_local.date())
