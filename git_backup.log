@@ -53816,3 +53816,8 @@ To https://github.com/torbjornthorbjornson/smart-styrning.git
  1 file changed, 4 insertions(+)
 To https://github.com/torbjornthorbjornson/smart-styrning.git
    184303b2..a7914d4b  main -> main
+[main 67706087] Automatisk backup: 2025-08-31 22:00
+ 3 files changed, 5 insertions(+), 1 deletion(-)
+ mode change 100755 => 100644 spotpris.py
+To https://github.com/torbjornthorbjornson/smart-styrning.git
+   a7914d4b..67706087  main -> main
