@@ -54009,3 +54009,10 @@ To https://github.com/torbjornthorbjornson/smart-styrning.git
  1 file changed, 4 insertions(+)
 To https://github.com/torbjornthorbjornson/smart-styrning.git
    97bcf962..9d977bea  main -> main
+[main 8c2e1fba] Automatisk backup: 2025-09-01 10:00
+ 5 files changed, 93 insertions(+)
+ create mode 100755 tools/arrigo_health.sh
+ create mode 100755 tools/push_prices.sh
+ create mode 100755 tools/push_prices_tomorrow.sh
+To https://github.com/torbjornthorbjornson/smart-styrning.git
+   9d977bea..8c2e1fba  main -> main
