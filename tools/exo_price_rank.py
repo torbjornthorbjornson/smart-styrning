@@ -45,8 +45,8 @@ UTC   = pytz.UTC
 # ======== KONFIG – FYLL I DINA VÄRDEN (kan överskuggas av flaggor/env) ========
 # Publik adress inkl. port (om ni har 80/443 duger hosten)
 DEFAULT_ARRIGO_BASE_URL = os.getenv("ARRIGO_BASE_URL", "http://arrigo.svenskastenhus.se/arrigo/api")  # <-- BYT!
-DEFAULT_ARRIGO_USER     = os.getenv("ARRIGO_USER",     "api_pusher")                               # <-- BYT!
-DEFAULT_ARRIGO_PASS     = os.getenv("ARRIGO_PASS",     "hemligt")                                   # <-- BYT!
+DEFAULT_ARRIGO_USER     = os.getenv("ARRIGO_USER",     "APIUser")                               # <-- BYT!
+DEFAULT_ARRIGO_PASS     = os.getenv("ARRIGO_PASS",     "API_S#are")                                   # <-- BYT!
 DEFAULT_PVL_PATH        = os.getenv("ARRIGO_PVL_PATH", "QVBJZGVtby5BcmVhRm9zZGVyVmlldy5GaWxlLkFQSVZhcmlibGVMaXN0LkZpbGU=")  # <-- BYT!
 
 # PVL-indexordning (matchar ditt projekt):
