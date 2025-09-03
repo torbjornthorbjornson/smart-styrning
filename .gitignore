@@ -6,3 +6,35 @@ backup/*.exe
 backup/*.msi
 templates/backup/
 static/icons/svg/
+
+# === Smartweb standard ===
+__pycache__/
+*.pyc
+*.pyo
+
+# Virtuella miljöer
+.venv/
+venv/
+myenv/
+
+# Loggar & temp
+*.log
+*.tmp
+tmp/
+
+# Frontend-byggen (om aktuellt)
+node_modules/
+dist/
+build/
+
+# Lokala hemligheter (lägg bara upp exempel-filer i repo)
+.env
+.env.local
+*.secret
+secrets/
+config.local.*
+
+# Diverse
+*.bak
+*.old
+*.zip
