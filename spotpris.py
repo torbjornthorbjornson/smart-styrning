@@ -51,13 +51,23 @@ def fetch_prices(date_obj):
         return []
 
 def parse_and_save(data, target_date_local):
-    """Spara priser i UTC-naiv tid. Validera att posten hör till target_date_local i Stockholmstid."""
+    """
+    Spara priser i UTC-naiv tid.
+    target_date_local är en date (YYYY-MM-DD).
+    Endast poster som ligger inom [midnatt, nästa midnatt) i svensk tid sparas.
+    """
     if not data:
         return 0
     saved = 0
     conn = pymysql.connect(**DB_CONFIG)
     with conn:
         with conn.cursor() as cursor:
+            cursor.execute("SET time_zone = 'UTC'")
+
+            # Bygg intervallet för hela svenska dygnet
+            day_start_local = STHLM.localize(datetime.combine(target_date_local, time(0,0)))
+            day_end_local = day_start_local + timedelta(days=1)
+
             for row in data:
                 ts_str = row.get("time_start")
                 if not ts_str:
@@ -68,12 +78,12 @@ def parse_and_save(data, target_date_local):
                 else:
                     ts_local = ts_parsed.astimezone(STHLM)
 
-                # Spara bara rader som tillhör rätt DYGN i Stockholmstid
-                if ts_local.date() != target_date_local.date():
-                    logging.info(f"⏩ Skippad: fel datum ({ts_local.date()} != {target_date_local.date()})")
+                # Kolla att timmen ligger inom rätt dygn
+                if not (day_start_local <= ts_local < day_end_local):
+                    logging.info(f"⏩ Skippad (utanför dygn): {ts_local}")
                     continue
 
-                # Konvertera till UTC-naiv innan INSERT (MariaDB DATETIME saknar tz)
+                # Konvertera till UTC-naiv innan INSERT
                 ts_utc_naive = ts_local.astimezone(UTC).replace(tzinfo=None)
 
                 price = row.get("SEK_per_kWh")
@@ -83,7 +93,7 @@ def parse_and_save(data, target_date_local):
                 try:
                     cursor.execute(
                         "INSERT INTO electricity_prices (datetime, price) VALUES (%s, %s)",
-                        (ts_utc_naive, price)
+                        (ts_utc_naive, price),
                     )
                     logging.info(f"💾 Sparat: {ts_utc_naive}Z => {price} kr/kWh")
                     saved += 1
@@ -91,13 +101,12 @@ def parse_and_save(data, target_date_local):
                     logging.info(f"⏩ Skippad (fanns redan): {ts_utc_naive}Z")
         conn.commit()
 
-    # Informationslogg vid 23/25 timmar (DST)
-    day_start_local = STHLM.localize(datetime.combine(target_date_local.date(), time(0,0)))
-    if saved in (23, 25):
-        if day_start_local.dst():
-            logging.info("☀️ Sommartid: 23 timmar är normalt den här dagen.")
-        else:
-            logging.info("❄️ Vintertid: 25 timmar är normalt den här dagen.")
+    # Informationslogg vid 23/25 timmar (DST-dygn)
+    if saved == 23:
+        logging.info("☀️ Dygn med 23 timmar (sommartidstart).")
+    elif saved == 25:
+        logging.info("❄️ Dygn med 25 timmar (vintertidstart).")
+
     return saved
 
 def main():
@@ -108,7 +117,7 @@ def main():
     logging.info("==> spotpris.py startade")
     date_str = args.datum or datetime.now().strftime("%Y-%m-%d")
     try:
-        target_date_local = datetime.strptime(date_str, "%Y-%m-%d")
+        target_date_local = datetime.strptime(date_str, "%Y-%m-%d").date()
     except ValueError:
         logging.error("❌ Ogiltigt datumformat. Använd ÅÅÅÅ-MM-DD.")
         return
@@ -118,7 +127,7 @@ def main():
 
     if saved == 0:
         fallback_date = target_date_local - timedelta(days=1)
-        logging.warning(f"🔁 Försöker med gårdagens data istället: {fallback_date.date()}")
+        logging.warning(f"🔁 Försöker med gårdagens data istället: {fallback_date}")
         data = fetch_prices(fallback_date)
         saved = parse_and_save(data, fallback_date)
 
