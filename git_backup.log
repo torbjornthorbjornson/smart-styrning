@@ -55639,3 +55639,10 @@ To https://github.com/torbjornthorbjornson/smart-styrning.git
  rename tools/{ => old_rank}/push_prices_tomorrow.sh (100%)
 To https://github.com/torbjornthorbjornson/smart-styrning.git
    d3027bf7..fa8e2639  main -> main
+[main 807b2d13] Automatisk backup: 2025-09-05 15:00
+ 5 files changed, 404 insertions(+)
+ create mode 100755 tools/new_rank/exo_price_rank_array.py
+ create mode 100755 tools/new_rank/push_prices_array.sh
+ create mode 100755 tools/new_rank/push_prices_tomorrow_array.sh
+To https://github.com/torbjornthorbjornson/smart-styrning.git
+   fa8e2639..807b2d13  main -> main
