@@ -171,8 +171,9 @@ def discover_write_signature(graphql_url: str, token: str, verify_tls: bool):
 
 def build_writes_for_pvl_array(pvl_path: str, payload: Dict[str, Any]) -> List[Dict[str, Any]]:
     w = []
+    # skriv alla 24 timmar som PRICE_RANK(0) ... PRICE_RANK(23)
     for idx, hour in enumerate(payload["price_rank"]):
-        w.append({"key": f"{pvl_path}:PRICE_RANK_{idx:02d}", "value": str(hour)})
+        w.append({"key": f"{pvl_path}:PRICE_RANK({idx})", "value": str(hour)})
     w += [
         {"key": f"{pvl_path}:EC_MASK_L", "value": str(payload["masks"]["EC"]["L"])},
         {"key": f"{pvl_path}:EC_MASK_H", "value": str(payload["masks"]["EC"]["H"])},
@@ -204,7 +205,7 @@ def push_to_arrigo(login_url: str, graphql_url: str,
 # ---------------- CLI ----------------
 
 def parse_args():
-    ap = argparse.ArgumentParser(description="Bygg rank/masker från DB och pusha till Arrigo.")
+    ap = argparse.ArgumentParser(description="Bygg rank-array/masker från DB och pusha till Arrigo.")
     ap.add_argument("--site-id", required=True)
     ap.add_argument("--day", help="YYYY-MM-DD (lokaldag). Default = idag.")
     ap.add_argument("--tz", default="Europe/Stockholm")
@@ -260,7 +261,7 @@ def main():
         push_to_arrigo(login_url, graphql_url,
                        args.arrigo_user, args.arrigo_pass, args.pvl_path,
                        payload, verify_tls)
-        print("✅ Push klar.")
+        print("✅ Push klar (parentes-variabler).")
 
 if __name__ == "__main__":
     try:
