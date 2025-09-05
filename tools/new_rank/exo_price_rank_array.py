@@ -169,22 +169,16 @@ def discover_write_signature(graphql_url: str, token: str, verify_tls: bool):
                     return f["name"], a["name"], t["name"]
     return "writeData", "variables", "WriteVariableInput"
 
-def verify_readback(login_url: str, graphql_url: str, user: str, password: str,
-                    pvl_path: str, verify_tls: bool) -> Dict[str, Any]:
-    token = arrigo_login(login_url, user, password, verify_tls)
-    q = 'query ($path:String!){ data(path:$path){ variables { technicalAddress value } } }'
-    return gql(graphql_url, token, q, {"path": pvl_path}, verify_tls)
-
 def build_writes_for_pvl_array(pvl_path: str, payload: Dict[str, Any]) -> List[Dict[str, Any]]:
     w = []
     for idx, hour in enumerate(payload["price_rank"]):
-        w.append({"key": f"{pvl_path}.PRICE_RANK({idx})", "value": str(hour)})
+        w.append({"key": f"{pvl_path}:PRICE_RANK_{idx:02d}", "value": str(hour)})
     w += [
-        {"key": f"{pvl_path}.EC_MASK_L", "value": str(payload["masks"]["EC"]["L"])},
-        {"key": f"{pvl_path}.EC_MASK_H", "value": str(payload["masks"]["EC"]["H"])},
-        {"key": f"{pvl_path}.EX_MASK_L", "value": str(payload["masks"]["EX"]["L"])},
-        {"key": f"{pvl_path}.EX_MASK_H", "value": str(payload["masks"]["EX"]["H"])},
-        {"key": f"{pvl_path}.PRICE_STAMP", "value": str(payload["price_stamp"])},
+        {"key": f"{pvl_path}:EC_MASK_L", "value": str(payload["masks"]["EC"]["L"])},
+        {"key": f"{pvl_path}:EC_MASK_H", "value": str(payload["masks"]["EC"]["H"])},
+        {"key": f"{pvl_path}:EX_MASK_L", "value": str(payload["masks"]["EX"]["L"])},
+        {"key": f"{pvl_path}:EX_MASK_H", "value": str(payload["masks"]["EX"]["H"])},
+        {"key": f"{pvl_path}:PRICE_STAMP", "value": str(payload["price_stamp"])},
     ]
     return w
 
@@ -195,25 +189,22 @@ def push_to_arrigo(login_url: str, graphql_url: str,
     mut_name, arg_name, input_type = discover_write_signature(graphql_url, token, verify_tls)
     mutation = f"mutation ($vars:[{input_type}!]!){{ {mut_name}({arg_name}:$vars) }}"
 
-    # OK=0
     gql(graphql_url, token, mutation,
-        {"vars":[{"key":f"{pvl_path}.PRICE_OK","value":"0"}]},
+        {"vars":[{"key":f"{pvl_path}:PRICE_OK","value":"0"}]},
         verify_tls)
 
-    # värden
     gql(graphql_url, token, mutation,
         {"vars": build_writes_for_pvl_array(pvl_path, payload)},
         verify_tls)
 
-    # OK=1
     gql(graphql_url, token, mutation,
-        {"vars":[{"key":f"{pvl_path}.PRICE_OK","value":"1"}]},
+        {"vars":[{"key":f"{pvl_path}:PRICE_OK","value":"1"}]},
         verify_tls)
 
 # ---------------- CLI ----------------
 
 def parse_args():
-    ap = argparse.ArgumentParser(description="Bygg rank-array/masker från DB och pusha till Arrigo.")
+    ap = argparse.ArgumentParser(description="Bygg rank/masker från DB och pusha till Arrigo.")
     ap.add_argument("--site-id", required=True)
     ap.add_argument("--day", help="YYYY-MM-DD (lokaldag). Default = idag.")
     ap.add_argument("--tz", default="Europe/Stockholm")
@@ -252,24 +243,24 @@ def main():
         cheap_pct=args.cheap_pct, exp_pct=args.exp_pct
     )
 
-    if args.verify:
-        data = verify_readback(login_url, graphql_url,
-                               args.arrigo_user, args.arrigo_pass, args.pvl_path,
-                               verify_tls)
-        print(json.dumps(data, ensure_ascii=False, indent=2))
-
     if args.out:
         js = json.dumps(payload, ensure_ascii=False, indent=2)
         if args.out == "-": print(js)
         else:
             with open(args.out, "w", encoding="utf-8") as f: f.write(js)
 
+    if args.verify:
+        data = gql(graphql_url, arrigo_login(login_url, args.arrigo_user, args.arrigo_pass, verify_tls),
+                   'query ($path:String!){ data(path:$path){ variables { technicalAddress value } } }',
+                   {"path": args.pvl_path}, verify_tls)
+        print(json.dumps(data, ensure_ascii=False, indent=2))
+
     if args.push:
-        if not args.pvl_path: raise SystemExit("Saknar --pvl-path.")
+        if not args.pvl_path: raise SystemExit("Saknar --pvl-path (base64).")
         push_to_arrigo(login_url, graphql_url,
                        args.arrigo_user, args.arrigo_pass, args.pvl_path,
                        payload, verify_tls)
-        print("✅ Push klar (array).")
+        print("✅ Push klar.")
 
 if __name__ == "__main__":
     try:
