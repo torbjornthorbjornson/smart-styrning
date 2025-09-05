@@ -10,6 +10,8 @@ import pytz, pymysql, requests
 STHLM = pytz.timezone("Europe/Stockholm")
 UTC   = pytz.UTC
 
+# ---------------- DB ----------------
+
 def db():
     return pymysql.connect(
         read_default_file="/home/runerova/.my.cnf",
@@ -176,13 +178,13 @@ def verify_readback(login_url: str, graphql_url: str, user: str, password: str,
 def build_writes_for_pvl_array(pvl_path: str, payload: Dict[str, Any]) -> List[Dict[str, Any]]:
     w = []
     for idx, hour in enumerate(payload["price_rank"]):
-        w.append({"key": f"{pvl_path}:{idx}", "value": str(hour)})
+        w.append({"key": f"{pvl_path}.PRICE_RANK({idx})", "value": str(hour)})
     w += [
-        {"key": f"{pvl_path}:24", "value": str(payload["masks"]["EC"]["L"])},
-        {"key": f"{pvl_path}:25", "value": str(payload["masks"]["EC"]["H"])},
-        {"key": f"{pvl_path}:26", "value": str(payload["masks"]["EX"]["L"])},
-        {"key": f"{pvl_path}:27", "value": str(payload["masks"]["EX"]["H"])},
-        {"key": f"{pvl_path}:28", "value": str(payload["price_stamp"])},
+        {"key": f"{pvl_path}.EC_MASK_L", "value": str(payload["masks"]["EC"]["L"])},
+        {"key": f"{pvl_path}.EC_MASK_H", "value": str(payload["masks"]["EC"]["H"])},
+        {"key": f"{pvl_path}.EX_MASK_L", "value": str(payload["masks"]["EX"]["L"])},
+        {"key": f"{pvl_path}.EX_MASK_H", "value": str(payload["masks"]["EX"]["H"])},
+        {"key": f"{pvl_path}.PRICE_STAMP", "value": str(payload["price_stamp"])},
     ]
     return w
 
@@ -193,32 +195,32 @@ def push_to_arrigo(login_url: str, graphql_url: str,
     mut_name, arg_name, input_type = discover_write_signature(graphql_url, token, verify_tls)
     mutation = f"mutation ($vars:[{input_type}!]!){{ {mut_name}({arg_name}:$vars) }}"
 
-    # Steg 1: OK=0
+    # OK=0
     gql(graphql_url, token, mutation,
-        {"vars":[{"key":f"{pvl_path}:29","value":"0"}]},
+        {"vars":[{"key":f"{pvl_path}.PRICE_OK","value":"0"}]},
         verify_tls)
 
-    # Steg 2: alla värden
+    # värden
     gql(graphql_url, token, mutation,
         {"vars": build_writes_for_pvl_array(pvl_path, payload)},
         verify_tls)
 
-    # Steg 3: OK=1
+    # OK=1
     gql(graphql_url, token, mutation,
-        {"vars":[{"key":f"{pvl_path}:29","value":"1"}]},
+        {"vars":[{"key":f"{pvl_path}.PRICE_OK","value":"1"}]},
         verify_tls)
 
 # ---------------- CLI ----------------
 
 def parse_args():
-    ap = argparse.ArgumentParser(description="Bygg rank-array/masker från DB och (valfritt) pusha till Arrigo.")
+    ap = argparse.ArgumentParser(description="Bygg rank-array/masker från DB och pusha till Arrigo.")
     ap.add_argument("--site-id", required=True)
     ap.add_argument("--day", help="YYYY-MM-DD (lokaldag). Default = idag.")
     ap.add_argument("--tz", default="Europe/Stockholm")
     ap.add_argument("--cheap-pct", type=float, default=-0.20)
     ap.add_argument("--exp-pct",   type=float, default=+0.20)
 
-    ap.add_argument("--base", help="Bas-URL utan /login eller /graphql")
+    ap.add_argument("--base")
     ap.add_argument("--login-url")
     ap.add_argument("--graphql-url")
 
@@ -237,7 +239,7 @@ def resolve_urls(args):
         return f"{base}/login", f"{base}/graphql"
     if args.login_url and args.graphql_url:
         return args.login_url, args.graphql_url
-    raise SystemExit("Ange --base (utan /login|/graphql) ELLER båda --login-url och --graphql-url.")
+    raise SystemExit("Ange --base eller både --login-url och --graphql-url.")
 
 def main():
     args = parse_args()
@@ -263,11 +265,11 @@ def main():
             with open(args.out, "w", encoding="utf-8") as f: f.write(js)
 
     if args.push:
-        if not args.pvl_path: raise SystemExit("Saknar --pvl-path (base64).")
+        if not args.pvl_path: raise SystemExit("Saknar --pvl-path.")
         push_to_arrigo(login_url, graphql_url,
                        args.arrigo_user, args.arrigo_pass, args.pvl_path,
                        payload, verify_tls)
-        print("Push klar (array).")
+        print("✅ Push klar (array).")
 
 if __name__ == "__main__":
     try:
