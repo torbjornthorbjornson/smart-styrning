@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import argparse, json, os, sys
+import argparse, json, os
 from datetime import datetime, date, time, timedelta
 from typing import Dict, Any, Iterable, List, Tuple
 
@@ -167,17 +167,22 @@ def discover_write_signature(graphql_url: str, token: str, verify_tls: bool):
                     return f["name"], a["name"], t["name"]
     return "writeData", "variables", "WriteVariableInput"
 
+def verify_readback(login_url: str, graphql_url: str, user: str, password: str,
+                    pvl_path: str, verify_tls: bool) -> Dict[str, Any]:
+    token = arrigo_login(login_url, user, password, verify_tls)
+    q = 'query ($path:String!){ data(path:$path){ variables { technicalAddress value } } }'
+    return gql(graphql_url, token, q, {"path": pvl_path}, verify_tls)
+
 def build_writes_for_pvl_array(pvl_path: str, payload: Dict[str, Any]) -> List[Dict[str, Any]]:
     w = []
     for idx, hour in enumerate(payload["price_rank"]):
-        w.append({"key": f"{pvl_path}:PRICE_RANK[{idx}]", "value": str(hour)})
+        w.append({"key": f"{pvl_path}:{idx}", "value": str(hour)})
     w += [
-        {"key": f"{pvl_path}:EC_MASK_L", "value": str(payload["masks"]["EC"]["L"])},
-        {"key": f"{pvl_path}:EC_MASK_H", "value": str(payload["masks"]["EC"]["H"])},
-        {"key": f"{pvl_path}:EX_MASK_L", "value": str(payload["masks"]["EX"]["L"])},
-        {"key": f"{pvl_path}:EX_MASK_H", "value": str(payload["masks"]["EX"]["H"])},
-        {"key": f"{pvl_path}:PRICE_STAMP", "value": str(payload["price_stamp"])},
-        {"key": f"{pvl_path}:PRICE_OK", "value": "1"},
+        {"key": f"{pvl_path}:24", "value": str(payload["masks"]["EC"]["L"])},
+        {"key": f"{pvl_path}:25", "value": str(payload["masks"]["EC"]["H"])},
+        {"key": f"{pvl_path}:26", "value": str(payload["masks"]["EX"]["L"])},
+        {"key": f"{pvl_path}:27", "value": str(payload["masks"]["EX"]["H"])},
+        {"key": f"{pvl_path}:28", "value": str(payload["price_stamp"])},
     ]
     return w
 
@@ -187,7 +192,21 @@ def push_to_arrigo(login_url: str, graphql_url: str,
     token = arrigo_login(login_url, user, password, verify_tls)
     mut_name, arg_name, input_type = discover_write_signature(graphql_url, token, verify_tls)
     mutation = f"mutation ($vars:[{input_type}!]!){{ {mut_name}({arg_name}:$vars) }}"
-    gql(graphql_url, token, mutation, {"vars": build_writes_for_pvl_array(pvl_path, payload)}, verify_tls)
+
+    # Steg 1: OK=0
+    gql(graphql_url, token, mutation,
+        {"vars":[{"key":f"{pvl_path}:29","value":"0"}]},
+        verify_tls)
+
+    # Steg 2: alla värden
+    gql(graphql_url, token, mutation,
+        {"vars": build_writes_for_pvl_array(pvl_path, payload)},
+        verify_tls)
+
+    # Steg 3: OK=1
+    gql(graphql_url, token, mutation,
+        {"vars":[{"key":f"{pvl_path}:29","value":"1"}]},
+        verify_tls)
 
 # ---------------- CLI ----------------
 
@@ -230,6 +249,12 @@ def main():
         site_id=args.site_id, local_day=local_day, tzname=args.tz,
         cheap_pct=args.cheap_pct, exp_pct=args.exp_pct
     )
+
+    if args.verify:
+        data = verify_readback(login_url, graphql_url,
+                               args.arrigo_user, args.arrigo_pass, args.pvl_path,
+                               verify_tls)
+        print(json.dumps(data, ensure_ascii=False, indent=2))
 
     if args.out:
         js = json.dumps(payload, ensure_ascii=False, indent=2)
