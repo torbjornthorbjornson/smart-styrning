@@ -55632,3 +55632,10 @@ To https://github.com/torbjornthorbjornson/smart-styrning.git
  1 file changed, 4 insertions(+)
 To https://github.com/torbjornthorbjornson/smart-styrning.git
    b4442ddf..d3027bf7  main -> main
+[main fa8e2639] Automatisk backup: 2025-09-05 14:30
+ 4 files changed, 4 insertions(+)
+ rename tools/{ => old_rank}/exo_price_rank.py (100%)
+ rename tools/{ => old_rank}/push_prices.sh (100%)
+ rename tools/{ => old_rank}/push_prices_tomorrow.sh (100%)
+To https://github.com/torbjornthorbjornson/smart-styrning.git
+   d3027bf7..fa8e2639  main -> main
