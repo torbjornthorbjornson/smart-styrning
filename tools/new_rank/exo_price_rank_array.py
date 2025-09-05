@@ -1,4 +1,4 @@
-#!/usr/bin/env python3APIdem
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
 import argparse, json, os, sys
@@ -9,14 +9,6 @@ import pytz, pymysql, requests
 
 STHLM = pytz.timezone("Europe/Stockholm")
 UTC   = pytz.UTC
-
-IDX_RANK_START = 0
-IDX_EC_L = 24
-IDX_EC_H = 25
-IDX_EX_L = 26
-IDX_EX_H = 27
-IDX_STAMP = 28
-IDX_OK = 29
 
 def db():
     return pymysql.connect(
@@ -115,10 +107,7 @@ def build_payload_from_db(site_id: str, local_day: date, tzname: str,
 def arrigo_login(login_url: str, user: str, password: str, verify_tls: bool) -> str:
     r = requests.post(login_url, json={"username": user, "password": password},
                       timeout=15, verify=verify_tls)
-    try:
-        r.raise_for_status()
-    except requests.HTTPError:
-        raise SystemExit(f"Inloggning misslyckades ({r.status_code}): {r.text}")
+    r.raise_for_status()
     j = r.json()
     tok = j.get("authToken")
     if not tok:
@@ -130,10 +119,7 @@ def gql(graphql_url: str, token: str, query: str, variables: Dict[str, Any], ver
                       headers={"Authorization": f"Bearer {token}"},
                       json={"query": query, "variables": variables},
                       timeout=20, verify=verify_tls)
-    try:
-        r.raise_for_status()
-    except requests.HTTPError:
-        raise SystemExit(f"GraphQL HTTP-fel ({r.status_code}): {r.text}")
+    r.raise_for_status()
     j = r.json()
     if "errors" in j:
         raise SystemExit("GraphQL-fel: " + json.dumps(j["errors"], ensure_ascii=False))
@@ -145,13 +131,6 @@ def _unwrap_type(t):
     return t
 
 def discover_write_signature(graphql_url: str, token: str, verify_tls: bool):
-    """
-    Introspektera schema → hitta mutationen som skriver PVL.
-    Vi letar efter ett fält som heter 'writeData' (vanligast).
-    Om inte, tar vi första mutation med en argument-lista som heter något likt 'variables'
-    och vars typ är en LIST med INPUT_OBJECT.
-    Returnerar (mutation_name, argument_name, input_type_name)
-    """
     q = """
     query Introspect {
       __schema {
@@ -173,8 +152,6 @@ def discover_write_signature(graphql_url: str, token: str, verify_tls: bool):
     if not mtype:
         raise SystemExit("Hittar ingen mutationType i schemat (är skrivning avstängd?).")
     fields = mtype["fields"] or []
-
-    # 1) försök hitta "writeData" direkt
     for f in fields:
         if f["name"] == "writeData":
             for a in f["args"]:
@@ -182,28 +159,25 @@ def discover_write_signature(graphql_url: str, token: str, verify_tls: bool):
                     t = _unwrap_type(a["type"])
                     if t and t.get("kind") == "INPUT_OBJECT" and t.get("name"):
                         return f["name"], a["name"], t["name"]
-
-    # 2) fallback – första fält med en 'variables'-liknande arg som tar INPUT_OBJECT-lista
     for f in fields:
         for a in f["args"]:
             if a["name"] in ("variables","vars","values","data"):
                 t = _unwrap_type(a["type"])
                 if t and t.get("kind") == "INPUT_OBJECT" and t.get("name"):
                     return f["name"], a["name"], t["name"]
-
-    # 3) hård fallback – prova vanliga namn
     return "writeData", "variables", "WriteVariableInput"
 
-def build_writes_for_pvl(pvl_path: str, payload: Dict[str, Any]) -> List[Dict[str, Any]]:
+def build_writes_for_pvl_array(pvl_path: str, payload: Dict[str, Any]) -> List[Dict[str, Any]]:
     w = []
-    for rank, hour in enumerate(payload["price_rank"]):
-        w.append({"key": f"{pvl_path}:{IDX_RANK_START+rank}", "value": str(hour)})
+    for idx, hour in enumerate(payload["price_rank"]):
+        w.append({"key": f"{pvl_path}:PRICE_RANK[{idx}]", "value": str(hour)})
     w += [
-        {"key": f"{pvl_path}:{IDX_EC_L}", "value": str(payload["masks"]["EC"]["L"])},
-        {"key": f"{pvl_path}:{IDX_EC_H}", "value": str(payload["masks"]["EC"]["H"])},
-        {"key": f"{pvl_path}:{IDX_EX_L}", "value": str(payload["masks"]["EX"]["L"])},
-        {"key": f"{pvl_path}:{IDX_EX_H}", "value": str(payload["masks"]["EX"]["H"])},
-        {"key": f"{pvl_path}:{IDX_STAMP}", "value": str(payload["price_stamp"])},
+        {"key": f"{pvl_path}:EC_MASK_L", "value": str(payload["masks"]["EC"]["L"])},
+        {"key": f"{pvl_path}:EC_MASK_H", "value": str(payload["masks"]["EC"]["H"])},
+        {"key": f"{pvl_path}:EX_MASK_L", "value": str(payload["masks"]["EX"]["L"])},
+        {"key": f"{pvl_path}:EX_MASK_H", "value": str(payload["masks"]["EX"]["H"])},
+        {"key": f"{pvl_path}:PRICE_STAMP", "value": str(payload["price_stamp"])},
+        {"key": f"{pvl_path}:PRICE_OK", "value": "1"},
     ]
     return w
 
@@ -211,28 +185,14 @@ def push_to_arrigo(login_url: str, graphql_url: str,
                    user: str, password: str, pvl_path: str,
                    payload: Dict[str, Any], verify_tls: bool):
     token = arrigo_login(login_url, user, password, verify_tls)
-
-    # Auto-detektera rätt mutation, argument och input-typ
     mut_name, arg_name, input_type = discover_write_signature(graphql_url, token, verify_tls)
     mutation = f"mutation ($vars:[{input_type}!]!){{ {mut_name}({arg_name}:$vars) }}"
-
-    # OK=0
-    gql(graphql_url, token, mutation, {"vars":[{"key":f"{pvl_path}:{IDX_OK}","value":"0"}]}, verify_tls)
-    # värden
-    gql(graphql_url, token, mutation, {"vars": build_writes_for_pvl(pvl_path, payload)}, verify_tls)
-    # OK=1
-    gql(graphql_url, token, mutation, {"vars":[{"key":f"{pvl_path}:{IDX_OK}","value":"1"}]}, verify_tls)
-
-def verify_readback(login_url: str, graphql_url: str, user: str, password: str,
-                    pvl_path: str, verify_tls: bool) -> Dict[str, Any]:
-    token = arrigo_login(login_url, user, password, verify_tls)
-    q = 'query ($path:String!){ data(path:$path){ variables { technicalAddress value } } }'
-    return gql(graphql_url, token, q, {"path": pvl_path}, verify_tls)
+    gql(graphql_url, token, mutation, {"vars": build_writes_for_pvl_array(pvl_path, payload)}, verify_tls)
 
 # ---------------- CLI ----------------
 
 def parse_args():
-    ap = argparse.ArgumentParser(description="Bygg rank/masker från DB och (valfritt) pusha till Arrigo.")
+    ap = argparse.ArgumentParser(description="Bygg rank-array/masker från DB och (valfritt) pusha till Arrigo.")
     ap.add_argument("--site-id", required=True)
     ap.add_argument("--day", help="YYYY-MM-DD (lokaldag). Default = idag.")
     ap.add_argument("--tz", default="Europe/Stockholm")
@@ -282,13 +242,7 @@ def main():
         push_to_arrigo(login_url, graphql_url,
                        args.arrigo_user, args.arrigo_pass, args.pvl_path,
                        payload, verify_tls)
-        print("Push klar (OK=0 → värden → OK=1).")
-
-    if args.verify:
-        data = verify_readback(login_url, graphql_url,
-                               args.arrigo_user, args.arrigo_pass, args.pvl_path,
-                               verify_tls)
-        print(json.dumps(data, ensure_ascii=False, indent=2))
+        print("Push klar (array).")
 
 if __name__ == "__main__":
     try:
