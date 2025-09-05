@@ -169,12 +169,11 @@ def discover_write_signature(graphql_url: str, token: str, verify_tls: bool):
                     return f["name"], a["name"], t["name"]
     return "writeData", "variables", "WriteVariableInput"
 
-# ⛳️ VIKTIGT: Skriv via INDEX, Arrigo mappar själv till PRICE_RANK_00..23
 def build_writes_for_pvl_array(pvl_path: str, payload: Dict[str, Any]) -> List[Dict[str, Any]]:
     w = []
-    # 24 värden -> :0 .. :23  (inte PRICE_RANK_XX; skriv via index är det som funkar)
+    # skriv alla 24 timmar som PRICE_RANK_00 ... PRICE_RANK_23 (underscore-variablerna som verify visade)
     for idx, hour in enumerate(payload["price_rank"]):
-        w.append({"key": f"{pvl_path}:{idx}", "value": str(hour)})
+        w.append({"key": f"{pvl_path}:PRICE_RANK_{idx:02d}", "value": str(hour)})
     # maskar + stamp
     w += [
         {"key": f"{pvl_path}:EC_MASK_L", "value": str(payload["masks"]["EC"]["L"])},
@@ -263,7 +262,7 @@ def main():
         push_to_arrigo(login_url, graphql_url,
                        args.arrigo_user, args.arrigo_pass, args.pvl_path,
                        payload, verify_tls)
-        print("✅ Push klar (index → PRICE_RANK_00..23).")
+        print("✅ Push klar (underscore-variabler).")
 
 if __name__ == "__main__":
     try:
