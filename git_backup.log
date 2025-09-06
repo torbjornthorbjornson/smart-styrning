@@ -55977,3 +55977,9 @@ To https://github.com/torbjornthorbjornson/smart-styrning.git
  1 file changed, 7 insertions(+)
 To https://github.com/torbjornthorbjornson/smart-styrning.git
    390bdd87..6bcb6823  main -> main
+[main 2e1bb584] Automatisk backup: 2025-09-06 11:00
+ 5 files changed, 666 insertions(+), 10 deletions(-)
+ create mode 100755 tools/new_rank/exo_price_rank_array.py.bak.1757147979
+ create mode 100755 tools/new_rank/exo_price_rank_array.py.bak.1757148189
+To https://github.com/torbjornthorbjornson/smart-styrning.git
+   6bcb6823..2e1bb584  main -> main
