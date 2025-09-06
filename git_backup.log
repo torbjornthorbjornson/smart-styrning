@@ -56178,3 +56178,10 @@ To https://github.com/torbjornthorbjornson/smart-styrning.git
  1 file changed, 5 insertions(+)
 To https://github.com/torbjornthorbjornson/smart-styrning.git
    8e3e02c0..6e045fa3  main -> main
+[main b082c1af] Automatisk backup: 2025-09-06 23:00
+ 4 files changed, 256 insertions(+)
+ create mode 100755 tools/old_rank/push_index_min.py
+ create mode 100755 tools/old_rank/push_index_prod.py
+ create mode 100755 tools/old_rank/push_prices_idx.sh
+To https://github.com/torbjornthorbjornson/smart-styrning.git
+   6e045fa3..b082c1af  main -> main
