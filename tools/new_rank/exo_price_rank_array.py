@@ -1,47 +1,30 @@
+cp ~/smartweb/tools/new_rank/exo_price_rank_array.py ~/smartweb/tools/new_rank/exo_price_rank_array.py.bak.$(date +%s)
+
+cat > ~/smartweb/tools/new_rank/exo_price_rank_array.py <<'PYEOF'
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-
-"""
-exo_price_rank_array.py (new_rank)
-Bygger PRICE_RANK-array och masker från DB och pushar till Arrigo.
-Uppdaterar BÅDE:
-  - PRICE_RANK(0) … PRICE_RANK(23)   (array-stil)
-  - PRICE_RANK_00 … PRICE_RANK_23    (klassisk stil)
-samt EC/EX-masker och PRICE_STAMP.
-"""
-
-import argparse, json, os
+import argparse, json, os, re
 from datetime import datetime, date, time, timedelta
 from typing import Dict, Any, Iterable, List, Tuple
-
 import pytz, pymysql, requests, configparser
 
 STHLM = pytz.timezone("Europe/Stockholm")
 UTC   = pytz.UTC
 
 # ---------------- DB ----------------
-
 def read_my_cnf(path: str = "/home/runerova/.my.cnf") -> Dict[str, Any]:
     cp = configparser.ConfigParser()
-    if not cp.read(path, encoding="utf-8"):
-        raise SystemExit(f"Hittar inte {path}.")
-    if "client" not in cp:
-        raise SystemExit(f"[client]-sektion saknas i {path}.")
+    if not cp.read(path, encoding="utf-8"): raise SystemExit(f"Hittar inte {path}.")
+    if "client" not in cp: raise SystemExit(f"[client]-sektion saknas i {path}.")
     c = cp["client"]
     return {
-        "user": c.get("user", ""),
-        "password": c.get("password", ""),
-        "host": c.get("host", "localhost"),
-        "port": c.getint("port", 3306),
-        "database": c.get("database", "smart_styrning"),
-        "charset": "utf8mb4",
-        "cursorclass": pymysql.cursors.DictCursor,
-        "autocommit": True,
+        "user": c.get("user",""), "password": c.get("password",""),
+        "host": c.get("host","localhost"), "port": c.getint("port",3306),
+        "database": c.get("database","smart_styrning"), "charset":"utf8mb4",
+        "cursorclass": pymysql.cursors.DictCursor, "autocommit": True,
     }
 
-def db():
-    cfg = read_my_cnf("/home/runerova/.my.cnf")
-    return pymysql.connect(**cfg)
+def db(): return pymysql.connect(**read_my_cnf("/home/runerova/.my.cnf"))
 
 def local_day_to_utc_window(local_day: date, tzname: str):
     tz = pytz.timezone(tzname)
@@ -53,8 +36,7 @@ def local_day_to_utc_window(local_day: date, tzname: str):
 def pack_mask(hours: Iterable[int]) -> Tuple[int,int]:
     bits = 0
     for h in hours:
-        if 0 <= h <= 23:
-            bits |= (1 << h)
+        if 0 <= h <= 23: bits |= (1 << h)
     return bits & 0xFFFF, (bits >> 16) & 0xFFFF
 
 def normalize_to_24_hours(rows: List[Dict[str, Any]]) -> List[Tuple[int, float]]:
@@ -63,30 +45,27 @@ def normalize_to_24_hours(rows: List[Dict[str, Any]]) -> List[Tuple[int, float]]
         dt_utc = UTC.localize(r["datetime"])
         h_loc  = dt_utc.astimezone(STHLM).hour
         per_hour[h_loc].append(float(r["price"]))
+    if not any(per_hour.values()): raise SystemExit("Elpriser saknas för dygnet.")
     out = []
-    known = [h for h,v in per_hour.items() if v]
-    if not known:
-        raise SystemExit("Elpriser saknas för dygnet.")
     for h in range(24):
         vals = per_hour[h]
         if not vals:
             left = h-1
-            while left >=0 and not per_hour[left]: left -= 1
+            while left>=0 and not per_hour[left]: left -= 1
             right = h+1
-            while right <=23 and not per_hour[right]: right += 1
-            if left >=0 and right <=23 and per_hour[left] and per_hour[right]:
+            while right<=23 and not per_hour[right]: right += 1
+            if left>=0 and right<=23 and per_hour[left] and per_hour[right]:
                 price = (sum(per_hour[left])/len(per_hour[left]) + sum(per_hour[right])/len(per_hour[right]))/2.0
-            elif left >=0 and per_hour[left]:
+            elif left>=0 and per_hour[left]:
                 price = sum(per_hour[left])/len(per_hour[left])
             else:
-                f = min(known); price = sum(per_hour[f])/len(per_hour[f])
+                f = min([k for k,v in per_hour.items() if v]); price = sum(per_hour[f])/len(per_hour[f])
         else:
             price = sum(vals)/len(vals)
         out.append((h, float(price)))
     return out
 
-def build_payload_from_db(site_id: str, local_day: date, tzname: str,
-                          cheap_pct: float, exp_pct: float) -> Dict[str, Any]:
+def build_payload_from_db(site_id: str, local_day: date, tzname: str, cheap_pct: float, exp_pct: float) -> Dict[str, Any]:
     start_utc, end_utc = local_day_to_utc_window(local_day, tzname)
     with db() as conn, conn.cursor() as cur:
         cur.execute("""
@@ -96,75 +75,50 @@ def build_payload_from_db(site_id: str, local_day: date, tzname: str,
             ORDER BY datetime
         """, (start_utc, end_utc))
         rows = cur.fetchall()
-
     hour_price = normalize_to_24_hours(rows)
     price_rank = [h for (h, _) in sorted(hour_price, key=lambda t: t[1])]
-    if len(price_rank)!=24 or sorted(price_rank)!=list(range(24)):
-        raise SystemExit("price_rank inte permutation av 0..23.")
-
+    if len(price_rank)!=24 or sorted(price_rank)!=list(range(24)): raise SystemExit("price_rank inte permutation av 0..23.")
     sorted_prices = sorted([p for (_,p) in hour_price])
     median = (sorted_prices[11] + sorted_prices[12]) / 2.0
-    cheap_thr = median * (1.0 + cheap_pct)
-    exp_thr   = median * (1.0 + exp_pct)
-
+    cheap_thr = median * (1.0 + cheap_pct); exp_thr = median * (1.0 + exp_pct)
     cheap_hours = {h for (h,p) in hour_price if p <= cheap_thr}
     exp_hours   = {h for (h,p) in hour_price if p >= exp_thr}
-
-    ecL, ecH = pack_mask(cheap_hours)
-    exL, exH = pack_mask(exp_hours)
-
+    ecL, ecH = pack_mask(cheap_hours); exL, exH = pack_mask(exp_hours)
     return {
-        "site_id": site_id,
-        "day": local_day.strftime("%Y-%m-%d"),
-        "tz": tzname,
-        "price_stamp": int(local_day.strftime("%Y%m%d")),
-        "price_rank": price_rank,
+        "site_id": site_id, "day": local_day.strftime("%Y-%m-%d"), "tz": tzname,
+        "price_stamp": int(local_day.strftime("%Y%m%d")), "price_rank": price_rank,
         "masks": {"EC":{"L":ecL,"H":ecH}, "EX":{"L":exL,"H":exH}},
-        "meta": {
-            "generated_at": datetime.now(UTC).astimezone(STHLM).isoformat(timespec="seconds"),
-            "median": median, "cheap_thr": cheap_thr, "exp_thr": exp_thr,
-            "cheap_pct": cheap_pct, "exp_pct": exp_pct,
-        },
+        "meta": {"generated_at": datetime.now(UTC).astimezone(STHLM).isoformat(timespec="seconds"),
+                 "median": median, "cheap_thr": cheap_thr, "exp_thr": exp_thr,
+                 "cheap_pct": cheap_pct, "exp_pct": exp_pct}
     }
 
 # ---------------- Arrigo API ----------------
-
 def gql(graphql_url: str, token: str, query: str, variables: Dict[str, Any], verify_tls: bool) -> Dict[str, Any]:
     try:
-        r = requests.post(
-            graphql_url,
-            headers={"Authorization": f"Bearer {token}"},
-            json={"query": query, "variables": variables},
-            timeout=30, verify=verify_tls
-        )
+        r = requests.post(graphql_url, headers={"Authorization": f"Bearer {token}"},
+                          json={"query": query, "variables": variables}, timeout=30, verify=verify_tls)
         if r.status_code >= 400:
             txt = r.text.strip()
             raise SystemExit(f"GraphQL HTTP {r.status_code} på {graphql_url}\nQuery:\n{query}\nVars:{json.dumps(variables)[:400]}...\nSvartext:\n{txt[:2000]}")
         j = r.json()
     except requests.RequestException as e:
         raise SystemExit(f"Nätverksfel mot GraphQL: {e}")
-    if "errors" in j:
-        raise SystemExit("GraphQL-fel: " + json.dumps(j["errors"], ensure_ascii=False))
+    if "errors" in j: raise SystemExit("GraphQL-fel: " + json.dumps(j["errors"], ensure_ascii=False))
     return j["data"]
 
 def arrigo_login(login_url: str, user: str, password: str, verify_tls: bool) -> str:
-    r = requests.post(login_url, json={"username": user, "password": password},
-                      timeout=15, verify=verify_tls)
-    r.raise_for_status()
-    j = r.json()
-    tok = j.get("authToken")
-    if not tok:
-        raise SystemExit(f"Inget authToken i svar: {j}")
+    r = requests.post(login_url, json={"username": user, "password": password}, timeout=15, verify=verify_tls)
+    r.raise_for_status(); j = r.json(); tok = j.get("authToken")
+    if not tok: raise SystemExit(f"Inget authToken i svar: {j}")
     return tok
 
 def _unwrap_type(t):
-    while t and t.get("ofType"):
-        t = t["ofType"]
+    while t and t.get("ofType"): t = t["ofType"]
     return t
 
 def _kind_name(t):
-    base = _unwrap_type(t or {})
-    return base.get("kind"), base.get("name")
+    base = _unwrap_type(t or {}); return base.get("kind"), base.get("name")
 
 def discover_write_signature(graphql_url: str, token: str, verify_tls: bool):
     q = """
@@ -186,141 +140,139 @@ def discover_write_signature(graphql_url: str, token: str, verify_tls: bool):
     """
     data = gql(graphql_url, token, q, {}, verify_tls)
     mtype = data["__schema"].get("mutationType")
-    if not mtype:
-        raise SystemExit("Hittar ingen mutationType i schemat (är skrivning avstängd?).")
+    if not mtype: raise SystemExit("Hittar ingen mutationType i schemat (är skrivning avstängd?).")
     fields = mtype["fields"] or []
-
     def pick(f):
         arg_name, input_type = None, None
         for a in (f.get("args") or []):
             if a["name"] in ("variables","vars","values","data"):
-                _, input_type = _kind_name(a["type"])
-                arg_name = a["name"]
-                break
-        if not arg_name or not input_type:
-            return None
+                _, input_type = _kind_name(a["type"]); arg_name = a["name"]; break
+        if not arg_name or not input_type: return None
         ret_kind, ret_name = _kind_name(f.get("type"))
         return (f["name"], arg_name, input_type, ret_kind, ret_name)
-
     for f in fields:
         if f["name"] == "writeData":
-            got = pick(f); 
+            got = pick(f)
             if got: return got
     for f in fields:
         got = pick(f)
         if got: return got
     return ("writeData", "variables", "WriteVariableInput", "SCALAR", "Boolean")
 
-# ---------------- Push helpers ----------------
+# -------- Fetch existing technical addresses under PVL --------
+def get_variables_map(graphql_url: str, token: str, pvl_path: str, verify_tls: bool):
+    data = gql(
+        graphql_url, token,
+        'query ($path:String!){ data(path:$path){ variables { technicalAddress } } }',
+        {"path": pvl_path}, verify_tls
+    )
+    vars_list = (data.get("data") or {}).get("variables") or []
+    rank_classic = {}
+    rank_array   = {}
+    singles = {}
+    for v in vars_list:
+        ta = v.get("technicalAddress") or ""
+        m1 = re.search(r'\.PRICE_RANK_(\d{2})$', ta)
+        m2 = re.search(r'\.PRICE_RANK\((\d+)\)$', ta)
+        if m1:
+            idx = int(m1.group(1))
+            rank_classic[idx] = ta
+        elif m2:
+            idx = int(m2.group(1))
+            rank_array[idx] = ta
+        else:
+            # masks, stamp, ok
+            for name in ("EC_MASK_L","EC_MASK_H","EX_MASK_L","EX_MASK_H","PRICE_STAMP","PRICE_OK"):
+                if ta.endswith("." + name):
+                    singles[name] = ta
+    return {"classic": rank_classic, "array": rank_array, "singles": singles}
 
-def build_writes_for_pvl_array(pvl_path: str, payload: Dict[str, Any]) -> List[Dict[str, Any]]:
+# ---------------- Build writes using technicalAddress ----------------
+def build_writes_using_map(varmap: Dict[str, Any], payload: Dict[str, Any]) -> List[Dict[str, Any]]:
     w = []
+    classic = varmap["classic"]; arr = varmap["array"]; single = varmap["singles"]
+    # ranks
     for idx, hour in enumerate(payload["price_rank"]):
-        w.append({"key": f"{pvl_path}.PRICE_RANK({idx})", "value": str(hour)})
-        w.append({"key": f"{pvl_path}.PRICE_RANK_{idx:02d}", "value": str(hour)})
-    w += [
-        {"key": f"{pvl_path}.EC_MASK_L", "value": str(payload["masks"]["EC"]["L"])},
-        {"key": f"{pvl_path}.EC_MASK_H", "value": str(payload["masks"]["EC"]["H"])},
-        {"key": f"{pvl_path}.EX_MASK_L", "value": str(payload["masks"]["EX"]["L"])},
-        {"key": f"{pvl_path}.EX_MASK_H", "value": str(payload["masks"]["EX"]["H"])},
-        {"key": f"{pvl_path}.PRICE_STAMP", "value": str(payload["price_stamp"])},
-    ]
+        if idx in arr:     w.append({"key": arr[idx],     "value": str(hour)})
+        if idx in classic: w.append({"key": classic[idx], "value": str(hour)})
+    # masks + stamp
+    for name, path in single.items():
+        if name == "EC_MASK_L": w.append({"key": path, "value": str(payload["masks"]["EC"]["L"])})
+        if name == "EC_MASK_H": w.append({"key": path, "value": str(payload["masks"]["EC"]["H"])})
+        if name == "EX_MASK_L": w.append({"key": path, "value": str(payload["masks"]["EX"]["L"])})
+        if name == "EX_MASK_H": w.append({"key": path, "value": str(payload["masks"]["EX"]["H"])})
+        if name == "PRICE_STAMP": w.append({"key": path, "value": str(payload["price_stamp"])})
     return w
 
-def push_to_arrigo(login_url: str, graphql_url: str,
-                   user: str, password: str, pvl_path: str,
-                   payload: Dict[str, Any], verify_tls: bool,
-                   log_keys: bool = False):
+# ---------------- Push ----------------
+def push_to_arrigo(login_url: str, graphql_url: str, user: str, password: str,
+                   pvl_path: str, payload: Dict[str, Any], verify_tls: bool, log_keys: bool=False):
     token = arrigo_login(login_url, user, password, verify_tls)
     mut_name, arg_name, input_type, ret_kind, _ = discover_write_signature(graphql_url, token, verify_tls)
+    mutation = f"mutation ($vars:[{input_type}!]!){{ {mut_name}({arg_name}:$vars) }}"
     if ret_kind in ("OBJECT","INTERFACE","UNION"):
         mutation = f"mutation ($vars:[{input_type}!]!){{ {mut_name}({arg_name}:$vars) {{ __typename }} }}"
-    else:
-        mutation = f"mutation ($vars:[{input_type}!]!){{ {mut_name}({arg_name}:$vars) }}"
-
-    pre = [{"key":f"{pvl_path}.PRICE_OK","value":"0"}]
-    post= [{"key":f"{pvl_path}.PRICE_OK","value":"1"}]
-    body = build_writes_for_pvl_array(pvl_path, payload)
-
+    # Läs vilka tekniska adresser som finns under PVL-path
+    varmap = get_variables_map(graphql_url, token, pvl_path, verify_tls)
+    writes = build_writes_using_map(varmap, payload)
+    pre = []; post = []
+    if "PRICE_OK" in varmap["singles"]:
+        pre  = [{"key": varmap["singles"]["PRICE_OK"], "value": "0"}]
+        post = [{"key": varmap["singles"]["PRICE_OK"], "value": "1"}]
+    send = pre + writes + post
     if log_keys:
-        print("Nycklar som skickas (inklusive PRICE_OK):")
-        for item in pre + body + post:
-            print(f"  {item['key']} = {item['value']}")
-
-    gql(graphql_url, token, mutation, {"vars": pre}, verify_tls)
-    gql(graphql_url, token, mutation, {"vars": body}, verify_tls)
-    gql(graphql_url, token, mutation, {"vars": post}, verify_tls)
+        print("Nycklar som skickas (inklusive PRICE_OK om den finns):")
+        for item in send: print(f"  {item['key']} = {item['value']}")
+    # Kör i tre chunkar för att inte trigga server-limiter
+    if pre:  gql(graphql_url, token, mutation, {"vars": pre}, verify_tls)
+    if writes: gql(graphql_url, token, mutation, {"vars": writes}, verify_tls)
+    if post: gql(graphql_url, token, mutation, {"vars": post}, verify_tls)
 
 # ---------------- CLI ----------------
-
 def parse_args():
     ap = argparse.ArgumentParser(description="Bygg rank-array/masker från DB och pusha till Arrigo.")
-    ap.add_argument("--site-id", default="Site")
-    ap.add_argument("--day", help="YYYY-MM-DD (lokaldag). Default = idag.")
-    ap.add_argument("--tz", default="Europe/Stockholm")
-    ap.add_argument("--cheap-pct", type=float, default=-0.20)
-    ap.add_argument("--exp-pct",   type=float, default=+0.20)
-
-    ap.add_argument("--base")
-    ap.add_argument("--login-url")
-    ap.add_argument("--graphql-url")
-
-    ap.add_argument("--arrigo-user", default=os.getenv("ARRIGO_USER", "APIUser"))
-    ap.add_argument("--arrigo-pass", default=os.getenv("ARRIGO_PASS", "API_S#are"))
-    ap.add_argument("--pvl-path",    default=os.getenv("ARRIGO_PVL_PATH", ""))
-    ap.add_argument("--push", action="store_true")
-    ap.add_argument("--verify", action="store_true")
-    ap.add_argument("--out", default="")
-    ap.add_argument("--insecure", action="store_true")
+    ap.add_argument("--site-id", required=True)
+    ap.add_argument("--day"); ap.add_argument("--tz", default="Europe/Stockholm")
+    ap.add_argument("--cheap-pct", type=float, default=-0.20); ap.add_argument("--exp-pct", type=float, default=+0.20)
+    ap.add_argument("--base"); ap.add_argument("--login-url"); ap.add_argument("--graphql-url")
+    ap.add_argument("--arrigo-user", default=os.getenv("ARRIGO_USER","APIUser"))
+    ap.add_argument("--arrigo-pass", default=os.getenv("ARRIGO_PASS","API_S#are"))
+    ap.add_argument("--pvl-path",    default=os.getenv("ARRIGO_PVL_PATH",""))
+    ap.add_argument("--push", action="store_true"); ap.add_argument("--verify", action="store_true")
+    ap.add_argument("--out", default=""); ap.add_argument("--insecure", action="store_true")
     ap.add_argument("--log-keys", action="store_true")
     return ap.parse_args()
 
 def resolve_urls(args):
-    if args.base:
-        base = args.base.rstrip("/")
-        return f"{base}/login", f"{base}/graphql"
-    if args.login_url and args.graphql_url:
-        return args.login_url, args.graphql_url
+    if args.base: base = args.base.rstrip("/"); return f"{base}/login", f"{base}/graphql"
+    if args.login_url and args.graphql_url: return args.login_url, args.graphql_url
     raise SystemExit("Ange --base eller både --login-url och --graphql-url.")
 
 def main():
     args = parse_args()
-    login_url, graphql_url = resolve_urls(args)
-    verify_tls = not args.insecure
+    login_url, graphql_url = resolve_urls(args); verify_tls = not args.insecure
     local_day = date.fromisoformat(args.day) if args.day else datetime.now(STHLM).date()
-
-    payload = build_payload_from_db(
-        site_id=args.site_id, local_day=local_day, tzname=args.tz,
-        cheap_pct=args.cheap_pct, exp_pct=args.exp_pct
-    )
-
+    payload = build_payload_from_db(args.site_id, local_day, args.tz, args.cheap_pct, args.exp_pct)
     if args.out:
         js = json.dumps(payload, ensure_ascii=False, indent=2)
-        if args.out == "-":
-            print(js)
+        if args.out == "-": print(js)
         else:
-            with open(args.out, "w", encoding="utf-8") as f:
-                f.write(js)
-
+            with open(args.out, "w", encoding="utf-8") as f: f.write(js)
     if args.verify:
         token = arrigo_login(login_url, args.arrigo_user, args.arrigo_pass, verify_tls)
-        data = gql(
-            graphql_url, token,
-            'query ($path:String!){ data(path:$path){ variables { technicalAddress value } } }',
-            {"path": args.pvl_path}, verify_tls
-        )
+        data = gql(graphql_url, token,
+                   'query ($path:String!){ data(path:$path){ variables { technicalAddress value } } }',
+                   {"path": args.pvl_path}, verify_tls)
         print(json.dumps(data, ensure_ascii=False, indent=2))
-
     if args.push:
-        if not args.pvl_path:
-            raise SystemExit("Saknar --pvl-path (base64).")
-        push_to_arrigo(login_url, graphql_url,
-                       args.arrigo_user, args.arrigo_pass, args.pvl_path,
-                       payload, verify_tls, log_keys=args.log_keys)
+        if not args.pvl_path: raise SystemExit("Saknar --pvl-path (base64).")
+        push_to_arrigo(login_url, graphql_url, args.arrigo_user, args.arrigo_pass,
+                       args.pvl_path, payload, verify_tls, log_keys=args.log_keys)
         print("✅ Push klar (array + gamla variabler).")
 
 if __name__ == "__main__":
-    try:
-        main()
-    except KeyboardInterrupt:
-        pass
+    try: main()
+    except KeyboardInterrupt: pass
+PYEOF
+
+chmod +x ~/smartweb/tools/new_rank/exo_price_rank_array.py
