@@ -2,7 +2,7 @@ PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 #!/usr/bin/env bash
 set -euo pipefail
 source /home/runerova/.arrigo.env
-/usr/bin/python3 /home/runerova/smartweb/tools/exo_price_rank.py \
+/usr/bin/python3 /home/runerova/smartweb/tools/old_rank/exo_price_rank.py \
   --site-id C1 \
   --login-url   "$ARRIGO_LOGIN_URL" \
   --graphql-url "$ARRIGO_GRAPHQL_URL" \
