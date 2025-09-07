@@ -56526,3 +56526,33 @@ To https://github.com/torbjornthorbjornson/smart-styrning.git
  2 files changed, 112 insertions(+)
 To https://github.com/torbjornthorbjornson/smart-styrning.git
    281351d6..7b1ac854  main -> main
+[main 65a3eb8c] Automatisk backup: 2025-09-07 20:30
+ 26 files changed, 0 insertions(+), 0 deletions(-)
+ rename tools/{new_rank => arrigo}/arrigo_health_array.sh (100%)
+ rename tools/{old_rank => arrigo}/exo_price_rank.py (100%)
+ rename tools/{new_rank => arrigo}/exo_price_rank_array.py (100%)
+ rename tools/{new_rank => arrigo}/exo_price_rank_array.py.bak.1757110288 (100%)
+ rename tools/{new_rank => arrigo}/exo_price_rank_array.py.bak.1757110787 (100%)
+ rename tools/{new_rank => arrigo}/exo_price_rank_array.py.bak.1757145803 (100%)
+ rename tools/{new_rank => arrigo}/exo_price_rank_array.py.bak.1757145859 (100%)
+ rename tools/{new_rank => arrigo}/exo_price_rank_array.py.bak.1757147979 (100%)
+ rename tools/{new_rank => arrigo}/exo_price_rank_array.py.bak.1757148189 (100%)
+ rename tools/{new_rank => arrigo}/exo_price_rank_array.py.save (100%)
+ rename tools/{new_rank => arrigo}/exo_price_rank_array.py.save.1 (100%)
+ rename tools/{new_rank => arrigo}/exo_price_rank_array.py.save.2 (100%)
+ rename tools/{new_rank => arrigo}/exo_price_rank_array.py.trash.1757146283 (100%)
+ rename tools/{old_rank => arrigo}/exo_price_rank_idx.py (100%)
+ rename tools/{new_rank => arrigo}/payload.json (100%)
+ rename tools/{old_rank => arrigo}/push_by_index.py (100%)
+ rename tools/{old_rank => arrigo}/push_index_min.py (100%)
+ rename tools/{old_rank => arrigo}/push_index_prod.py (100%)
+ rename tools/{old_rank => arrigo}/push_prices.sh (100%)
+ rename tools/{new_rank => arrigo}/push_prices_array.sh (100%)
+ rename tools/{new_rank => arrigo}/push_prices_array.sh.save (100%)
+ rename tools/{new_rank => arrigo}/push_prices_array.sh.save.1 (100%)
+ rename tools/{old_rank => arrigo}/push_prices_idx.sh (100%)
+ rename tools/{old_rank => arrigo}/push_prices_tomorrow.sh (100%)
+ rename tools/{new_rank => arrigo}/push_prices_tomorrow_array.sh (100%)
+ rename tools/{new_rank => arrigo}/verify_prices_array.sh (100%)
+To https://github.com/torbjornthorbjornson/smart-styrning.git
+   7b1ac854..65a3eb8c  main -> main
