@@ -1,111 +1,76 @@
 #!/usr/bin/env python3
-import os, json, requests, sys
-
+import os, sys, json, re, requests
+VERIFY = (os.environ.get('ARRIGO_INSECURE')!='1')
 LOGIN  = os.environ['ARRIGO_LOGIN_URL']
 GQL    = os.environ['ARRIGO_GRAPHQL_URL']
 USER   = os.environ.get('ARRIGO_USER','APIUser')
 PASS   = os.environ.get('ARRIGO_PASS','API_S#are')
 PVL_B64= os.environ['ARRIGO_PVL_PATH']
-VERIFY = False if os.environ.get('ARRIGO_INSECURE')=='1' else True
 
-REF_PREFIX = 'Huvudcentral_C1'
+# ----- hämta token -----
+tok = requests.post(LOGIN, json={'username':USER,'password':PASS},
+                    verify=VERIFY, timeout=30).json()['authToken']
+hdr = {'Authorization':f'Bearer {tok}','Content-Type':'application/json'}
 
-def gql(query, variables=None, token=None):
-    h = {'Content-Type':'application/json'}
-    if token: h['Authorization'] = f'Bearer {token}'
-    r = requests.post(GQL, json={'query':query,'variables':variables or {}}, headers=h, verify=VERIFY, timeout=30)
-    r.raise_for_status()
-    j = r.json()
-    if 'errors' in j:
-        raise SystemExit('GraphQL-fel: '+json.dumps(j['errors'], ensure_ascii=False))
-    return j['data']
+# ----- läs alla variabler (ordningen = index) -----
+q = 'query($p:String!){ data(path:$p){ variables{ technicalAddress type value } } }'
+j = requests.post(GQL, headers=hdr,
+                  json={'query':q,'variables':{'p':PVL_B64}},
+                  verify=VERIFY, timeout=30).json()
+vars_ = j['data']['data']['variables']
 
-def login():
-    r = requests.post(LOGIN, json={'username':USER,'password':PASS}, verify=VERIFY, timeout=15)
-    r.raise_for_status()
-    tok = r.json().get('authToken')
-    if not tok: raise SystemExit('Inget authToken i svar.')
-    return tok
+# ----- dina 24 timranks (ERSÄTT om du hämtar från DB i annat steg) -----
+rank = [14,13,15,11,12,10,16,23,2,3,4,5,6,0,1,7,8,22,17,9,21,18,20,19]
 
-def get_index_map(token):
-    q = 'query($p:String!){ data(path:$p){ variables{ technicalAddress } } }'
-    d = gql(q, {'p': PVL_B64}, token)
-    vars_ = d['data']['variables'] or []
-    return { v['technicalAddress']: i for i,v in enumerate(vars_) }
+items = []
+match_re = re.compile(r'(?:PRICE|Price)[_ ]?RANK[_\(]?(\d{1,2})\)?$')
 
-def write_items(token, items):
-    mut = 'mutation ($variables:[VariableKeyValue!]!){ writeData(variables:$variables) }'
-    # skicka i chunkar om många
-    CH=40
-    out=[]
-    for i in range(0,len(items),CH):
-        part = items[i:i+CH]
-        d = gql(mut, {'variables': part}, token)
-        out += d['writeData']
-    return out
+for i, v in enumerate(vars_):
+    ta = v['technicalAddress']
+    typ = str(v.get('type',''))
+    if typ.lower() == 'response':   # skriv inte till read-only
+        continue
+    m = match_re.search(ta)
+    if not m:
+        continue
+    h = int(m.group(1))
+    if 0 <= h <= 23:
+        items.append({'key': f'{PVL_B64}:{i}', 'value': str(rank[h])})
 
-def read_back(token):
-    q = 'query($p:String!){ data(path:$p){ variables{ technicalAddress value } } }'
-    d = gql(q, {'p': PVL_B64}, token)
-    return d['data']['variables']
+# PRICE_OK (om den är skrivbar)
+for i, v in enumerate(vars_):
+    if v['technicalAddress'].endswith('PRICE_OK') and str(v.get('type','')).lower()!='response':
+        items.append({'key': f'{PVL_B64}:{i}', 'value': '1'})
 
-def main():
-    tok = login()
-    idx = get_index_map(tok)
-    if not idx: raise SystemExit('Tom PVL eller fel path.')
+# PRICE_STAMP (om den finns & inte Response)
+from datetime import datetime
+stamp = datetime.now().strftime('%Y%m%d')
+for i, v in enumerate(vars_):
+    if v['technicalAddress'].endswith('PRICE_STAMP') and str(v.get('type','')).lower()!='response':
+        items.append({'key': f'{PVL_B64}:{i}', 'value': stamp})
 
-    # bygg writes
-    items=[]
+# ----- skriv -----
+mut = 'mutation ($variables:[VariableKeyValue!]!){ writeData(variables:$variables) }'
+r = requests.post(GQL, headers=hdr,
+                  json={'query':mut, 'variables':{'variables':items}},
+                  verify=VERIFY, timeout=30).json()['data']['writeData']
 
-    # 1) PRICE_OK = 0
-    ok_ta = f'{REF_PREFIX}.PRICE_OK'
-    if ok_ta in idx:
-        items.append({'key': f'{PVL_B64}:{idx[ok_ta]}', 'value': '0'})
+# rapportera ev. False
+bad = [i for i,x in enumerate(r) if str(x)!='True']
+if bad:
+    print("❌ False på:", [items[i]['key'] for i in bad])
+else:
+    print("✅ Allt True (", len(items), "nycklar )")
 
-    # 2) Försök läsa /tmp/payload.json (om den finns) för ranks + mask + stamp
-    price_rank=None; ec=None; ex=None; stamp=None
-    if os.path.exists('/tmp/payload.json'):
-        try:
-            with open('/tmp/payload.json','r',encoding='utf-8') as f:
-                p = json.load(f)
-            # prova vanliga nycklar
-            price_rank = p.get('price_rank') or p.get('rank') or p.get('PRICE_RANK')
-            if isinstance(price_rank, list) and len(price_rank)==24:
-                for h,val in enumerate(price_rank):
-                    for ta in (f'{REF_PREFIX}.PRICE_RANK_{h:02d}', f'{REF_PREFIX}.PRICE_RANK({h})'):
-                        if ta in idx:
-                            items.append({'key': f'{PVL_B64}:{idx[ta]}', 'value': str(val)})
-            # masker
-            masks = p.get('masks') or {}
-            EC = masks.get('EC') or {}
-            EX = masks.get('EX') or {}
-            extras = [
-                (f'{REF_PREFIX}.EC_MASK_L', EC.get('L')),
-                (f'{REF_PREFIX}.EC_MASK_H', EC.get('H')),
-                (f'{REF_PREFIX}.EX_MASK_L', EX.get('L')),
-                (f'{REF_PREFIX}.EX_MASK_H', EX.get('H')),
-                (f'{REF_PREFIX}.PRICE_STAMP', p.get('price_stamp') or p.get('PRICE_STAMP')),
-            ]
-            for ta,val in extras:
-                if val is not None and ta in idx:
-                    items.append({'key': f'{PVL_B64}:{idx[ta]}', 'value': str(val)})
-        except Exception as e:
-            print('⚠️ Ignorerar payload.json:', e, file=sys.stderr)
-
-    # 3) PRICE_OK = 1 sist
-    if ok_ta in idx:
-        items.append({'key': f'{PVL_B64}:{idx[ok_ta]}', 'value': '1'})
-
-    # skriv
-    res = write_items(tok, items)
-    print(f'✅ Push skickad ({len(items)} nycklar). Svar: {res}')
-
-    # verifiera
-    vars_ = read_back(tok)
-    for v in vars_:
-        ta=v['technicalAddress']
-        if ta.startswith(f'{REF_PREFIX}.PRICE_RANK_0') or ta.endswith('PRICE_OK'):
-            print(f'{ta} = {v["value"]}')
-
-if __name__=='__main__':
-    main()
+# visa ett urval för bekräftelse
+print("Exempelvärden efter push:")
+q2='query($p:String!){ data(path:$p){ variables{ technicalAddress value } } }'
+j2=requests.post(GQL, headers=hdr,
+                 json={'query':q2,'variables':{'p':PVL_B64}},
+                 verify=VERIFY, timeout=30).json()
+vals = {v['technicalAddress']:v['value'] for v in j2['data']['data']['variables']}
+for h in range(10):  # 0..9
+    for pat in (f'PRICE_RANK_{h:02d}', f'Price_Rank_{h}'):
+        for k in vals:
+            if k.endswith(pat):
+                print(k, '=', vals[k])
