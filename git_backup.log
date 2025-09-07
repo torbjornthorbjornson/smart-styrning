@@ -56485,3 +56485,8 @@ To https://github.com/torbjornthorbjornson/smart-styrning.git
  1 file changed, 4 insertions(+)
 To https://github.com/torbjornthorbjornson/smart-styrning.git
    bd8f5d5f..a9627db1  main -> main
+[main 332daa44] Automatisk backup: 2025-09-07 18:00
+ 2 files changed, 100 insertions(+)
+ create mode 100755 tools/push_from_db.py
+To https://github.com/torbjornthorbjornson/smart-styrning.git
+   a9627db1..332daa44  main -> main
