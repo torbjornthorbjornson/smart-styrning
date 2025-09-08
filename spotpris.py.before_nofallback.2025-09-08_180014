@@ -112,11 +112,6 @@ def parse_and_save(data, target_date_local):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--datum", help="Datum i formatet ÅÅÅÅ-MM-DD")
-parser.add_argument(
-    "--no-fallback",
-    action="store_true",
-    help="Skriv inte in gårdagens data om det blev 0 sparade",
-)
     args = parser.parse_args()
 
     logging.info("==> spotpris.py startade")
@@ -130,7 +125,7 @@ parser.add_argument(
     data = fetch_prices(target_date_local)
     saved = parse_and_save(data, target_date_local)
 
-    if saved == 0 and not args.no_fallback:
+    if saved == 0:
         fallback_date = target_date_local - timedelta(days=1)
         logging.warning(f"🔁 Försöker med gårdagens data istället: {fallback_date}")
         data = fetch_prices(fallback_date)
