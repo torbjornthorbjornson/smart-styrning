@@ -158,71 +158,47 @@ def discover_write_signature(graphql_url: str, token: str, verify_tls: bool):
 
 # -------- Fetch existing technical addresses under PVL --------
 def get_variables_map(graphql_url: str, token: str, pvl_path: str, verify_tls: bool):
-    # Hämta både technicalAddress OCH reference/index
     data = gql(
         graphql_url, token,
-        'query ($path:String!){ data(path:$path){ variables { technicalAddress reference index } } }',
+        'query ($path:String!){ data(path:$path){ variables { technicalAddress } } }',
         {"path": pvl_path}, verify_tls
     )
     vars_list = (data.get("data") or {}).get("variables") or []
-
-    rank_classic = {}   # hour -> {"key": "ref:idx"}
-    rank_array   = {}   # hour -> {"key": "ref:idx"}
-    singles      = {}   # name -> {"key": "ref:idx"}
-
+    rank_classic = {}
+    rank_array   = {}
+    singles = {}
     for v in vars_list:
-        ta  = (v.get("technicalAddress") or "").strip()
-        ref = (v.get("reference") or "").strip()
-        idx = v.get("index")
-        if not ref or idx is None:
-            continue
-        key_refidx = f"{ref}:{idx}"
-
-        m1 = re.search(r'\.PRICE_RANK_(\d{2})$', ta)     # classic
-        m2 = re.search(r'\.PRICE_RANK\((\d+)\)$', ta)    # array
-
+        ta = v.get("technicalAddress") or ""
+        m1 = re.search(r'\.PRICE_RANK_(\d{2})$', ta)
+        m2 = re.search(r'\.PRICE_RANK\((\d+)\)$', ta)
         if m1:
-            hour = int(m1.group(1))
-            rank_classic[hour] = {"key": key_refidx}
+            idx = int(m1.group(1))
+            rank_classic[idx] = ta
         elif m2:
-            hour = int(m2.group(1))
-            rank_array[hour] = {"key": key_refidx}
+            idx = int(m2.group(1))
+            rank_array[idx] = ta
         else:
+            # masks, stamp, ok
             for name in ("EC_MASK_L","EC_MASK_H","EX_MASK_L","EX_MASK_H","PRICE_STAMP","PRICE_OK"):
                 if ta.endswith("." + name):
-                    singles[name] = {"key": key_refidx}
-
+                    singles[name] = ta
     return {"classic": rank_classic, "array": rank_array, "singles": singles}
-
 
 # ---------------- Build writes using technicalAddress ----------------
 def build_writes_using_map(varmap: Dict[str, Any], payload: Dict[str, Any]) -> List[Dict[str, Any]]:
     w = []
-    classic = varmap["classic"]
-    arr     = varmap["array"]
-    single  = varmap["singles"]
-
-    # payload["price_rank"] = timmar sorterade på pris (billigast först)
-    # Vi behöver rank per timme: rank_per_hour[hour] = rank
-    rank_per_hour = [0]*24
-    for rank, hour in enumerate(payload["price_rank"]):
-        if 0 <= hour <= 23:
-            rank_per_hour[hour] = rank
-
-    # Skriv både array och classic om de finns
-    for hour in range(24):
-        val = str(rank_per_hour[hour])
-        if hour in arr:
-            w.append({"key": arr[hour]["key"], "value": val})
-        if hour in classic:
-            w.append({"key": classic[hour]["key"], "value": val})
-
-    # Masker + stamp
-    if "EC_MASK_L" in single:  w.append({"key": single["EC_MASK_L"]["key"],  "value": str(payload["masks"]["EC"]["L"])})
-    if "EC_MASK_H" in single:  w.append({"key": single["EC_MASK_H"]["key"],  "value": str(payload["masks"]["EC"]["H"])})
-    if "EX_MASK_L" in single:  w.append({"key": single["EX_MASK_L"]["key"],  "value": str(payload["masks"]["EX"]["L"])})
-    if "EX_MASK_H" in single:  w.append({"key": single["EX_MASK_H"]["key"],  "value": str(payload["masks"]["EX"]["H"])})
-    if "PRICE_STAMP" in single:w.append({"key": single["PRICE_STAMP"]["key"],"value": str(payload["price_stamp"])})
+    classic = varmap["classic"]; arr = varmap["array"]; single = varmap["singles"]
+    # ranks
+    for idx, hour in enumerate(payload["price_rank"]):
+        if idx in arr:     w.append({"key": arr[idx],     "value": str(hour)})
+        if idx in classic: w.append({"key": classic[idx], "value": str(hour)})
+    # masks + stamp
+    for name, path in single.items():
+        if name == "EC_MASK_L": w.append({"key": path, "value": str(payload["masks"]["EC"]["L"])})
+        if name == "EC_MASK_H": w.append({"key": path, "value": str(payload["masks"]["EC"]["H"])})
+        if name == "EX_MASK_L": w.append({"key": path, "value": str(payload["masks"]["EX"]["L"])})
+        if name == "EX_MASK_H": w.append({"key": path, "value": str(payload["masks"]["EX"]["H"])})
+        if name == "PRICE_STAMP": w.append({"key": path, "value": str(payload["price_stamp"])})
     return w
 
 # ---------------- Push ----------------
