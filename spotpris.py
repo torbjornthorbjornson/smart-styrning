@@ -93,4 +93,51 @@ def parse_and_save(data, target_date_local):
                 try:
                     cursor.execute(
                         "INSERT INTO electricity_prices (datetime, price) VALUES (%s, %s)",
-                        (ts_utc_naive, price),
+                        (ts_utc_naive, price)
+                    )
+                    logging.info(f"💾 Sparat: {ts_utc_naive}Z => {price} kr/kWh")
+                    saved += 1
+                except pymysql.err.IntegrityError:
+                    logging.info(f"⏩ Skippad (fanns redan): {ts_utc_naive}Z")
+        conn.commit()
+
+    # Informationslogg vid 23/25 timmar (DST-dygn)
+    if saved == 23:
+        logging.info("☀️ Dygn med 23 timmar (sommartidstart).")
+    elif saved == 25:
+        logging.info("❄️ Dygn med 25 timmar (vintertidstart).")
+
+    return saved
+
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--datum", help="Datum i formatet ÅÅÅÅ-MM-DD")
+    parser.add_argument(
+        "--no-fallback",
+        action="store_true",
+        help="Skriv inte in gårdagens data om det blev 0 sparade",
+    )
+    args = parser.parse_args()
+
+    logging.info("==> spotpris.py startade")
+    date_str = args.datum or datetime.now().strftime("%Y-%m-%d")
+    try:
+        target_date_local = datetime.strptime(date_str, "%Y-%m-%d").date()
+    except ValueError:
+        logging.error("❌ Ogiltigt datumformat. Använd ÅÅÅÅ-MM-DD.")
+        return
+
+    data = fetch_prices(target_date_local)
+    saved = parse_and_save(data, target_date_local)
+
+    if saved == 0 and not args.no_fallback:
+        fallback_date = target_date_local - timedelta(days=1)
+        logging.warning(f"🔁 Försöker med gårdagens data istället: {fallback_date}")
+        data = fetch_prices(fallback_date)
+        saved = parse_and_save(data, fallback_date)
+
+    logging.info(f"✅ {saved} priser sparade.")
+    logging.info("==> spotpris.py klar")
+
+if __name__ == "__main__":
+    main()
