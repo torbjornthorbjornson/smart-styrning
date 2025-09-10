@@ -57694,3 +57694,9 @@ To https://github.com/torbjornthorbjornson/smart-styrning.git
  1 file changed, 4 insertions(+)
 To https://github.com/torbjornthorbjornson/smart-styrning.git
    7d9a9a87..b8f9b40d  main -> main
+[main 96a1dea3] Automatisk backup: 2025-09-10 19:00
+ 3 files changed, 4 insertions(+)
+ create mode 100644 tools/arrigo/.push_from_db.py.swp
+ rename tools/{ => arrigo}/push_from_db.py (100%)
+To https://github.com/torbjornthorbjornson/smart-styrning.git
+   b8f9b40d..96a1dea3  main -> main
