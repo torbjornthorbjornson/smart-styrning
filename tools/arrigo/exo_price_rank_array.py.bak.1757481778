@@ -90,7 +90,7 @@ def build_payload_from_db(site_id: str, local_day: date, tzname: str, cheap_pct:
                  "cheap_pct": cheap_pct, "exp_pct": exp_pct}
     }
 
-# ---------------- GraphQL helpers ----------------
+# ---------------- Arrigo API ----------------
 def gql(graphql_url: str, token: str, query: str, variables: Dict[str, Any], verify_tls: bool) -> Dict[str, Any]:
     try:
         r = requests.post(graphql_url, headers={"Authorization": f"Bearer {token}"},
@@ -110,95 +110,144 @@ def arrigo_login(login_url: str, user: str, password: str, verify_tls: bool) -> 
     if not tok: raise SystemExit(f"Inget authToken i svar: {j}")
     return tok
 
-# ---------------- Läs PVL & bygg index ----------------
+def _unwrap_type(t):
+    while t and t.get("ofType"): t = t["ofType"]
+    return t
+
+def _kind_name(t):
+    base = _unwrap_type(t or {}); return base.get("kind"), base.get("name")
+
+def discover_write_signature(graphql_url: str, token: str, verify_tls: bool):
+    q = """
+    query Introspect {
+      __schema {
+        mutationType {
+          name
+          fields {
+            name
+            type { kind name ofType { kind name ofType { kind name } } }
+            args {
+              name
+              type { kind name ofType { kind name ofType { kind name } } }
+            }
+          }
+        }
+      }
+    }
+    """
+    data = gql(graphql_url, token, q, {}, verify_tls)
+    mtype = data["__schema"].get("mutationType")
+    if not mtype: raise SystemExit("Hittar ingen mutationType i schemat (är skrivning avstängd?).")
+    fields = mtype["fields"] or []
+    def pick(f):
+        arg_name, input_type = None, None
+        for a in (f.get("args") or []):
+            if a["name"] in ("variables","vars","values","data"):
+                _, input_type = _kind_name(a["type"]); arg_name = a["name"]; break
+        if not arg_name or not input_type: return None
+        ret_kind, ret_name = _kind_name(f.get("type"))
+        return (f["name"], arg_name, input_type, ret_kind, ret_name)
+    for f in fields:
+        if f["name"] == "writeData":
+            got = pick(f)
+            if got: return got
+    for f in fields:
+        got = pick(f)
+        if got: return got
+    return ("writeData", "variables", "WriteVariableInput", "SCALAR", "Boolean")
+
+# -------- Fetch existing technical addresses under PVL --------
 def get_variables_map(graphql_url: str, token: str, pvl_path: str, verify_tls: bool):
+    # Hämta både technicalAddress OCH reference/index
     data = gql(
         graphql_url, token,
-        'query ($path:String!){ data(path:$path){ variables { technicalAddress } } }',
+        'query ($path:String!){ data(path:$path){ variables { technicalAddress reference index } } }',
         {"path": pvl_path}, verify_tls
     )
-    vars_list = ((data.get("data") or {}).get("variables") or [])
-    # TA -> index i PVL-listan
-    ta_index = {}
-    for idx, v in enumerate(vars_list):
-        ta = (v.get("technicalAddress") or "").strip()
-        if ta:
-            ta_index[ta] = idx
+    vars_list = (data.get("data") or {}).get("variables") or []
 
-    # Endast ARRAY-formen PRICE_RANK(h)/(hh) + singlar
-    rank_array = {}   # hour -> (TA, idx)
-    singles    = {}   # name -> (TA, idx)
+    rank_classic = {}   # hour -> {"key": "ref:idx"}
+    rank_array   = {}   # hour -> {"key": "ref:idx"}
+    singles      = {}   # name -> {"key": "ref:idx"}
 
-    for ta, idx in ta_index.items():
-        m_arr = re.search(r'\.PRICE_RANK\((\d+)\)$', ta)
-        if m_arr:
-            hour = int(m_arr.group(1))
-            if 0 <= hour <= 23:
-                rank_array[hour] = (ta, idx)
+    for v in vars_list:
+        ta  = (v.get("technicalAddress") or "").strip()
+        ref = (v.get("reference") or "").strip()
+        idx = v.get("index")
+        if not ref or idx is None:
             continue
-        for name in ("EC_MASK_L","EC_MASK_H","EX_MASK_L","EX_MASK_H","PRICE_STAMP","PRICE_OK"):
-            if ta.endswith("." + name):
-                singles[name] = (ta, idx)
+        key_refidx = f"{ref}:{idx}"
 
-    return {"array": rank_array, "singles": singles, "ta_index": ta_index}
+        m1 = re.search(r'\.PRICE_RANK_(\d{2})$', ta)     # classic
+        m2 = re.search(r'\.PRICE_RANK\((\d+)\)$', ta)    # array
 
-# ---------------- Bygg writes (ref:index) ----------------
-def build_writes_using_map(varmap: Dict[str, Any], payload: Dict[str, Any], pvl_b64: str) -> List[Dict[str, Any]]:
+        if m1:
+            hour = int(m1.group(1))
+            rank_classic[hour] = {"key": key_refidx}
+        elif m2:
+            hour = int(m2.group(1))
+            rank_array[hour] = {"key": key_refidx}
+        else:
+            for name in ("EC_MASK_L","EC_MASK_H","EX_MASK_L","EX_MASK_H","PRICE_STAMP","PRICE_OK"):
+                if ta.endswith("." + name):
+                    singles[name] = {"key": key_refidx}
+
+    return {"classic": rank_classic, "array": rank_array, "singles": singles}
+
+
+# ---------------- Build writes using technicalAddress ----------------
+def build_writes_using_map(varmap: Dict[str, Any], payload: Dict[str, Any]) -> List[Dict[str, Any]]:
     w = []
-    arr    = varmap["array"]   # hour -> (TA, idx)
-    single = varmap["singles"] # name -> (TA, idx)
+    classic = varmap["classic"]
+    arr     = varmap["array"]
+    single  = varmap["singles"]
 
-    # Gör om price_rank till rank_per_hour (rank = 0..23)
+    # payload["price_rank"] = timmar sorterade på pris (billigast först)
+    # Vi behöver rank per timme: rank_per_hour[hour] = rank
     rank_per_hour = [0]*24
     for rank, hour in enumerate(payload["price_rank"]):
         if 0 <= hour <= 23:
             rank_per_hour[hour] = rank
 
-    # Skriv ARRAY-variabler
+    # Skriv både array och classic om de finns
     for hour in range(24):
+        val = str(rank_per_hour[hour])
         if hour in arr:
-            _, idx = arr[hour]
-            w.append({"key": f"{pvl_b64}:{idx}", "value": str(rank_per_hour[hour])})
+            w.append({"key": arr[hour]["key"], "value": val})
+        if hour in classic:
+            w.append({"key": classic[hour]["key"], "value": val})
 
-    # Masker + stämpel
-    if "EC_MASK_L" in single:  w.append({"key": f"{pvl_b64}:{single['EC_MASK_L'][1]}", "value": str(payload["masks"]["EC"]["L"])})
-    if "EC_MASK_H" in single:  w.append({"key": f"{pvl_b64}:{single['EC_MASK_H'][1]}", "value": str(payload["masks"]["EC"]["H"])})
-    if "EX_MASK_L" in single:  w.append({"key": f"{pvl_b64}:{single['EX_MASK_L'][1]}", "value": str(payload["masks"]["EX"]["L"])})
-    if "EX_MASK_H" in single:  w.append({"key": f"{pvl_b64}:{single['EX_MASK_H'][1]}", "value": str(payload["masks"]["EX"]["H"])})
-    if "PRICE_STAMP" in single: w.append({"key": f"{pvl_b64}:{single['PRICE_STAMP'][1]}", "value": str(payload["price_stamp"])})
+    # Masker + stamp
+    if "EC_MASK_L" in single:  w.append({"key": single["EC_MASK_L"]["key"],  "value": str(payload["masks"]["EC"]["L"])})
+    if "EC_MASK_H" in single:  w.append({"key": single["EC_MASK_H"]["key"],  "value": str(payload["masks"]["EC"]["H"])})
+    if "EX_MASK_L" in single:  w.append({"key": single["EX_MASK_L"]["key"],  "value": str(payload["masks"]["EX"]["L"])})
+    if "EX_MASK_H" in single:  w.append({"key": single["EX_MASK_H"]["key"],  "value": str(payload["masks"]["EX"]["H"])})
+    if "PRICE_STAMP" in single:w.append({"key": single["PRICE_STAMP"]["key"],"value": str(payload["price_stamp"])})
     return w
 
 # ---------------- Push ----------------
 def push_to_arrigo(login_url: str, graphql_url: str, user: str, password: str,
                    pvl_path: str, payload: Dict[str, Any], verify_tls: bool, log_keys: bool=False):
     token = arrigo_login(login_url, user, password, verify_tls)
-    mutation = "mutation ($vars:[VariableKeyValue!]!){ writeData(variables:$vars) }"
-
+    mut_name, arg_name, input_type, ret_kind, _ = discover_write_signature(graphql_url, token, verify_tls)
+    mutation = f"mutation ($vars:[{input_type}!]!){{ {mut_name}({arg_name}:$vars) }}"
+    if ret_kind in ("OBJECT","INTERFACE","UNION"):
+        mutation = f"mutation ($vars:[{input_type}!]!){{ {mut_name}({arg_name}:$vars) {{ __typename }} }}"
+    # Läs vilka tekniska adresser som finns under PVL-path
     varmap = get_variables_map(graphql_url, token, pvl_path, verify_tls)
-    writes = build_writes_using_map(varmap, payload, pvl_path)
-
-    # PRICE_OK pre/post om den finns
-    pre = post = []
+    writes = build_writes_using_map(varmap, payload)
+    pre = []; post = []
     if "PRICE_OK" in varmap["singles"]:
-        _, ok_idx = varmap["singles"]["PRICE_OK"]
-        pre  = [{"key": f"{pvl_path}:{ok_idx}", "value": "0"}]
-        post = [{"key": f"{pvl_path}:{ok_idx}", "value": "1"}]
-
-    batches = [b for b in (pre, writes, post) if b]
-
+        pre  = [{"key": varmap["singles"]["PRICE_OK"], "value": "0"}]
+        post = [{"key": varmap["singles"]["PRICE_OK"], "value": "1"}]
+    send = pre + writes + post
     if log_keys:
-        print("Nycklar som skickas (ref:index) – kommenterat med TA:")
-        ta_by_idx = {idx: ta for ta, idx in varmap["ta_index"].items()}
-        for batch in batches:
-            for item in batch:
-                try:
-                    idx = int(item["key"].split(":")[-1]); ta = ta_by_idx.get(idx, "?")
-                except Exception:
-                    ta = "?"
-                print(f"  {item['key']} = {item['value']}    # {ta}")
-
-    for batch in batches:
-        gql(graphql_url, token, mutation, {"vars": batch}, verify_tls)
+        print("Nycklar som skickas (inklusive PRICE_OK om den finns):")
+        for item in send: print(f"  {item['key']} = {item['value']}")
+    # Kör i tre chunkar för att inte trigga server-limiter
+    if pre:  gql(graphql_url, token, mutation, {"vars": pre}, verify_tls)
+    if writes: gql(graphql_url, token, mutation, {"vars": writes}, verify_tls)
+    if post: gql(graphql_url, token, mutation, {"vars": post}, verify_tls)
 
 # ---------------- CLI ----------------
 def parse_args():
@@ -240,7 +289,7 @@ def main():
         if not args.pvl_path: raise SystemExit("Saknar --pvl-path (base64).")
         push_to_arrigo(login_url, graphql_url, args.arrigo_user, args.arrigo_pass,
                        args.pvl_path, payload, verify_tls, log_keys=args.log_keys)
-        print("✅ Push klar (array-only + masker + stamp).")
+        print("✅ Push klar (array + gamla variabler).")
 
 if __name__ == "__main__":
     try: main()
