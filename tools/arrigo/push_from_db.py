@@ -1,96 +1,136 @@
 #!/usr/bin/env python3
-import os, pymysql, requests
-from datetime import datetime, timedelta, time
-import pytz
+# -*- coding: utf-8 -*-
+"""
+push_from_db.py (tolerant variant, array-only)
+- Hämtar elpriser från DB
+- Bygger rank-array (0..23)
+- Fyller ut saknade timmar med rank 23 (sämst)
+- Pushar alltid komplett array till Arrigo
+"""
 
-UTC=pytz.UTC
-STHLM=pytz.timezone("Europe/Stockholm")
+import os, sys, json, datetime as dt
+from zoneinfo import ZoneInfo
+import pymysql
+import requests
+from configparser import ConfigParser
 
-def local_day_to_utc_window(d):
-    lm = STHLM.localize(datetime.combine(d, time(0,0)))
-    return lm.astimezone(UTC).replace(tzinfo=None), (lm+timedelta(days=1)).astimezone(UTC).replace(tzinfo=None)
+TZ = ZoneInfo("Europe/Stockholm")
+LOG_PATH = "/home/runerova/smartweb/tools/arrigo/logs/arrigo_push.log"
 
-def get_prices_for(local_day):
-    u0,u1 = local_day_to_utc_window(local_day)
-    conn = pymysql.connect(read_default_file="/home/runerova/.my.cnf",
-                           database="smart_styrning",
-                           cursorclass=pymysql.cursors.DictCursor)
-    prices=[None]*24
-    with conn, conn.cursor() as cur:
-        cur.execute("""SELECT datetime, price FROM electricity_prices
-                       WHERE datetime >= %s AND datetime < %s
-                       ORDER BY datetime""", (u0,u1))
-        for r in cur.fetchall():
-            h=r["datetime"].replace(tzinfo=UTC).astimezone(STHLM).hour
-            prices[h]=float(r["price"])
-    if any(v is None for v in prices):
-        raise SystemExit("Ofullständiga DB-priser (saknar timmar)")
-    return prices
+def log(msg):
+    now = dt.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    with open(LOG_PATH, "a") as f:
+        f.write(f"{now} {msg}\n")
+    print(msg)
 
-def ranks_from(prices):
-    order = sorted(range(24), key=lambda h: (prices[h], h))
-    rank=[None]*24
-    for r,h in enumerate(order): rank[h]=r
+def read_db_creds():
+    cp = ConfigParser()
+    cp.read("/home/runerova/.my.cnf")
+    return dict(
+        host=cp.get("client", "host", fallback="localhost"),
+        user=cp.get("client", "user"),
+        password=cp.get("client", "password"),
+        database=cp.get("client", "database", fallback="smart_styrning")
+    )
+
+def sql_connect():
+    creds = read_db_creds()
+    return pymysql.connect(
+        host=creds["host"], user=creds["user"], password=creds["password"],
+        database=creds["database"], cursorclass=pymysql.cursors.DictCursor
+    )
+
+def local_day_window(which):
+    today_local = dt.datetime.now(TZ).date()
+    if which == "today":
+        day = today_local
+    elif which == "tomorrow":
+        day = today_local + dt.timedelta(days=1)
+    else:
+        raise ValueError("Använd: today | tomorrow")
+    start = dt.datetime.combine(day, dt.time(0,0), TZ)
+    end   = start + dt.timedelta(days=1)
+    return start.astimezone(dt.timezone.utc), end.astimezone(dt.timezone.utc)
+
+def fetch_prices(start_utc, end_utc):
+    sql = """
+    SELECT datetime, price
+    FROM electricity_prices
+    WHERE datetime >= %s AND datetime < %s
+    ORDER BY datetime ASC
+    """
+    with sql_connect() as conn, conn.cursor() as cur:
+        cur.execute(sql, (start_utc, end_utc))
+        return cur.fetchall()
+
+def build_rank(rows, day_local):
+    prices = [None]*24
+    for r in rows:
+        t_local = r["datetime"].replace(tzinfo=dt.timezone.utc).astimezone(TZ)
+        prices[t_local.hour] = float(r["price"])
+    # ranka
+    values = [p if p is not None else float("inf") for p in prices]
+    order = sorted(range(24), key=lambda i: (values[i], i))
+    rank = [None]*24
+    for r, idx in enumerate(order):
+        rank[idx] = r
+    # saknade timmar
+    missing = [i for i, p in enumerate(prices) if p is None]
+    if missing:
+        log(f"⚠️ Saknade timmar {missing} för {day_local}, fyllde rank 23.")
+        for i in missing:
+            rank[i] = 23
     return rank
 
-# --- dagval ---
-when=os.getenv("RANK_WHEN","today").lower()
-today_local = datetime.now(UTC).astimezone(STHLM).date()
-day = today_local if not when.startswith("tom") else (today_local + timedelta(days=1))
+def arrigo_login(session, login_url, user, passwd, verify):
+    r = session.post(login_url, json={"username": user, "password": passwd}, timeout=20, verify=verify)
+    r.raise_for_status()
+    return r.json().get("authToken")
 
-prices = get_prices_for(day)
-rank   = ranks_from(prices)
+def arrigo_push(session, graphql_url, pvl_b64, rank, verify):
+    writes = [{"key": f"{pvl_b64}:{i}", "value": int(rank[i])} for i in range(24)]
+    mutation = """
+    mutation ($variables:[VariableKeyValue!]!){
+      writeData(variables:$variables)
+    }
+    """
+    payload = {"query": mutation, "variables": {"variables": writes}}
+    r = session.post(graphql_url, json=payload, timeout=30, verify=verify)
+    r.raise_for_status()
+    data = r.json()
+    log("GraphQL svar: " + json.dumps(data)[:400])
+    return data
 
-# --- Arrigo ---
-VERIFY=(os.environ.get('ARRIGO_INSECURE')!='1')
-LOGIN=os.environ['ARRIGO_LOGIN_URL']
-GQL  =os.environ['ARRIGO_GRAPHQL_URL']
-USER =os.environ['ARRIGO_USER']
-PASS =os.environ['ARRIGO_PASS']
-PVL  =os.environ['ARRIGO_PVL_PATH']  # base64
-REF  =os.getenv('ARRIGO_REF_PREFIX','Huvudcentral_C1')
+def main():
+    which = os.environ.get("RANK_WHEN", "today")
+    login_url   = os.environ.get("ARRIGO_LOGIN_URL")
+    graphql_url = os.environ.get("ARRIGO_GRAPHQL_URL")
+    user        = os.environ.get("ARRIGO_USER")
+    passwd      = os.environ.get("ARRIGO_PASS")
+    pvl_b64     = os.environ.get("PVL_B64") or os.environ.get("ARRIGO_PVL_PATH")
+    insecure    = os.environ.get("ARRIGO_INSECURE", "0") == "1"
 
-tok=requests.post(LOGIN,json={'username':USER,'password':PASS},
-                  verify=VERIFY,timeout=30).json()['authToken']
-hdr={'Authorization':f'Bearer {tok}','Content-Type':'application/json'}
+    if not all([login_url, graphql_url, user, passwd, pvl_b64]):
+        log("❌ Saknar miljövariabler. Avbryter.")
+        sys.exit(1)
 
-# Hämta index-karta
-qidx='query($p:String!){ data(path:$p){ variables{ technicalAddress } } }'
-vars_=requests.post(GQL,headers=hdr,json={'query':qidx,'variables':{'p':PVL}},
-                    verify=VERIFY,timeout=30).json()['data']['data']['variables']
-index={v['technicalAddress']:i for i,v in enumerate(vars_)}
+    start_utc, end_utc = local_day_window(which)
+    rows = fetch_prices(start_utc, end_utc)
+    day_local = start_utc.astimezone(TZ).date()
+    log(f"Hämtade {len(rows)} rader för {which} ({day_local})")
 
-def key_for(ta):
-    i=index.get(ta)
-    return f"{PVL}:{i}" if i is not None else None
+    rank = build_rank(rows, day_local)
 
-items=[]
+    sess = requests.Session()
+    verify = not insecure
+    token = arrigo_login(sess, login_url, user, passwd, verify)
+    sess.headers.update({"Authorization": f"Bearer {token}"})
+    arrigo_push(sess, graphql_url, pvl_b64, rank, verify)
+    log(f"✅ Push klar för {which} ({day_local})")
 
-# Gate av
-k_ok=key_for(f"{REF}.PRICE_OK")
-if k_ok: items.append({'key':k_ok,'value':"0"})
-
-# Rank -> båda formerna som finns
-for h,val in enumerate(rank):
-    for ta in (f"{REF}.PRICE_RANK_{h:02d}", f"{REF}.PRICE_RANK({h:02d})"):
-        k=key_for(ta)
-        if k: items.append({'key':k,'value':str(val)})
-
-# Stämpel & area (om variablerna finns i PVL)
-for ta,val in ((f"{REF}.Price_Stamp", day.strftime("%Y-%m-%d")),
-               (f"{REF}.Price_Area",  "SE3")):
-    k=key_for(ta)
-    if k: items.append({'key':k,'value':val})
-
-# Skriv batch
-mut='mutation ($variables:[VariableKeyValue!]!){ writeData(variables:$variables) }'
-r=requests.post(GQL,headers=hdr,json={'query':mut,'variables':{'variables':items}},
-                verify=VERIFY,timeout=60).json()
-res=r['data']['writeData']
-bad=[items[i]['key'] for i,x in enumerate(res) if str(x)!='True']
-print("✅ Allt True ("+str(len(res))+" nycklar)") if not bad else print("❌ False:",bad)
-
-# Gate på
-if k_ok:
-    requests.post(GQL,headers=hdr,json={'query':mut,'variables':{'variables':[{'key':k_ok,'value':"1"}]}},
-                  verify=VERIFY,timeout=30)
+if __name__ == "__main__":
+    try:
+        main()
+    except Exception as e:
+        log(f"❌ FEL: {e}")
+        sys.exit(1)
