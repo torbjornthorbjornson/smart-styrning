@@ -57746,3 +57746,35 @@ To https://github.com/torbjornthorbjornson/smart-styrning.git
  1 file changed, 4 insertions(+)
 To https://github.com/torbjornthorbjornson/smart-styrning.git
    e14ca14c..c4c3c1dc  main -> main
+[main eb6e9b1a] Automatisk backup: 2025-09-10 22:00
+ 29 files changed, 155 insertions(+), 261 deletions(-)
+ rename tools/new_rank/exo_price_rank_array.py => "Skr\303\244p/exo_price_rank_array.py" (100%)
+ rename tools/arrigo/exo_price_rank_array.py.bak.1757110288 => "Skr\303\244p/exo_price_rank_array.py.bak.1757110288" (100%)
+ rename tools/arrigo/exo_price_rank_array.py.bak.1757110787 => "Skr\303\244p/exo_price_rank_array.py.bak.1757110787" (100%)
+ rename tools/arrigo/exo_price_rank_array.py.bak.1757145803 => "Skr\303\244p/exo_price_rank_array.py.bak.1757145803" (100%)
+ rename tools/arrigo/exo_price_rank_array.py.bak.1757145859 => "Skr\303\244p/exo_price_rank_array.py.bak.1757145859" (100%)
+ rename tools/arrigo/exo_price_rank_array.py.bak.1757147979 => "Skr\303\244p/exo_price_rank_array.py.bak.1757147979" (100%)
+ rename tools/arrigo/exo_price_rank_array.py.bak.1757148189 => "Skr\303\244p/exo_price_rank_array.py.bak.1757148189" (100%)
+ rename tools/new_rank/exo_price_rank_array.py.bak.1757445141 => "Skr\303\244p/exo_price_rank_array.py.bak.1757445141" (100%)
+ rename tools/new_rank/exo_price_rank_array.py.bak.1757445163 => "Skr\303\244p/exo_price_rank_array.py.bak.1757445163" (100%)
+ rename tools/arrigo/exo_price_rank_array.py.bak.1757446741 => "Skr\303\244p/exo_price_rank_array.py.bak.1757446741" (100%)
+ rename tools/arrigo/exo_price_rank_array.py.bak.1757446866 => "Skr\303\244p/exo_price_rank_array.py.bak.1757446866" (100%)
+ rename tools/arrigo/exo_price_rank_array.py.bak.1757446953 => "Skr\303\244p/exo_price_rank_array.py.bak.1757446953" (100%)
+ rename tools/arrigo/exo_price_rank_array.py.bak.1757447071 => "Skr\303\244p/exo_price_rank_array.py.bak.1757447071" (100%)
+ rename tools/arrigo/exo_price_rank_array.py.bak.1757481778 => "Skr\303\244p/exo_price_rank_array.py.bak.1757481778" (100%)
+ rename tools/arrigo/exo_price_rank_array.py.save => "Skr\303\244p/exo_price_rank_array.py.save" (100%)
+ rename tools/arrigo/exo_price_rank_array.py.save.1 => "Skr\303\244p/exo_price_rank_array.py.save.1" (100%)
+ rename tools/arrigo/exo_price_rank_array.py.save.2 => "Skr\303\244p/exo_price_rank_array.py.save.2" (100%)
+ rename tools/arrigo/exo_price_rank_array.py.trash.1757146283 => "Skr\303\244p/exo_price_rank_array.py.trash.1757146283" (100%)
+ rename tools/new_rank/payload.json => "Skr\303\244p/new_rank/payload.json" (100%)
+ rename tools/arrigo/push_prices_array.sh => "Skr\303\244p/push_prices_array.sh" (100%)
+ rename tools/arrigo/push_prices_array.sh.save => "Skr\303\244p/push_prices_array.sh.save" (100%)
+ rename tools/arrigo/push_prices_array.sh.save.1 => "Skr\303\244p/push_prices_array.sh.save.1" (100%)
+ rename tools/arrigo/push_prices_tomorrow_array.sh => "Skr\303\244p/push_prices_tomorrow_array.sh" (100%)
+ rename tools/arrigo/verify_prices_array.sh => "Skr\303\244p/verify_prices_array.sh" (100%)
+ delete mode 100755 tools/arrigo/arrigo_health_array.sh
+ delete mode 100755 tools/arrigo/exo_price_rank_array.py
+ create mode 100755 tools/sys/audit_pi.sh
+ create mode 100644 tools/sys/reports/audit_20250910_214556.txt
+To https://github.com/torbjornthorbjornson/smart-styrning.git
+   c4c3c1dc..eb6e9b1a  main -> main
