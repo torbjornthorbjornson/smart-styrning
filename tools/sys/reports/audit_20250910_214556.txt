@@ -1,0 +1,113 @@
+=== DISKANVÄNDNING ===
+Filsystem      Storlek Använt Ledigt Anv% Monterat på
+udev              3,9G      0   3,9G   0% /dev
+tmpfs             806M   6,5M   800M   1% /run
+/dev/mmcblk0p2     58G    18G    38G  33% /
+tmpfs             4,0G   480K   4,0G   1% /dev/shm
+tmpfs             5,0M    48K   5,0M   1% /run/lock
+/dev/mmcblk0p1    510M    68M   443M  14% /boot/firmware
+tmpfs             806M   176K   806M   1% /run/user/1000
+
+=== STÖRSTA MAPPAR I HEMKATALOG (TOP 30) ===
+286M	/home/runerova/.vscode-server/extensions/ms-vscode.powershell-2025.2.0/modules/PSScriptAnalyzer
+286M	/home/runerova/.vscode-server/extensions/ms-vscode.powershell-2025.2.0/modules/PSScriptAnalyzer/1.24.0
+290M	/home/runerova/smartweb/.git/lfs/objects
+291M	/home/runerova/smartweb/.git/lfs
+292M	/home/runerova/git_backups
+292M	/home/runerova/git_backups/smartweb_backup
+296M	/home/runerova/smartweb_clean.git/smartweb_clean.git/smartweb_clean.git
+296M	/home/runerova/smartweb_clean.git/smartweb_clean.git/smartweb_clean.git/objects
+297M	/home/runerova/smartweb_clean.git
+297M	/home/runerova/smartweb_clean.git/smartweb_clean.git
+299M	/home/runerova/.vscode-server/extensions/ms-vscode.powershell-2025.2.0/modules
+302M	/home/runerova/.vscode-server/extensions/ms-vscode.powershell-2025.2.0
+306M	/home/runerova/backups
+311M	/home/runerova/.cache/chromium/Default/Cache
+311M	/home/runerova/.cache/chromium/Default/Cache/Cache_Data
+313M	/home/runerova/.cache/chromium/Default/Code Cache/js
+321M	/home/runerova/.cache/chromium/Default/Code Cache
+349M	/home/runerova/.config/chromium
+439M	/home/runerova/.config
+631M	/home/runerova/.cache/chromium
+631M	/home/runerova/.cache/chromium/Default
+709M	/home/runerova/.vscode-server/extensions
+723M	/home/runerova/.cache
+934M	/home/runerova/.vscode-server/cli
+934M	/home/runerova/.vscode-server/cli/servers
+1013M	/home/runerova/smartweb/.git/objects
+1,3G	/home/runerova/smartweb/.git
+1,4G	/home/runerova/smartweb
+1,8G	/home/runerova/.vscode-server
+6,1G	/home/runerova
+
+=== APT-cache ===
+3,1M	/var/cache/apt/archives
+
+=== Pip-cache ===
+71M	/home/runerova/.cache/pip
+
+=== NPM-cache ===
+4,9M	/home/runerova/.npm
+
+=== Journalctl storlek ===
+Archived and active journals take up 2.6G in the file system.
+
+=== Stora loggfiler (>100MB) i /var/log ===
+/var/log/btmp.1	167036 KB
+
+=== Virtuella miljöer (kandidater) i hemkatalog ===
+/home/runerova/myvenv
+/home/runerova/myvenv/bin
+/home/runerova/myvenv/lib
+/home/runerova/myvenv/include
+/home/runerova/myenv
+/home/runerova/myenv/share
+/home/runerova/myenv/bin
+/home/runerova/myenv/lib
+/home/runerova/myenv/include
+
+=== Aktiverade systemd-tjänster ===
+UNIT FILE                          STATE   PRESET
+accounts-daemon.service            enabled enabled
+apache2.service                    enabled enabled
+apparmor.service                   enabled enabled
+avahi-daemon.service               enabled enabled
+bluetooth.service                  enabled enabled
+console-setup.service              enabled enabled
+containerd.service                 enabled enabled
+cron.service                       enabled enabled
+cups-browsed.service               enabled enabled
+cups.service                       enabled enabled
+docker.service                     enabled enabled
+dphys-swapfile.service             enabled enabled
+e2scrub_reap.service               enabled enabled
+fake-hwclock.service               enabled enabled
+flaskapp.service                   enabled enabled
+getty@.service                     enabled enabled
+glamor-test.service                enabled enabled
+hciuart.service                    enabled enabled
+keyboard-setup.service             enabled enabled
+lightdm.service                    enabled enabled
+mariadb.service                    enabled enabled
+ModemManager.service               enabled enabled
+NetworkManager-dispatcher.service  enabled enabled
+NetworkManager-wait-online.service enabled enabled
+NetworkManager.service             enabled enabled
+rp1-test.service                   enabled enabled
+rpi-display-backlight.service      enabled enabled
+rpi-eeprom-update.service          enabled enabled
+smartstyrning.service              enabled enabled
+smartweb.service                   enabled enabled
+spotpris.service                   enabled enabled
+ssh.service                        enabled enabled
+sshswitch.service                  enabled enabled
+systemd-pstore.service             enabled enabled
+systemd-timesyncd.service          enabled enabled
+triggerhappy.service               enabled enabled
+udisks2.service                    enabled enabled
+watch_backup.service               enabled enabled
+wayvnc-control.service             enabled enabled
+weather.service                    enabled enabled
+wpa_supplicant.service             enabled enabled
+
+41 unit files listed.
