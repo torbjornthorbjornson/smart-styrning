@@ -57941,3 +57941,11 @@ To https://github.com/torbjornthorbjornson/smart-styrning.git
  1 file changed, 10 insertions(+)
 To https://github.com/torbjornthorbjornson/smart-styrning.git
    57e8987e..bdf72d0f  main -> main
+[main 50133f8b] Automatisk backup: 2025-09-11 08:00
+ 5 files changed, 118 insertions(+)
+ create mode 100644 "docs/Milj\303\266fil"
+ create mode 100644 "docs/Plan fram\303\245t"
+ create mode 100644 docs/Strategi
+ create mode 100644 "tools/arrigo/docs/Rutiner f\303\266r \303\244ndring"
+To https://github.com/torbjornthorbjornson/smart-styrning.git
+   bdf72d0f..50133f8b  main -> main
