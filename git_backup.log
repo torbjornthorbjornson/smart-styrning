@@ -57953,3 +57953,8 @@ To https://github.com/torbjornthorbjornson/smart-styrning.git
  2 files changed, 64 insertions(+)
 To https://github.com/torbjornthorbjornson/smart-styrning.git
    50133f8b..db59675d  main -> main
+[main a61ee8e3] Automatisk backup: 2025-09-11 08:30
+ 3 files changed, 307 insertions(+)
+ create mode 100644 tools/arrigo/docs/Strategi
+To https://github.com/torbjornthorbjornson/smart-styrning.git
+   db59675d..a61ee8e3  main -> main
