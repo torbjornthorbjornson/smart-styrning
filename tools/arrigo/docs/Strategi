@@ -1,0 +1,247 @@
+# Strategi för drift, ändringar och vidareutveckling
+
+> Mål: stabil drift av pris‑push till Arrigo, snabba och riskfria ändringar, samt en plan för nästa steg (EXOL/Regin, husstyrning, självlärande logik).
+
+---
+
+## 0) Snabböversikt
+
+* **Körande komponent**: `/home/runerova/smartweb/tools/arrigo/push_from_db.py`
+* **Miljöfil** (TLS + API + PVL): `/home/runerova/.arrigo.env`
+* **Logg**: `/home/runerova/smartweb/tools/arrigo/logs/arrigo_push.log`
+* **Tjänster & timers**:
+
+  * Unit‑template: `/etc/systemd/system/arrigo-push@.service`
+  * Timers: `/etc/systemd/system/arrigo-push@today.timer`, `/etc/systemd/system/arrigo-push@tomorrow.timer`
+* **Käll‑DB**: MariaDB tabell `electricity_prices` (UTC), 24 rader / dygn.
+
+---
+
+## 1) Filstruktur (\`tools/arrigo\`)
+
+| Fil                                         | Används i drift  | Beskrivning                                                                                                         |
+| ------------------------------------------- | ---------------- | ------------------------------------------------------------------------------------------------------------------- |
+| `push_from_db.py`                           | **JA (primär)**  | Hämtar priser, bygger rank‑array 0..23 och pushar till Arrigo via GraphQL. Tolerant mot saknade timmar (fyller 23). |
+| `logs/arrigo_push.log`                      | **JA**           | Samlad körlogg från tjänster & manuella körningar.                                                                  |
+| `docs/arrigo_sanity.ps1`                    | Valfritt         | PowerShell‑skript för snabbläsning/skrivtest mot GraphQL.                                                           |
+| `docs/arrigo_sanity_write_2.ps1`            | Valfritt         | PowerShell‑skript för skrivtest (arraynycklar).                                                                     |
+| `docs/Rutiner för ändring`                  | **JA**           | Denna strategi – operativa rutiner.                                                                                 |
+| `push_prices.sh`, `push_prices_tomorrow.sh` | **NEJ (legacy)** | Gamla wrapper‑skript. *Behåll tills allt är verifierat, arkivera sen.*                                              |
+| `payload.json`                              | Valfritt         | Tillfällig utdata vid felsökning.                                                                                   |
+| `push_from_db.py.bak`, `.save`              | **NEJ (backup)** | Historiska kopior – flytta till arkiv.                                                                              |
+
+**Rekommenderad städning**
+
+* Flytta `*.bak`, `*.save`, legacy‑skript till ett arkiv: `/home/runerova/smartweb/tools/arrigo/_archive/`.
+* Rör ej `push_from_db.py`, `logs/`, `docs/`.
+
+---
+
+## 2) Miljövariabler (\`.arrigo.env\`)
+
+Plats: `/home/runerova/.arrigo.env`
+
+```ini
+ARRIGO_LOGIN_URL=https://arrigo.svenskastenhus.se/arrigo/api/login
+ARRIGO_GRAPHQL_URL=https://arrigo.svenskastenhus.se/arrigo/api/graphql
+ARRIGO_USER=APIUser
+ARRIGO_PASS=API_S#are
+ARRIGO_PVL_PATH=QVBJZGVtby5BcmVhRm9sZGVyVmlldy5GaWxlLkFQSVZhcmlibGVMaXN0LkZpbGU=
+ARRIGO_INSECURE=0
+REQUESTS_CA_BUNDLE=/etc/ssl/certs/ca-certificates.crt
+```
+
+**Krav**
+
+* Format **NAME=value** (inga `export`).
+* Ändring kräver: `sudo systemctl daemon-reload && sudo systemctl restart arrigo-push@today.timer arrigo-push@tomorrow.timer` (eller `--user` om användartimers).
+* Rättigheter: `chmod 0644` räcker (innehåller inte tokens, bara inlogg).
+
+**När behövs uppdatering?**
+
+* Byte av PVL‑lista → uppdatera **endast** `ARRIGO_PVL_PATH` (base64 path). Kod/timers oförändrade.
+
+---
+
+## 3) Systemd – hur det körs
+
+**Service‑template** `/etc/systemd/system/arrigo-push@.service`
+
+* Kör som `User=runerova`
+* Laddar `.arrigo.env`
+* Sätter `RANK_WHEN=%i` (today/tomorrow)
+* Kör Python via flock‑lås (hindrar överlapp)
+
+**Timers**
+
+* `arrigo-push@today.timer` – kör varje heltimme **00–12**
+* `arrigo-push@tomorrow.timer` – kör varje heltimme **13–23**
+
+**Vanliga kommandon**
+
+```bash
+# Schema & senaste körning
+systemctl list-timers --all | grep arrigo-push
+
+# Logg senaste 100 rader
+journalctl -u arrigo-push@today.service -n 100 --no-pager
+journalctl -u arrigo-push@tomorrow.service -n 100 --no-pager
+
+# Starta/stoppa
+sudo systemctl enable --now arrigo-push@today.timer arrigo-push@tomorrow.timer
+sudo systemctl disable --now arrigo-push@today.timer arrigo-push@tomorrow.timer
+
+# Efter ändring av unit/env
+sudo systemctl daemon-reload
+```
+
+**Kända fällor**
+
+* Fel format på `.env` → tjänsten startar utan env ("Failed to load environment files").
+* Gamla paths i unit (pekar på borttagna skript). Verifiera med `systemctl cat arrigo-push@.service`.
+
+---
+
+## 4) Drift – daglig kontroll
+
+1. **DB → 24 rader** för dygnet som körs.
+2. **Logg**: inga varningar om saknade timmar; annars fylls 23 men undersök källan.
+3. **Arrigo UI**: `PRICE_RANK(h)` visar 0..23 (0 = billigast).
+4. **Masker & stamp** (om aktiverat i scriptversionen): `EC/EX_MASK_[LH]`, `PRICE_STAMP`.
+
+**Snabb manuell push**
+
+```bash
+# via env i aktuell shell
+set -a; source ~/.arrigo.env; set +a
+RANK_WHEN=today python3 ~/smartweb/tools/arrigo/push_from_db.py
+RANK_WHEN=tomorrow python3 ~/smartweb/tools/arrigo/push_from_db.py
+```
+
+---
+
+## 5) Ändra variabler i Arrigo – utan 2 dygns stopp
+
+**Princip**: *Separera* infrastruktur (kod/timers) från *innehåll* (vilka Arrigo‑variabler vi skriver).
+
+### 5.1 Byte av PVL‑lista eller struktur
+
+* Lägg upp ny PVL i Arrigo.
+* Hämta dess **base64‑path**.
+* Uppdatera **endast** `ARRIGO_PVL_PATH` i `.arrigo.env`.
+* `sudo systemctl daemon-reload && sudo systemctl restart arrigo-push@today.timer arrigo-push@tomorrow.timer`.
+* **Verifikation**:
+
+  * Manuell körning `RANK_WHEN=today|tomorrow ...`
+  * Kolla i loggen att `GraphQL svar` returnerar 24×`True`.
+
+### 5.2 Lägga till/ta bort enskilda variabler
+
+* Nuvarande push skriver **endast arrayen** `{PVL_B64}:{index}` för rank 0..23.
+* Om du introducerar nya singelvärden (masker, stamp): uppgradera skriptet till varianten som även sätter `EC/EX_MASK_*` och `PRICE_STAMP` (finns i historiken). Dokumentera i `docs/`.
+
+### 5.3 Sanitetstest (utan att röra drift)
+
+* Kör `docs/arrigo_sanity.ps1` (read) och `arrigo_sanity_write_2.ps1` (write) från en **annan** maskin/shell.
+* Testa mot separat **test‑PVL** för att inte påverka produktionen.
+
+---
+
+## 6) Felsökning – checklista
+
+1. `journalctl` för respektive service → felrad.
+2. `cat ~/.arrigo.env` → saknas nyckel? fel format?
+3. `python3 -c 'import os; print({k:v for k,v in os.environ.items() if k.startswith("ARRIGO")})'` under `systemd-run --user` om env inte syns.
+4. `requests` cert: `REQUESTS_CA_BUNDLE` pekar på `/etc/ssl/certs/ca-certificates.crt`.
+5. DB‑fönster: rätt dygn i svensk tid? (skriptet gör TZ‑konvertering åt dig).
+6. Om värden i Arrigo ser fel ut: jämför grafen/DB och **rank 0..23**. 0 är alltid billigast – verifiera att inte en invertering skett i din UI.
+
+---
+
+## 7) Roadmap (modulär utveckling)
+
+### A) Web
+
+* **Mål**: visualisering av priser, valda timmar, loggar, driftstatus.
+* **Backlog**:
+
+  * Sidor: *Översikt*, *Logg*, *Arrigo status* (läser via GraphQL `data(path)` read‑query).
+  * Autotest som jämför DB‑rank ↔ Arrigo rank dagligen.
+
+### B) Regin/EXOL
+
+* **Mål**: definiera kontrakt mellan Arrigo och Regin.
+* **Aktiviteter**:
+
+  * Läs in *EXOL Reference/Programming* (bifogade PDF) och dokumentera vilka signaler som ska mappas.
+  * Beslut: endast `PRICE_RANK(h)` eller även masker (`EC/EX`) och `PRICE_OK`/`PRICE_STAMP`.
+  * Prototyp: enkel EXOL‑modul som tolkar rank 0..23 till start/stopp för värmepump/tank.
+
+### C) Styrning hus (regelmotor)
+
+* **Mål**: schemalägg värmetimmar (N st) inom dygnet baserat på rank & komfort.
+* **Aktiviteter**:
+
+  * Parametrar per zon: antal timmar, blockeringar (t.ex. 07–09), max samtidigt.
+  * Fallback vid saknade priser → använd senast kända eller standardprofil.
+
+### D) Självlärande (prognos/optimering)
+
+* **Mål**: justera antal värmetimmar dynamiskt efter utetemp och byggnadens tröghet.
+* **Aktiviteter**:
+
+  * Samla telemetri: ute/inne‑temp, COP, energieffekt.
+  * Enkel modell (t.ex. linjär) → antal timmar = f(utetemp, dygnsmedel, avvikelse komfort).
+  * Iterativ förbättring: jämför plan vs utfört, korrigera.
+
+### E) API
+
+* **Mål**: ren intern REST/GraphQL‑yta för webb och automationsskript.
+* **Aktiviteter**:
+
+  * Endpoint för senaste push, fel, nuvarande PVL, etc.
+  * Liten autentisering (token i `.env`).
+
+### F) Push
+
+* **Mål**: hålla `push_from_db.py` stabil och enkel.
+* **Aktiviteter**:
+
+  * Liten testsvit (tox/pytest) för rank‑logik.
+  * CI‑check: `flake8` + black formatter.
+  * Versionsflagga `--dry-run` och `--out payload.json` vid test.
+
+---
+
+## 8) Förslag på arbetsflöde (ändringsrutin)
+
+1. **Skapa test‑PVL** i Arrigo.
+2. Ändra bara `ARRIGO_PVL_PATH` → *manuell* körning mot test (inte timers).
+3. Verifiera med `docs/arrigo_sanity*.ps1` + webb‑graf.
+4. När klart: peka tillbaka `ARRIGO_PVL_PATH` till prod‑PVL, `daemon-reload`, **starta timers**.
+5. Skriv en rad i `docs/Rutiner för ändring` vad som ändrades (datum, orsak, resultat).
+
+---
+
+## 9) Städ & skyddsräcken
+
+* Arkivkatalog: `/home/runerova/smartweb/tools/arrigo/_archive/` – flytta in allt legacy.
+* Lås: `flock` hindrar dubbelkörning.
+* Vakt: cron/systemd‑timer som **läser tillbaka** Arrigo en gång/dygn och jämför med DB.
+
+---
+
+## 10) Öppna frågor / att besluta
+
+* Ska vi återaktivera masker + `PRICE_STAMP` i produktion? (kod finns.)
+* Namnstandard i Arrigo (endast `PRICE_RANK(h)`?)
+* Telemetrikällor för självlärande (var läser vi inne/utetemperatur?).
+
+---
+
+## 11) Bilagor
+
+* `docs/arrigo_sanity.ps1` – read‑sanity
+* `docs/arrigo_sanity_write_2.ps1` – write‑sanity
+
+> **Kör!** Nästa steg: flytta legacy till `_archive/`, lägg in autotest som läser tillbaka Arrigo och jämför med DB varje morgon kl 06.
