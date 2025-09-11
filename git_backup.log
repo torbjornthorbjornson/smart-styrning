@@ -57927,3 +57927,13 @@ To https://github.com/torbjornthorbjornson/smart-styrning.git
  2 files changed, 60 insertions(+)
 To https://github.com/torbjornthorbjornson/smart-styrning.git
    3277884b..5165e7ee  main -> main
+[main 57e8987e] Automatisk backup: 2025-09-11 07:30
+ 8 files changed, 60 insertions(+)
+ rename tools/arrigo/exo_price_rank.py => "Skr\303\244p/exo_price_rank.py" (100%)
+ rename tools/arrigo/exo_price_rank_idx.py => "Skr\303\244p/exo_price_rank_idx.py" (100%)
+ rename tools/arrigo/push_by_index.py => "Skr\303\244p/push_by_index.py" (100%)
+ rename tools/arrigo/push_index_min.py => "Skr\303\244p/push_index_min.py" (100%)
+ rename tools/arrigo/push_index_prod.py => "Skr\303\244p/push_index_prod.py" (100%)
+ rename tools/arrigo/push_prices_idx.sh => "Skr\303\244p/push_prices_idx.sh" (100%)
+To https://github.com/torbjornthorbjornson/smart-styrning.git
+   5165e7ee..57e8987e  main -> main
