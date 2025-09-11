@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <h1>🛠️ Roadmap – Smart Fastighetsstyrning</h1>
+
+    <section>
+        <h2>🎯 Prioriterad ordning</h2>
+        <ol>
+            <li>Projekt 1 – Stabil pris-push</li>
+            <li>Projekt 2 – Regin EXOL</li>
+            <li>Projekt 6 – Adaptiv driftstidsmodell</li>
+            <li>Projekt 3 – Manuell uppdatering & sanitetstest</li>
+            <li>Projekt 4 – Fastighetsdatabas</li>
+            <li>Projekt 5 – Husvy med diagram</li>
+            <li>Projekt 7 – Batterilagring & solceller</li>
+            <li>Projekt 8 – Elbilsladdning</li>
+        </ol>
+    </section>
+
+    <hr>
+
+    <section>
+        <h2>📌 Projektbeskrivningar</h2>
+
+        <h3>1. Stabil pris-push</h3>
+        <p>Säkerställa att Pi alltid levererar rätt ranking till Arrigo. 
+           Pushar både <em>today</em> och <em>tomorrow</em> med respektive <code>STAMP</code>. 
+           Automatiseras via systemd-timers.</p>
+
+        <h3>2. Regin EXOL</h3>
+        <p>EXOL-kod i Regin väljer lista via <code>STAMP_TODAY</code> / <code>STAMP_TOMORROW</code>. 
+           Fallback till gårdagens lista eller standardprofil om ingen ny data finns.</p>
+
+        <h3>6. Adaptiv driftstidsmodell</h3>
+        <p>Regin beräknar antal driftstimmar beroende på utetemperatur och justerar sig självlärande. 
+           Startprofil t.ex. 0 °C → 12 timmar. Systemet justerar upp/ned baserat på utfallet.</p>
+
+        <h3>3. Manuell uppdatering & sanitetstest</h3>
+        <p>Uppdatera-knappar i webbgränssnittet samt trigger från Arrigo/Regin till Pi. 
+           Automatisk jämförelse DB ↔ Arrigo varje natt.</p>
+
+        <h3>4. Fastighetsdatabas</h3>
+        <p>MariaDB-tabell för fastigheter med namn, adress, GPS, elområde och Arrigo-ID. 
+           Redigeras via webbsida.</p>
+
+        <h3>5. Husvy med diagram</h3>
+        <p>För varje fastighet visas en bild och ett stapeldiagram med dagens elpriser. 
+           Markerade driftstimmar hämtas från Arrigo.</p>
+
+        <h3>7. Batterilagring & solceller</h3>
+        <p>Integration mot växelriktare (Fronius, BYD). Ladda batteriet på billiga timmar 
+           och urladda på dyra timmar.</p>
+
+        <h3>8. Elbilsladdning</h3>
+        <p>Integration mot laddbox (Easee, Zaptec, Garo m.fl.). Ladda bilen under billigaste timmarna 
+           eller vid solproduktion, med hänsyn till maxeffekt i fastigheten.</p>
+    </section>
+
+    <hr>
+
+    <section>
+        <h2>📅 Roadmap – Visuell tidslinje</h2>
+        <pre>
+Q4 2025 ────────────────────────────────────────────────────────────▶
+
+Projekt 1  [■■■■■■■■■■■■■■■■■■■■]  Stabil pris-push
+Projekt 2            [■■■■■■■■■■■■■■■■■■■■]  Regin EXOL
+Projekt 6                      [■■■■■■■■■■■■■■■■■■■■■■■■■■■■■]  Adaptiv modell
+
+Projekt 3                              [■■■■■]  Manuell uppdatering
+Projekt 4                                     [■■■■■]  Fastighetsdatabas
+Projekt 5                                          [■■■■■■]  Husvy med diagram
+Projekt 7                                                   [■■■■■■■■■■]  Batterilagring & solceller
+Projekt 8                                                             [■■■■■■■■■■]  Elbilsladdning
+        </pre>
+    </section>
+{% endblock %}

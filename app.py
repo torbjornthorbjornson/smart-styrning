@@ -142,6 +142,10 @@ def vision():
 def dokumentation():
     return render_template("dokumentation.html")
 
+@app.route("/roadmap")
+def roadmap():
+    return render_template("roadmap.html")
+
 @app.route("/github_versions")
 def github_versions():
     try:
