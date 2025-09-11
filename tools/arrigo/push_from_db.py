@@ -1,15 +1,22 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-push_from_db.py (modern, robust)
-- Hämtar elpriser från DB (UTC)
-- Bygger rank-array (0..23)
-- Räknar ut masker + stämpel
-- Loggar in mot Arrigo → authToken
-- Pushar till Arrigo via index-nycklar
+push_from_db.py (robust, index-baserad)
+- Hämtar elpriser från DB (UTC) och bygger rank 0..23
+- Loggar in mot Arrigo
+- Läser PVL-variabellistan, bygger TA→index
+- Skriver PRICE_RANK(h), PRICE_STAMP och togglar PRICE_OK
+- Miljövariabler (stöd för flera namn):
+  ARRIGO_LOGIN_URL
+  ARRIGO_GRAPHQL_URL
+  ARRIGO_USER | ARRIGO_USERNAME
+  ARRIGO_PASS | ARRIGO_PASSWORD
+  ARRIGO_PVL_B64 | ARRIGO_PVL_PATH   (klartext auto-B64)
+  ARRIGO_INSECURE=1 (valfritt)
+  REQUESTS_CA_BUNDLE=/path/to/ca.crt (valfritt)
 """
 
-import os, sys, json, re
+import os, sys, json, re, base64
 from datetime import datetime, date, time, timedelta
 import pymysql, requests
 from zoneinfo import ZoneInfo
@@ -23,9 +30,12 @@ LOG_PATH = "/home/runerova/smartweb/tools/arrigo/logs/arrigo_push.log"
 # === Hjälpfunktioner ===
 def log(msg):
     now = datetime.now(TZ).strftime("%Y-%m-%d %H:%M:%S")
-    with open(LOG_PATH, "a", encoding="utf-8") as f:
-        f.write(f"{now} {msg}\n")
-    print(msg)
+    try:
+        with open(LOG_PATH, "a", encoding="utf-8") as f:
+            f.write(f"{now} {msg}\n")
+    except Exception:
+        pass
+    print(msg, flush=True)
 
 def read_db_config():
     cfg = ConfigParser()
@@ -39,19 +49,47 @@ def read_db_config():
         "cursorclass": pymysql.cursors.DictCursor,
     }
 
-def arrigo_login(login_url, user, password, verify_tls=True):
-    r = requests.post(login_url, json={"username": user, "password": password}, timeout=15, verify=verify_tls)
+def getenv_any(names, required=False):
+    for n in names:
+        v = os.environ.get(n)
+        if v:
+            return v
+    if required:
+        raise KeyError(f"Saknar någon av miljövariablerna: {', '.join(names)}")
+    return None
+
+def ensure_b64(path_or_b64: str) -> str:
+    # Om strängen ser ut som Base64 (A-Za-z0-9+/= och längd%4==0), anta att den redan är B64.
+    s = path_or_b64.strip()
+    is_b64_chars = re.fullmatch(r'[A-Za-z0-9+/=]+', s or '') is not None
+    if is_b64_chars and len(s) % 4 == 0:
+        try:
+            base64.b64decode(s)
+            return s
+        except Exception:
+            pass
+    # Annars B64-enkoda klartext
+    return base64.b64encode(s.encode("utf-8")).decode("ascii")
+
+def build_verify():
+    if os.environ.get("ARRIGO_INSECURE", "0") == "1":
+        return False
+    cab = os.environ.get("REQUESTS_CA_BUNDLE")
+    return cab if cab else True
+
+def arrigo_login(login_url, user, password, verify):
+    r = requests.post(login_url, json={"username": user, "password": password}, timeout=20, verify=verify)
     r.raise_for_status()
     tok = r.json().get("authToken")
     if not tok:
         raise SystemExit("Inget authToken i login-svar")
     return tok
 
-def gql(url, token, query, variables, verify_tls=True):
+def gql(url, token, query, variables, verify):
     r = requests.post(url,
         headers={"Authorization": f"Bearer {token}"},
         json={"query": query, "variables": variables},
-        timeout=20, verify=verify_tls)
+        timeout=30, verify=verify)
     if r.status_code >= 400:
         raise SystemExit(f"GraphQL HTTP {r.status_code}: {r.text[:500]}")
     j = r.json()
@@ -62,11 +100,7 @@ def gql(url, token, query, variables, verify_tls=True):
 # === Hämta priser från DB ===
 def fetch_prices(which: str):
     today_local = date.today()
-    if which == "tomorrow":
-        day_local = today_local + timedelta(days=1)
-    else:
-        day_local = today_local
-
+    day_local = today_local + timedelta(days=1) if which == "tomorrow" else today_local
     start_local = datetime.combine(day_local, time(0,0), tzinfo=TZ)
     end_local   = start_local + timedelta(days=1)
     start_utc   = start_local.astimezone(UTC).replace(tzinfo=None)
@@ -90,9 +124,8 @@ def fetch_prices(which: str):
 
 # === Bygg rank-array (0..23) ===
 def build_rank(rows, day_local):
-    prices = [r["price"] for r in rows]
-    if not prices:
-        log(f"⚠️ Inga priser i DB för {day_local}")
+    if not rows:
+        log(f"⚠️ Inga priser i DB för {day_local}, fyller med rank=23")
         return [23]*24
 
     hourly = [None]*24
@@ -100,59 +133,88 @@ def build_rank(rows, day_local):
         h = r["datetime"].replace(tzinfo=UTC).astimezone(TZ).hour
         hourly[h] = r["price"]
 
+    # Rank: saknade timmar blir sämst (∞)
     filled = [p if p is not None else float("inf") for p in hourly]
     sorted_hours = sorted(range(24), key=lambda h: filled[h])
     hour_to_rank = {h: i for i,h in enumerate(sorted_hours)}
+    return [ (23 if hourly[h] is None else hour_to_rank[h]) for h in range(24) ]
 
-    final = []
-    for h in range(24):
-        if hourly[h] is None:
-            final.append(23)
-        else:
-            final.append(hour_to_rank[h])
-    return final
-
-# === Packa masker ===
-def pack_mask(hours):
-    bits = 0
-    for h in hours:
-        if 0 <= h <= 23: bits |= (1 << h)
-    return bits & 0xFFFF, (bits >> 16) & 0xFFFF
-
-# === Push till Arrigo ===
+# === Push till Arrigo (index-baserad) ===
 def push_to_arrigo(rank, day_local):
-    login_url   = os.environ["ARRIGO_LOGIN_URL"]
-    graphql_url = os.environ["ARRIGO_GRAPHQL_URL"]
-    user        = os.environ["ARRIGO_USER"]
-    password    = os.environ["ARRIGO_PASS"]
-    pvl_path    = os.environ["ARRIGO_PVL_PATH"]
-    verify_tls  = os.environ.get("ARRIGO_INSECURE","0") != "1"
+    login_url   = getenv_any(["ARRIGO_LOGIN_URL"], required=True)
+    graphql_url = getenv_any(["ARRIGO_GRAPHQL_URL"], required=True)
+    user        = getenv_any(["ARRIGO_USER","ARRIGO_USERNAME"], required=True)
+    password    = getenv_any(["ARRIGO_PASS","ARRIGO_PASSWORD"], required=True)
+    pvl_raw     = getenv_any(["ARRIGO_PVL_B64","ARRIGO_PVL_PATH"], required=True)
+    pvl_b64     = ensure_b64(pvl_raw)
+    verify      = build_verify()
 
-    token = arrigo_login(login_url, user, password, verify_tls)
+    token = arrigo_login(login_url, user, password, verify)
 
-    # Hämta PVL-lista → index-map
+    # Hämta PVL-lista → TA→index
     data = gql(graphql_url, token,
         'query ($path:String!){ data(path:$path){ variables{ technicalAddress } } }',
-        {"path": pvl_path}, verify_tls)
-
+        {"path": pvl_b64}, verify)
     vars_list = (data.get("data") or {}).get("variables") or []
-    ta_index = { (v.get("technicalAddress") or "").strip(): i for i,v in enumerate(vars_list)}
+
+    ta_index = {}
+    rank_idx = {}
+    idx_price_ok = None
+    idx_stamp = None
+
+    for i, v in enumerate(vars_list):
+        ta = (v.get("technicalAddress") or "").strip()
+        ta_index[ta] = i
+        m = re.search(r'\.PRICE_RANK\((\d+)\)$', ta)
+        if m:
+            rank_idx[int(m.group(1))] = i
+        elif ta.endswith(".PRICE_OK"):
+            idx_price_ok = i
+        elif ta.endswith(".PRICE_STAMP"):
+            idx_stamp = i
+
+    # Säkerhetsgate av (PRICE_OK=0) om den finns
+    if idx_price_ok is not None:
+        gql(graphql_url, token,
+            "mutation ($variables:[VariableKeyValue!]!){ writeData(variables:$variables) }",
+            {"variables": [{"key": f"{pvl_b64}:{idx_price_ok}", "value": "0"}]}, verify)
+        log("🔒 PRICE_OK=0 (gate av)")
 
     writes = []
-    # Rank-array
-    for hour,val in enumerate(rank):
-        writes.append({"key": f"{pvl_path}:{hour}", "value": str(val)})
+    # Rank-array med rätt index
+    missing = []
+    for h in range(24):
+        idx = rank_idx.get(h)
+        if idx is None:
+            missing.append(h)
+            continue
+        writes.append({"key": f"{pvl_b64}:{idx}", "value": str(rank[h])})
 
-    # Stamp
-    if any("PRICE_STAMP" in ta for ta in ta_index):
+    # Stamp YYYYMMDD om finns
+    if idx_stamp is not None:
         stamp = int(day_local.strftime("%Y%m%d"))
-        idx = [i for ta,i in ta_index.items() if ta.endswith(".PRICE_STAMP")][0]
-        writes.append({"key": f"{pvl_path}:{idx}", "value": str(stamp)})
+        writes.append({"key": f"{pvl_b64}:{idx_stamp}", "value": str(stamp)})
 
-    # Skicka mutation
-    mutation = "mutation ($variables:[VariableKeyValue!]!){ writeData(variables:$variables) }"
-    gql(graphql_url, token, mutation, {"variables": writes}, verify_tls)
-    log(f"✅ Push klar för {day_local}, {len(writes)} variabler")
+    if missing:
+        log(f"⚠️ Saknar index för PRICE_RANK timmar: {missing}")
+
+    if not writes:
+        raise SystemExit("Inget att skriva — kontrollera PVL och variabelnamn i Arrigo.")
+
+    # Batch-skriv
+    gql(graphql_url, token,
+        "mutation ($variables:[VariableKeyValue!]!){ writeData(variables:$variables) }",
+        {"variables": writes}, verify)
+    log(f"✅ Skrev {len(writes)} variabler (rank + ev. stamp)")
+
+    # Gate på igen (PRICE_OK=1) om den finns
+    if idx_price_ok is not None:
+        gql(graphql_url, token,
+            "mutation ($variables:[VariableKeyValue!]!){ writeData(variables:$variables) }",
+            {"variables": [{"key": f"{pvl_b64}:{idx_price_ok}", "value": "1"}]}, verify)
+        log("🔓 PRICE_OK=1 (gate på)")
+
+    log(f"🏁 Push klar för {day_local}")
 
 # === Huvud ===
 def main():
@@ -162,4 +224,8 @@ def main():
     push_to_arrigo(rank, day_local)
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except Exception as e:
+        log(f"💥 Fel: {e}")
+        raise
