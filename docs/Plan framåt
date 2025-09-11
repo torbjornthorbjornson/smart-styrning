@@ -1,0 +1,43 @@
+Plan framåt
+1. 🌐 Webb
+
+Flask + Chart.js
+
+Snygga grafer för elpris och väder
+
+Adminpanel för inställningar
+
+2. 🏠 Regin/EXOL
+
+Säkerställa variabler i EXO
+
+Logga driftstimmar för värme/VV
+
+Synka mot Arrigo API
+
+3. 🔄 Arrigo-integration
+
+Stabil push (klar)
+
+Läsa tillbaka driftstatus
+
+Utöka med fler signaler
+
+4. ⚡ Datahantering
+
+MariaDB (UTC)
+
+Loggning
+
+Automatisk backup (Git + script)
+
+5. 🤖 Självlärande styrning
+
+Enkel logik: billigaste timmarna
+
+Utökning: temperaturstyrd logik
+
+Långsiktigt: AI/ML för byggnadströghet
+
+📌 Detta dokument är din grundplan.
+Nästa steg: spara det i ditt repo som ~/smartweb/docs/STRATEGI.md så vi alltid kan gå tillbaka hit.

@@ -1,0 +1,25 @@
+Rutiner för ändringar
+
+För att undvika 2 dagars felsökning:
+
+Ändra .arrigo.env
+
+nano /home/runerova/.arrigo.env
+
+
+Ladda om systemd
+
+sudo systemctl daemon-reload
+
+
+Starta om timers
+
+sudo systemctl restart arrigo-push@today.timer arrigo-push@tomorrow.timer
+
+
+Kontrollera direkt
+
+journalctl -u arrigo-push@today.service -n 20 --no-pager
+
+
+Tar 2 minuter, inte 2 dagar ✅

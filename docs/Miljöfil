@@ -1,0 +1,10 @@
+/home/runerova/.arrigo.env
+Format: KEY=value
+
+ARRIGO_LOGIN_URL=https://arrigo.svenskastenhus.se/arrigo/api/login
+ARRIGO_GRAPHQL_URL=https://arrigo.svenskastenhus.se/arrigo/api/graphql
+ARRIGO_USER=APIUser
+ARRIGO_PASS=API_S#are
+ARRIGO_PVL_PATH=QVBJZGVtby5BcmVhRm9zZGVyVmlldy5GaWxlLkFQSVZhcmlibGVMaXN0LkZpbGU=
+ARRIGO_INSECURE=0
+REQUESTS_CA_BUNDLE=/etc/ssl/certs/ca-certificates.crt

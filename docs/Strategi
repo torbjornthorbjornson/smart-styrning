@@ -1,0 +1,36 @@
+# Smart styrning – Strategi & Dokumentation
+
+## 📂 Projektstruktur
+**Huvudmapp:** `~/smartweb/tools/arrigo`
+
+**Viktiga filer:**
+- `push_from_db.py` – huvudskript för att hämta priser från DB, bygga rank-array, och pusha till Arrigo.
+- `logs/arrigo_push.log` – loggfil för push-jobben.
+- `exo_price_rank*.py` – äldre skript, inte längre i aktiv användning.
+- `push_by_index.py`, `push_index_min.py`, `push_index_prod.py` – test- och varianter, behåll som referens.
+
+**Behåll:**
+- `push_from_db.py`
+- `logs/`
+- en referenskopia av `exo_price_rank_idx.py`
+
+**Kan rensas:**
+- gamla `push_prices*.sh`
+- alla `.bak/.save/.trash`
+
+---
+
+## ⚙️ Systemd & timers
+**Service-template:**  
+`/etc/systemd/system/arrigo-push@.service`
+- Kör `push_from_db.py`
+- Laddar `/home/runerova/.arrigo.env`
+
+**Timers:**
+- `/etc/systemd/system/arrigo-push@today.timer` – kör 00–12 varje timme
+- `/etc/systemd/system/arrigo-push@tomorrow.timer` – kör 13–23 varje timme
+
+**Kontroll:**
+```bash
+systemctl list-timers --all | grep arrigo-push
+journalctl -u arrigo-push@today.service -n 50 --no-pager
