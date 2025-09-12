@@ -58339,3 +58339,10 @@ To https://github.com/torbjornthorbjornson/smart-styrning.git
  2 files changed, 60 insertions(+)
 To https://github.com/torbjornthorbjornson/smart-styrning.git
    2455d1c0..d0bbc95c  main -> main
+[main cdfac80c] Automatisk backup: 2025-09-12 08:30
+ 5 files changed, 60 insertions(+)
+ rename static/weather-icons/{11.svg => heavyrainandthunder.svg} (100%)
+ rename static/weather-icons/{26d.svg => heavyrainshowersandthunder_day.svg} (100%)
+ rename static/weather-icons/{40n.svg => lightrainshowers_night.svg} (100%)
+To https://github.com/torbjornthorbjornson/smart-styrning.git
+   d0bbc95c..cdfac80c  main -> main
