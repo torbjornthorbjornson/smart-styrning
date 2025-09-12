@@ -18,6 +18,16 @@
   <p style="color:orange;"><strong>⚠️ Inget elpris publicerat för {{ selected_date }}.</strong></p>
 {% endif %}
 
+
+
+{% if weatherdata %}
+  <p style="font-weight:bold; color:#333;">
+    🌦️ Väderprognos från MET för {{ weatherdata[0].timestamp.date() }}
+  </p>
+{% else %}
+  <p style="color: orange;">⚠️ Ingen väderdata tillgänglig.</p>
+{% endif %}
+
 <!-- Ikonrad -->
 <div class="icon-row">
   {% for row in weatherdata %}
@@ -29,14 +39,6 @@
     </div>
   {% endfor %}
 </div>
-
-{% if weatherdata %}
-  <p style="font-weight:bold; color:#333;">
-    🌦️ Väderprognos från MET för {{ weatherdata[0].timestamp.date() }}
-  </p>
-{% else %}
-  <p style="color: orange;">⚠️ Ingen väderdata tillgänglig.</p>
-{% endif %}
 
 <!-- Vädergraf -->
 <h3>Temperatur & Vind</h3>
