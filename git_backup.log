@@ -59690,3 +59690,9 @@ To https://github.com/torbjornthorbjornson/smart-styrning.git
  2 files changed, 60 insertions(+)
 To https://github.com/torbjornthorbjornson/smart-styrning.git
    b41333a4..0b71fd54  main -> main
+[main 6ee4d285] Automatisk backup: 2025-09-15 20:30
+ 5 files changed, 75 insertions(+), 9 deletions(-)
+ rename tools/arrigo/push_prices.sh => "Skr\303\244p/push_prices.sh" (100%)
+ rename tools/arrigo/push_prices_tomorrow.sh => "Skr\303\244p/push_prices_tomorrow.sh" (100%)
+To https://github.com/torbjornthorbjornson/smart-styrning.git
+   0b71fd54..6ee4d285  main -> main
