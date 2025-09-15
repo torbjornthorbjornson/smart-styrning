@@ -9,6 +9,10 @@ push_from_db.py (allt i ett)
 - Skriver PRICE_RANK(h), PRICE_STAMP, EC/EX-maskar
 - Skriver även OAT_mean_yday och OAT_mean_tomorrow
 - Togglar PRICE_OK
+
+Thresholds för maskar styrs via miljövariabler:
+  ARRIGO_CHEAP_PCT   (default -0.30)  → t.ex. -0.30 betyder "cheap ≤ 70% av median"
+  ARRIGO_EXP_PCT     (default +0.50)  → t.ex. +0.50 betyder "exp ≥ 150% av median"
 """
 
 import os, re, base64
@@ -43,13 +47,13 @@ def read_db_config():
         "cursorclass": pymysql.cursors.DictCursor,
     }
 
-def getenv_any(names, required=False):
+def getenv_any(names, required=False, default=None):
     for n in names:
         v = os.environ.get(n)
         if v: return v
     if required:
         raise KeyError(f"Saknar någon av: {', '.join(names)}")
-    return None
+    return default
 
 def ensure_b64(s: str) -> str:
     s = s.strip()
@@ -126,8 +130,12 @@ def build_rank_and_masks(rows):
     hour_price = normalize_to_24(rows)
     sorted_prices = sorted([p for _,p in hour_price])
     median = (sorted_prices[11] + sorted_prices[12])/2.0
-    cheap_thr = median * 0.7   # 70% av median
-    exp_thr   = median * 1.5   # 150% av median
+
+    # --- thresholds från miljövariabler ---
+    cheap_pct = float(getenv_any(["ARRIGO_CHEAP_PCT"], default="-0.30"))  # default -0.30
+    exp_pct   = float(getenv_any(["ARRIGO_EXP_PCT"],   default="+0.50"))  # default +0.50
+    cheap_thr = median * (1.0 + cheap_pct)
+    exp_thr   = median * (1.0 + exp_pct)
 
     cheap_hours = [h for h,p in hour_price if p <= cheap_thr]
     exp_hours   = [h for h,p in hour_price if p >= exp_thr]
@@ -146,7 +154,8 @@ def build_rank_and_masks(rows):
     hour_to_rank = {h:i for i,h in enumerate(sorted_hours)}
     rank = [hour_to_rank[h] for h,_ in hour_price]
 
-    return rank, median, {"EC_MASK_L":ecL,"EC_MASK_H":ecH,"EX_MASK_L":exL,"EX_MASK_H":exH}
+    log(f"📊 Median={median:.3f}, cheap_thr={cheap_thr:.3f}, exp_thr={exp_thr:.3f}")
+    return rank, {"EC_MASK_L":ecL,"EC_MASK_H":ecH,"EX_MASK_L":exL,"EX_MASK_H":exH}
 
 # ---- OAT ----
 def daily_avg_oat(day_local: date):
@@ -204,10 +213,8 @@ def push_to_arrigo(rank, masks, day_local, oat_yday, oat_tmr):
         writes.append({"key":f"{pvl_b64}:{idx_stamp}","value":day_local.strftime("%Y%m%d")})
     if idx_oat_yday is not None and oat_yday is not None:
         writes.append({"key":f"{pvl_b64}:{idx_oat_yday}","value":str(oat_yday)})
-        log(f"🌡️ OAT_mean_yday={oat_yday}")
     if idx_oat_tmr is not None and oat_tmr is not None:
         writes.append({"key":f"{pvl_b64}:{idx_oat_tmr}","value":str(oat_tmr)})
-        log(f"🌡️ OAT_mean_tomorrow={oat_tmr}")
     for k,v in masks.items():
         if k in idx_masks:
             writes.append({"key":f"{pvl_b64}:{idx_masks[k]}","value":str(v)})
@@ -224,8 +231,7 @@ def push_to_arrigo(rank, masks, day_local, oat_yday, oat_tmr):
 def main():
     which=os.getenv("RANK_WHEN","today")
     rows,day_local=fetch_prices(which)
-    rank,median,masks=build_rank_and_masks(rows)
-    log(f"📊 Medianpris={median:.3f}")
+    rank,masks=build_rank_and_masks(rows)
     today=date.today()
     oat_yday=daily_avg_oat(today-timedelta(days=1))
     oat_tmr =daily_avg_oat(today+timedelta(days=1))
