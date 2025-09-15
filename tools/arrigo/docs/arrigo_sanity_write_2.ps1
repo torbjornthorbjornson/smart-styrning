@@ -75,9 +75,16 @@ if ($PriceOkTA) {
 $verify = (Invoke-JsonPost -Url $GraphqlUrl -Headers $hdr -Body @{ query=$qRead; variables=@{ path=$PVL_B64 } }).data.data.variables
 
 $verify |
-  Where-Object { $_.technicalAddress -like '*.PRICE_OK' -or $_.technicalAddress -match '\.PRICE_RANK\((\d+)\)$' } |
-  Sort-Object technicalAddress |
-  Select-Object -First 30 technicalAddress,value |
+  Where-Object {
+    $_.technicalAddress -match '\.(PRICE_OK|PRICE_RANK\(\d+\)|OAT_(mean|yday))$'
+  } |
+  Sort-Object `
+    @{ Expression = {
+         if ($_.technicalAddress -match '\.PRICE_RANK\((\d+)\)$') { [int]$matches[1] } else { 999 }
+       } },
+    technicalAddress |
+  Select-Object technicalAddress, value |
   Format-Table -AutoSize
+
 
 "✅ Sanity-write klar. Skrev rank 0..23 och togglade PRICE_OK."
