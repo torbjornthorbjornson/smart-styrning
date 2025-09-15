@@ -77,7 +77,7 @@ $verify = (Invoke-JsonPost -Url $GraphqlUrl -Headers $hdr -Body @{ query=$qRead;
 $verify |
   Where-Object { $_.technicalAddress -like '*.PRICE_OK' -or $_.technicalAddress -match '\.PRICE_RANK\((\d+)\)$' } |
   Sort-Object technicalAddress |
-  Select-Object -First 10 technicalAddress,value |
+  Select-Object -First 30 technicalAddress,value |
   Format-Table -AutoSize
 
 "✅ Sanity-write klar. Skrev rank 0..23 och togglade PRICE_OK."
