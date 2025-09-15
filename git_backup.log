@@ -59716,3 +59716,8 @@ To https://github.com/torbjornthorbjornson/smart-styrning.git
  1 file changed, 4 insertions(+)
 To https://github.com/torbjornthorbjornson/smart-styrning.git
    70b06fc7..af6c6336  main -> main
+[main ffc4c8ed] Automatisk backup: 2025-09-15 22:00
+ 2 files changed, 55 insertions(+)
+ create mode 100644 docs/Markdown/fusklapp.md
+To https://github.com/torbjornthorbjornson/smart-styrning.git
+   af6c6336..ffc4c8ed  main -> main
