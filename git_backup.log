@@ -60113,3 +60113,8 @@ To https://github.com/torbjornthorbjornson/smart-styrning.git
  2 files changed, 61 insertions(+)
 To https://github.com/torbjornthorbjornson/smart-styrning.git
    ced003a2..80d381be  main -> main
+[main cdbcff69] Automatisk backup: 2025-09-16 22:30
+ 3 files changed, 77 insertions(+)
+ create mode 100644 tools/arrigo_api.py
+To https://github.com/torbjornthorbjornson/smart-styrning.git
+   80d381be..cdbcff69  main -> main
