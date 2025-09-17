@@ -60260,3 +60260,10 @@ To https://github.com/torbjornthorbjornson/smart-styrning.git
  2 files changed, 62 insertions(+)
 To https://github.com/torbjornthorbjornson/smart-styrning.git
    ae3b3b45..d941409a  main -> main
+[main b9763491] Automatisk backup: 2025-09-17 07:30
+ 4 files changed, 73 insertions(+), 7 deletions(-)
+ rename tools/{ => arrigo}/WebSocket/arrigo_api.py (76%)
+ rename tools/{ => arrigo}/WebSocket/arrigo_listener.py (56%)
+ mode change 100644 => 100755
+To https://github.com/torbjornthorbjornson/smart-styrning.git
+   d941409a..b9763491  main -> main
