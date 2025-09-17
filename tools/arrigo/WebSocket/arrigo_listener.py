@@ -16,15 +16,15 @@ async def subscribe_to_arrigo():
 
     # Starta GraphQL-klienten utan att hämta schema
     async with Client(transport=transport, fetch_schema_from_transport=False) as session:
-        # Prenumerera på uppdateringar
+        # Prenumerera på uppdateringar med en enklare fråga
         subscription = gql("""
         subscription {
-          data(path: "TGFuZHNrcm9uYS5zeXN0ZW1haXIuZmlsZQ==") {
+          data {
             value
             path
             technicalAddress
             type
-            timeStamp  # Ändrat från "timestamp" till "timeStamp"
+            timeStamp
           }
         }
         """)
