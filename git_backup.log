@@ -60250,3 +60250,9 @@ To https://github.com/torbjornthorbjornson/smart-styrning.git
  1 file changed, 4 insertions(+)
 To https://github.com/torbjornthorbjornson/smart-styrning.git
    70ce3a93..6f62388d  main -> main
+[main ae3b3b45] Automatisk backup: 2025-09-17 07:00
+ 3 files changed, 4 insertions(+)
+ rename tools/{ => WebSocket}/arrigo_api.py (100%)
+ rename tools/{ => WebSocket}/arrigo_listener.py (100%)
+To https://github.com/torbjornthorbjornson/smart-styrning.git
+   6f62388d..ae3b3b45  main -> main
