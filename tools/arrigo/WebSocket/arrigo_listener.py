@@ -1,15 +1,21 @@
 import asyncio
 from gql import Client, gql
 from gql.transport.websockets import WebsocketsTransport
+from arrigo_api import login  # Importera login-funktionen från arrigo_api.py
 
 async def subscribe_to_arrigo():
-    # Byt ut URL och Auth Token till dina egna värden
+    # Konfiguration
+    url = "wss://arrigo.svenskastenhus.se/arrigo/api/graphql/ws"  # Rätt URL för Arrigo-servern
+    auth_token = f"Bearer {login()}"  # Hämta Auth Token automatiskt från arrigo_api.py
+
+    # Skapa WebSocket-transport
     transport = WebsocketsTransport(
-        url="wss://myserver.com/arrigo/api/graphql/ws",  # Ändra till din Arrigo-server
-        headers={"Authorization": "Bearer [your_auth_token]"}  # Ersätt med ditt Auth Token
+        url=url,
+        headers={"Authorization": auth_token}
     )
 
-    async with Client(transport=transport, fetch_schema_from_transport=True) as session:
+    # Starta GraphQL-klienten utan att hämta schema
+    async with Client(transport=transport, fetch_schema_from_transport=False) as session:
         # Prenumerera på uppdateringar
         subscription = gql("""
         subscription {
@@ -18,7 +24,7 @@ async def subscribe_to_arrigo():
             path
             technicalAddress
             type
-            timestamp
+            timeStamp  # Ändrat från "timestamp" till "timeStamp"
           }
         }
         """)

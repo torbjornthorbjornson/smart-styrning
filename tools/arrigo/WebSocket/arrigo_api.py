@@ -1,7 +1,7 @@
 import requests
 
 # ==== KONFIG ====
-LOGIN_URL = "ws://arrigo.svenskastenhus.se/arrigo/api/graphql/ws"
+LOGIN_URL = "https://arrigo.svenskastenhus.se/arrigo/api/login"  # Rätt URL för inloggning
 USER = 'APIUser'
 PASS = 'API_S#are'
 
