@@ -1,0 +1,213 @@
+ADM_Dokumentation.md
+1. Variabellista (utdrag för ADM)
+
+Alla variabler är prefixade med ADM_ för att undvika krockar. Befintliga systemvariabler (t.ex. GM_true, OAT_mean_tomorrow) används direkt.
+
+; ===== Adaptiv driftsmodell (ADM) =====
+
+; Init & mognad
+I   ADM_INIT_LOOP
+I   ADM_MIN_LEARN_DAYS
+I   ADM_LEARN_COUNT
+L   ADM_READY
+I   adm_idx_fill
+
+; Planerings- och lärningstider (Index)
+X   ADM_PLAN_H
+X   ADM_PLAN_M
+X   ADM_TRAIN_H
+X   ADM_TRAIN_M
+
+; Skalor och index
+R   ADM_DT_MIN
+R   ADM_DT_MAX
+I   ADM_IDX_MIN
+I   ADM_IDX_MAX
+I   ADM_IDX
+I   ADM_IDX_NOW
+
+; Driftid
+R   ADM_H_USED
+
+; Kurvtabeller
+R   ADM_C0[36]
+R   ADM_C1[36]
+R   ADM_HOURS_CURVE[36]
+
+; Prediktion/planering
+R   ADM_dT_NOW
+R   ADM_dT_PLAN
+R   ADM_dT_USED
+R   ADM_H_PRED_D
+R   ADM_H_REQ_R
+I   ADM_H_REQ
+
+; Flags
+L   ADM_FIRST_PLAN_DONE
+
+; Startkurva
+I   ADM_CURVE_MODE      ; 0=linjär, 1=segment
+R   ADM_C0_COLD_H
+R   ADM_C0_WARM_H
+R   ADM_SEG_PT0_H
+R   ADM_SEG_PT1_H
+R   ADM_SEG_PT2_H
+R   ADM_SEG_PT3_H
+R   ADM_SEG_PT4_H
+R   ADM_SEG_PT5_H
+R   ADM_SEG_PT6_H
+R   ADM_C0_SLOPE
+
+; GM-inlärning
+R   GM_SUM_TODAY
+I   GM_COUNT_TODAY
+R   GM_MIN_TODAY
+R   GM_MAX_TODAY
+R   GM_AVG
+R   ERR_H
+R   ERR_GM
+R   ERR_COMB
+R   C1_DELTA
+
+2. INIT (läggs i INIT.tse)
+
+Init-blocket körs en gång vid uppstart och säkrar startkurva samt neutral driftid.
+
+; ===== INIT (ADM) =====
+ADM_DT_MIN   = -20.0
+ADM_DT_MAX   =  15.0
+ADM_IDX_MIN  = 0
+ADM_IDX_MAX  = 35
+
+ADM_PLAN_H   = 13
+ADM_PLAN_M   = 5
+ADM_TRAIN_H  = 0
+ADM_TRAIN_M  = 0
+
+ADM_MIN_LEARN_DAYS = 2
+ADM_LEARN_COUNT    = 0
+ADM_READY          = 0
+
+ADM_IDX       = ADM_IDX_MIN
+ADM_INIT_LOOP = 1
+ADM_H_USED    = 0.0
+
+; Neutral start för att ge värme tills push anländer
+ADM_H_REQ = 8
+
+; Default kurvparametrar
+IF ADM_C0_COLD_H = 0.0
+  ADM_C0_COLD_H = 16.0
+ENDIF
+IF ADM_C0_WARM_H = 0.0
+  ADM_C0_WARM_H = 2.0
+ENDIF
+
+; Segmentpunkter
+IF ADM_SEG_PT0_H = 0.0
+  ADM_SEG_PT0_H = 16.0
+ENDIF
+IF ADM_SEG_PT1_H = 0.0
+  ADM_SEG_PT1_H = 12.0
+ENDIF
+IF ADM_SEG_PT2_H = 0.0
+  ADM_SEG_PT2_H = 9.0
+ENDIF
+IF ADM_SEG_PT3_H = 0.0
+  ADM_SEG_PT3_H = 7.0
+ENDIF
+IF ADM_SEG_PT4_H = 0.0
+  ADM_SEG_PT4_H = 5.0
+ENDIF
+IF ADM_SEG_PT5_H = 0.0
+  ADM_SEG_PT5_H = 3.5
+ENDIF
+IF ADM_SEG_PT6_H = 0.0
+  ADM_SEG_PT6_H = 2.0
+ENDIF
+
+ADM_C0_SLOPE = (ADM_C0_WARM_H - ADM_C0_COLD_H) / CvI(ADM_IDX_MAX - ADM_IDX_MIN)
+
+ADM_FIRST_PLAN_DONE = 0
+
+; Nollställ GM-lärning
+GM_SUM_TODAY   = 0.0
+GM_COUNT_TODAY = 0
+GM_MIN_TODAY   = 0.0
+GM_MAX_TODAY   = 0.0
+
+3. Programblock (AdaptivDriftsmodell.tse)
+Init-loop (linjär/segment)
+IF ADM_INIT_LOOP = 1
+  IF ADM_CURVE_MODE = 0
+    ADM_C0[adm_idx_fill] = ADM_C0_COLD_H + CvI(adm_idx_fill) * ADM_C0_SLOPE
+  ELSE
+    IF adm_idx_fill = 0  ADM_C0[adm_idx_fill] = ADM_SEG_PT0_H ENDIF
+    IF adm_idx_fill = 6  ADM_C0[adm_idx_fill] = ADM_SEG_PT1_H ENDIF
+    IF adm_idx_fill = 12 ADM_C0[adm_idx_fill] = ADM_SEG_PT2_H ENDIF
+    IF adm_idx_fill = 18 ADM_C0[adm_idx_fill] = ADM_SEG_PT3_H ENDIF
+    IF adm_idx_fill = 24 ADM_C0[adm_idx_fill] = ADM_SEG_PT4_H ENDIF
+    IF adm_idx_fill = 30 ADM_C0[adm_idx_fill] = ADM_SEG_PT5_H ENDIF
+    IF adm_idx_fill = 35 ADM_C0[adm_idx_fill] = ADM_SEG_PT6_H ENDIF
+  ENDIF
+  ADM_C1[adm_idx_fill] = 0.0
+  adm_idx_fill = adm_idx_fill + 1
+  IF adm_idx_fill > ADM_IDX_MAX
+    ADM_INIT_LOOP = 0
+  ENDIF
+ENDIF
+
+Driftidsräknare (1-min trigger, GM-summering)
+IF Minute <> last_minute
+  IF HEAT_DEMAND = 1
+    ADM_H_USED = ADM_H_USED + 0.0167
+  ENDIF
+
+  ADM_dT_NOW = 0.0 - OAT
+  IF ADM_dT_NOW < ADM_DT_MIN  ADM_dT_NOW = ADM_DT_MIN ENDIF
+  IF ADM_dT_NOW > ADM_DT_MAX  ADM_dT_NOW = ADM_DT_MAX ENDIF
+  ADM_IDX_NOW = CvR(ADM_dT_NOW - ADM_DT_MIN)
+
+  ; GM-summering
+  IF GM_COUNT_TODAY = 0
+    GM_MIN_TODAY = GM_true
+    GM_MAX_TODAY = GM_true
+  ENDIF
+  GM_SUM_TODAY   = GM_SUM_TODAY + GM_true
+  GM_COUNT_TODAY = GM_COUNT_TODAY + 1
+  IF GM_true < GM_MIN_TODAY GM_MIN_TODAY = GM_true ENDIF
+  IF GM_true > GM_MAX_TODAY GM_MAX_TODAY = GM_true ENDIF
+
+  last_minute = Minute
+ENDIF
+
+Planering (13:05)
+
+(beräknar nytt ADM_H_REQ baserat på OAT_mean_tomorrow, bara om push har kommit).
+
+Dygnsskifte (00:00)
+
+Här läggs GM-inlärningen in igen (beräkna fel, korrigera C1[]).
+
+4. HMI-inställningar
+
+I HMI ska följande vara tillgängligt för justering:
+
+ADM_CURVE_MODE: växla mellan linjär (0) och segment (1).
+
+ADM_C0_COLD_H / ADM_C0_WARM_H: ytterpunkter för linjär kurva.
+
+ADM_SEG_PT0_H … ADM_SEG_PT6_H: sju segmentpunkter.
+
+ADM_MIN_LEARN_DAYS: antal dygn innan modellen aktiveras.
+
+ADM_H_REQ: visas i HMI (prognostiserade timmar).
+
+ADM_H_USED: faktisk driftid från senaste dygnet.
+
+GM_true / GM_sched: läggs till för diagnostik.
+
+👉 Den här markdownen sparar du som ADM_Dokumentation.md i projektet.
+Sedan tar vi med den till den nya chatten “Driftsättning/Utvärdering ADM” där vi gör driftstest, optimering och bygger HMI-vyer.
+
+Vill du att jag även fyller in exempel på GM-inlärningsdelen (Steg 2 full kod) direkt i markdownen, så slipper du kopiera från gamla filer?
