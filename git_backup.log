@@ -63184,3 +63184,32 @@ To https://github.com/torbjornthorbjornson/smart-styrning.git
  1 file changed, 4 insertions(+)
 To https://github.com/torbjornthorbjornson/smart-styrning.git
    03401e78..2be238c4  main -> main
+[main f7278b85] Automatisk backup: 2025-09-24 22:00
+ 26 files changed, 107164 insertions(+)
+ create mode 100755 "Skr\303\244p/run_app.sh"
+ create mode 100644 "Skr\303\244p/run_app_log.txt"
+ create mode 100755 "Skr\303\244p/run_spotpris.sh"
+ create mode 100755 "Skr\303\244p/run_weather.sh"
+ create mode 100644 "Skr\303\244p/runerova.code-workspace"
+ create mode 100644 "Skr\303\244p/save_weather_data.py"
+ create mode 100644 "Skr\303\244p/smartstyrning.py"
+ create mode 100755 "Skr\303\244p/smartstyrning.py.save"
+ create mode 100644 "Skr\303\244p/smartstyrning1.py"
+ create mode 100644 "Skr\303\244p/smartstyrningf\303\266r.py"
+ create mode 100644 "Skr\303\244p/smartstyrningold.py"
+ create mode 100644 "Skr\303\244p/spotpris.py"
+ create mode 100755 "Skr\303\244p/spotpris.sh"
+ create mode 100755 "Skr\303\244p/spotpris.sh.save"
+ create mode 100755 "Skr\303\244p/spotpris.sh.save.1"
+ create mode 100644 "Skr\303\244p/spotpris1.py"
+ create mode 100644 "Skr\303\244p/spotpris_log.txt"
+ create mode 100644 "Skr\303\244p/sqlfavoriter.txt"
+ create mode 100644 "Skr\303\244p/status.json"
+ create mode 100644 "Skr\303\244p/weather.py"
+ create mode 100644 "Skr\303\244p/weather_backup.py"
+ create mode 100644 "Skr\303\244p/weather_backup2.py"
+ create mode 100644 "Skr\303\244p/weather_data.db"
+ create mode 100644 "Skr\303\244p/weather_log.txt"
+ create mode 100644 "Skr\303\244p/weatherdb_backup_20250401_212105.sql"
+To https://github.com/torbjornthorbjornson/smart-styrning.git
+   2be238c4..f7278b85  main -> main
