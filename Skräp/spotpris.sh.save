@@ -1,0 +1,16 @@
+!/bin/bash
+
+# Ange sökvägen till din virtuella miljö
+VENV_PATH="/home/runerova/myvenv"
+
+# Aktivera den virtuella miljön
+source $VENV_PATH/bin/activate
+
+# Installera beroenden om det inte redan är gjort
+pip install pymysql requests
+
+# Kör Python-skriptet
+python /home/runerova/spotpris.py
+
+# Avaktivera den virtuella miljön
+deactivate

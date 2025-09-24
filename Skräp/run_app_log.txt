@@ -1,0 +1,262 @@
+Looking in indexes: https://pypi.org/simple, https://www.piwheels.org/simple
+Requirement already satisfied: pymysql in ./myvenv/lib/python3.11/site-packages (1.1.1)
+Requirement already satisfied: requests in ./myvenv/lib/python3.11/site-packages (2.32.3)
+Requirement already satisfied: charset-normalizer<4,>=2 in ./myvenv/lib/python3.11/site-packages (from requests) (3.4.1)
+Requirement already satisfied: idna<4,>=2.5 in ./myvenv/lib/python3.11/site-packages (from requests) (3.10)
+Requirement already satisfied: urllib3<3,>=1.21.1 in ./myvenv/lib/python3.11/site-packages (from requests) (2.3.0)
+Requirement already satisfied: certifi>=2017.4.17 in ./myvenv/lib/python3.11/site-packages (from requests) (2025.1.31)
+2025-03-26 13:00:02,216 - INFO - ==> spotpris.py startade
+2025-03-26 13:00:02,216 - INFO - 👉 Kör spotpris.py – hämtar från https://www.elprisetjustnu.se/api/v1/prices/2025/03-26_SE3.json
+2025-03-26 13:00:03,620 - INFO - ✅ 24 priser hämtade.
+2025-03-26 13:00:03,621 - INFO - ⏩ Skippad (fanns redan): 2025-03-26 00:00:00+01:00
+2025-03-26 13:00:03,622 - INFO - ⏩ Skippad (fanns redan): 2025-03-26 01:00:00+01:00
+2025-03-26 13:00:03,622 - INFO - ⏩ Skippad (fanns redan): 2025-03-26 02:00:00+01:00
+2025-03-26 13:00:03,622 - INFO - ⏩ Skippad (fanns redan): 2025-03-26 03:00:00+01:00
+2025-03-26 13:00:03,622 - INFO - ⏩ Skippad (fanns redan): 2025-03-26 04:00:00+01:00
+2025-03-26 13:00:03,623 - INFO - ⏩ Skippad (fanns redan): 2025-03-26 05:00:00+01:00
+2025-03-26 13:00:03,623 - INFO - ⏩ Skippad (fanns redan): 2025-03-26 06:00:00+01:00
+2025-03-26 13:00:03,623 - INFO - ⏩ Skippad (fanns redan): 2025-03-26 07:00:00+01:00
+2025-03-26 13:00:03,623 - INFO - ⏩ Skippad (fanns redan): 2025-03-26 08:00:00+01:00
+2025-03-26 13:00:03,623 - INFO - ⏩ Skippad (fanns redan): 2025-03-26 09:00:00+01:00
+2025-03-26 13:00:03,624 - INFO - ⏩ Skippad (fanns redan): 2025-03-26 10:00:00+01:00
+2025-03-26 13:00:03,624 - INFO - ⏩ Skippad (fanns redan): 2025-03-26 11:00:00+01:00
+2025-03-26 13:00:03,624 - INFO - ⏩ Skippad (fanns redan): 2025-03-26 12:00:00+01:00
+2025-03-26 13:00:03,624 - INFO - ⏩ Skippad (fanns redan): 2025-03-26 13:00:00+01:00
+2025-03-26 13:00:03,624 - INFO - ⏩ Skippad (fanns redan): 2025-03-26 14:00:00+01:00
+2025-03-26 13:00:03,624 - INFO - ⏩ Skippad (fanns redan): 2025-03-26 15:00:00+01:00
+2025-03-26 13:00:03,625 - INFO - ⏩ Skippad (fanns redan): 2025-03-26 16:00:00+01:00
+2025-03-26 13:00:03,625 - INFO - ⏩ Skippad (fanns redan): 2025-03-26 17:00:00+01:00
+2025-03-26 13:00:03,625 - INFO - ⏩ Skippad (fanns redan): 2025-03-26 18:00:00+01:00
+2025-03-26 13:00:03,625 - INFO - ⏩ Skippad (fanns redan): 2025-03-26 19:00:00+01:00
+2025-03-26 13:00:03,625 - INFO - ⏩ Skippad (fanns redan): 2025-03-26 20:00:00+01:00
+2025-03-26 13:00:03,625 - INFO - ⏩ Skippad (fanns redan): 2025-03-26 21:00:00+01:00
+2025-03-26 13:00:03,626 - INFO - ⏩ Skippad (fanns redan): 2025-03-26 22:00:00+01:00
+2025-03-26 13:00:03,626 - INFO - ⏩ Skippad (fanns redan): 2025-03-26 23:00:00+01:00
+2025-03-26 13:00:03,626 - INFO - 💾 Alla priser sparade.
+2025-03-26 13:00:03,626 - INFO - ==> spotpris.py klar
+Looking in indexes: https://pypi.org/simple, https://www.piwheels.org/simple
+Requirement already satisfied: pymysql in ./myvenv/lib/python3.11/site-packages (1.1.1)
+Requirement already satisfied: requests in ./myvenv/lib/python3.11/site-packages (2.32.3)
+Requirement already satisfied: charset-normalizer<4,>=2 in ./myvenv/lib/python3.11/site-packages (from requests) (3.4.1)
+Requirement already satisfied: idna<4,>=2.5 in ./myvenv/lib/python3.11/site-packages (from requests) (3.10)
+Requirement already satisfied: urllib3<3,>=1.21.1 in ./myvenv/lib/python3.11/site-packages (from requests) (2.3.0)
+Requirement already satisfied: certifi>=2017.4.17 in ./myvenv/lib/python3.11/site-packages (from requests) (2025.1.31)
+2025-03-27 13:00:02,145 - INFO - ==> spotpris.py startade
+2025-03-27 13:00:02,145 - INFO - 👉 Kör spotpris.py – hämtar från https://www.elprisetjustnu.se/api/v1/prices/2025/03-27_SE3.json
+2025-03-27 13:00:03,407 - INFO - ✅ 24 priser hämtade.
+2025-03-27 13:00:03,408 - INFO - ⏩ Skippad (fanns redan): 2025-03-27 00:00:00+01:00
+2025-03-27 13:00:03,409 - INFO - ⏩ Skippad (fanns redan): 2025-03-27 01:00:00+01:00
+2025-03-27 13:00:03,409 - INFO - ⏩ Skippad (fanns redan): 2025-03-27 02:00:00+01:00
+2025-03-27 13:00:03,410 - INFO - ⏩ Skippad (fanns redan): 2025-03-27 03:00:00+01:00
+2025-03-27 13:00:03,410 - INFO - ⏩ Skippad (fanns redan): 2025-03-27 04:00:00+01:00
+2025-03-27 13:00:03,410 - INFO - ⏩ Skippad (fanns redan): 2025-03-27 05:00:00+01:00
+2025-03-27 13:00:03,411 - INFO - ⏩ Skippad (fanns redan): 2025-03-27 06:00:00+01:00
+2025-03-27 13:00:03,411 - INFO - ⏩ Skippad (fanns redan): 2025-03-27 07:00:00+01:00
+2025-03-27 13:00:03,411 - INFO - ⏩ Skippad (fanns redan): 2025-03-27 08:00:00+01:00
+2025-03-27 13:00:03,411 - INFO - ⏩ Skippad (fanns redan): 2025-03-27 09:00:00+01:00
+2025-03-27 13:00:03,412 - INFO - ⏩ Skippad (fanns redan): 2025-03-27 10:00:00+01:00
+2025-03-27 13:00:03,412 - INFO - ⏩ Skippad (fanns redan): 2025-03-27 11:00:00+01:00
+2025-03-27 13:00:03,412 - INFO - ⏩ Skippad (fanns redan): 2025-03-27 12:00:00+01:00
+2025-03-27 13:00:03,412 - INFO - ⏩ Skippad (fanns redan): 2025-03-27 13:00:00+01:00
+2025-03-27 13:00:03,412 - INFO - ⏩ Skippad (fanns redan): 2025-03-27 14:00:00+01:00
+2025-03-27 13:00:03,412 - INFO - ⏩ Skippad (fanns redan): 2025-03-27 15:00:00+01:00
+2025-03-27 13:00:03,413 - INFO - ⏩ Skippad (fanns redan): 2025-03-27 16:00:00+01:00
+2025-03-27 13:00:03,413 - INFO - ⏩ Skippad (fanns redan): 2025-03-27 17:00:00+01:00
+2025-03-27 13:00:03,413 - INFO - ⏩ Skippad (fanns redan): 2025-03-27 18:00:00+01:00
+2025-03-27 13:00:03,413 - INFO - ⏩ Skippad (fanns redan): 2025-03-27 19:00:00+01:00
+2025-03-27 13:00:03,413 - INFO - ⏩ Skippad (fanns redan): 2025-03-27 20:00:00+01:00
+2025-03-27 13:00:03,414 - INFO - ⏩ Skippad (fanns redan): 2025-03-27 21:00:00+01:00
+2025-03-27 13:00:03,414 - INFO - ⏩ Skippad (fanns redan): 2025-03-27 22:00:00+01:00
+2025-03-27 13:00:03,414 - INFO - ⏩ Skippad (fanns redan): 2025-03-27 23:00:00+01:00
+2025-03-27 13:00:03,414 - INFO - 💾 Alla priser sparade.
+2025-03-27 13:00:03,414 - INFO - ==> spotpris.py klar
+Looking in indexes: https://pypi.org/simple, https://www.piwheels.org/simple
+Requirement already satisfied: pymysql in ./myvenv/lib/python3.11/site-packages (1.1.1)
+Requirement already satisfied: requests in ./myvenv/lib/python3.11/site-packages (2.32.3)
+Requirement already satisfied: charset-normalizer<4,>=2 in ./myvenv/lib/python3.11/site-packages (from requests) (3.4.1)
+Requirement already satisfied: idna<4,>=2.5 in ./myvenv/lib/python3.11/site-packages (from requests) (3.10)
+Requirement already satisfied: urllib3<3,>=1.21.1 in ./myvenv/lib/python3.11/site-packages (from requests) (2.3.0)
+Requirement already satisfied: certifi>=2017.4.17 in ./myvenv/lib/python3.11/site-packages (from requests) (2025.1.31)
+2025-03-28 13:00:02,376 - INFO - ==> spotpris.py startade
+2025-03-28 13:00:02,376 - INFO - 👉 Kör spotpris.py – hämtar från https://www.elprisetjustnu.se/api/v1/prices/2025/03-28_SE3.json
+2025-03-28 13:00:02,887 - INFO - ✅ 24 priser hämtade.
+2025-03-28 13:00:02,888 - INFO - ⏩ Skippad (fanns redan): 2025-03-28 00:00:00+01:00
+2025-03-28 13:00:02,888 - INFO - ⏩ Skippad (fanns redan): 2025-03-28 01:00:00+01:00
+2025-03-28 13:00:02,889 - INFO - ⏩ Skippad (fanns redan): 2025-03-28 02:00:00+01:00
+2025-03-28 13:00:02,889 - INFO - ⏩ Skippad (fanns redan): 2025-03-28 03:00:00+01:00
+2025-03-28 13:00:02,889 - INFO - ⏩ Skippad (fanns redan): 2025-03-28 04:00:00+01:00
+2025-03-28 13:00:02,889 - INFO - ⏩ Skippad (fanns redan): 2025-03-28 05:00:00+01:00
+2025-03-28 13:00:02,890 - INFO - ⏩ Skippad (fanns redan): 2025-03-28 06:00:00+01:00
+2025-03-28 13:00:02,890 - INFO - ⏩ Skippad (fanns redan): 2025-03-28 07:00:00+01:00
+2025-03-28 13:00:02,890 - INFO - ⏩ Skippad (fanns redan): 2025-03-28 08:00:00+01:00
+2025-03-28 13:00:02,890 - INFO - ⏩ Skippad (fanns redan): 2025-03-28 09:00:00+01:00
+2025-03-28 13:00:02,890 - INFO - ⏩ Skippad (fanns redan): 2025-03-28 10:00:00+01:00
+2025-03-28 13:00:02,891 - INFO - ⏩ Skippad (fanns redan): 2025-03-28 11:00:00+01:00
+2025-03-28 13:00:02,891 - INFO - ⏩ Skippad (fanns redan): 2025-03-28 12:00:00+01:00
+2025-03-28 13:00:02,891 - INFO - ⏩ Skippad (fanns redan): 2025-03-28 13:00:00+01:00
+2025-03-28 13:00:02,891 - INFO - ⏩ Skippad (fanns redan): 2025-03-28 14:00:00+01:00
+2025-03-28 13:00:02,891 - INFO - ⏩ Skippad (fanns redan): 2025-03-28 15:00:00+01:00
+2025-03-28 13:00:02,892 - INFO - ⏩ Skippad (fanns redan): 2025-03-28 16:00:00+01:00
+2025-03-28 13:00:02,892 - INFO - ⏩ Skippad (fanns redan): 2025-03-28 17:00:00+01:00
+2025-03-28 13:00:02,892 - INFO - ⏩ Skippad (fanns redan): 2025-03-28 18:00:00+01:00
+2025-03-28 13:00:02,892 - INFO - ⏩ Skippad (fanns redan): 2025-03-28 19:00:00+01:00
+2025-03-28 13:00:02,892 - INFO - ⏩ Skippad (fanns redan): 2025-03-28 20:00:00+01:00
+2025-03-28 13:00:02,892 - INFO - ⏩ Skippad (fanns redan): 2025-03-28 21:00:00+01:00
+2025-03-28 13:00:02,893 - INFO - ⏩ Skippad (fanns redan): 2025-03-28 22:00:00+01:00
+2025-03-28 13:00:02,893 - INFO - ⏩ Skippad (fanns redan): 2025-03-28 23:00:00+01:00
+2025-03-28 13:00:02,893 - INFO - 💾 Alla priser sparade.
+2025-03-28 13:00:02,893 - INFO - ==> spotpris.py klar
+Looking in indexes: https://pypi.org/simple, https://www.piwheels.org/simple
+Requirement already satisfied: pymysql in ./myvenv/lib/python3.11/site-packages (1.1.1)
+Requirement already satisfied: requests in ./myvenv/lib/python3.11/site-packages (2.32.3)
+Requirement already satisfied: charset-normalizer<4,>=2 in ./myvenv/lib/python3.11/site-packages (from requests) (3.4.1)
+Requirement already satisfied: idna<4,>=2.5 in ./myvenv/lib/python3.11/site-packages (from requests) (3.10)
+Requirement already satisfied: urllib3<3,>=1.21.1 in ./myvenv/lib/python3.11/site-packages (from requests) (2.3.0)
+Requirement already satisfied: certifi>=2017.4.17 in ./myvenv/lib/python3.11/site-packages (from requests) (2025.1.31)
+2025-03-29 13:00:01,942 - INFO - ==> spotpris.py startade
+2025-03-29 13:00:01,942 - INFO - 👉 Kör spotpris.py – hämtar från https://www.elprisetjustnu.se/api/v1/prices/2025/03-29_SE3.json
+2025-03-29 13:00:02,134 - INFO - ✅ 24 priser hämtade.
+2025-03-29 13:00:02,135 - INFO - ⏩ Skippad (fanns redan): 2025-03-29 00:00:00+01:00
+2025-03-29 13:00:02,136 - INFO - ⏩ Skippad (fanns redan): 2025-03-29 01:00:00+01:00
+2025-03-29 13:00:02,136 - INFO - ⏩ Skippad (fanns redan): 2025-03-29 02:00:00+01:00
+2025-03-29 13:00:02,136 - INFO - ⏩ Skippad (fanns redan): 2025-03-29 03:00:00+01:00
+2025-03-29 13:00:02,136 - INFO - ⏩ Skippad (fanns redan): 2025-03-29 04:00:00+01:00
+2025-03-29 13:00:02,137 - INFO - ⏩ Skippad (fanns redan): 2025-03-29 05:00:00+01:00
+2025-03-29 13:00:02,137 - INFO - ⏩ Skippad (fanns redan): 2025-03-29 06:00:00+01:00
+2025-03-29 13:00:02,137 - INFO - ⏩ Skippad (fanns redan): 2025-03-29 07:00:00+01:00
+2025-03-29 13:00:02,137 - INFO - ⏩ Skippad (fanns redan): 2025-03-29 08:00:00+01:00
+2025-03-29 13:00:02,138 - INFO - ⏩ Skippad (fanns redan): 2025-03-29 09:00:00+01:00
+2025-03-29 13:00:02,138 - INFO - ⏩ Skippad (fanns redan): 2025-03-29 10:00:00+01:00
+2025-03-29 13:00:02,138 - INFO - ⏩ Skippad (fanns redan): 2025-03-29 11:00:00+01:00
+2025-03-29 13:00:02,138 - INFO - ⏩ Skippad (fanns redan): 2025-03-29 12:00:00+01:00
+2025-03-29 13:00:02,138 - INFO - ⏩ Skippad (fanns redan): 2025-03-29 13:00:00+01:00
+2025-03-29 13:00:02,139 - INFO - ⏩ Skippad (fanns redan): 2025-03-29 14:00:00+01:00
+2025-03-29 13:00:02,139 - INFO - ⏩ Skippad (fanns redan): 2025-03-29 15:00:00+01:00
+2025-03-29 13:00:02,139 - INFO - ⏩ Skippad (fanns redan): 2025-03-29 16:00:00+01:00
+2025-03-29 13:00:02,139 - INFO - ⏩ Skippad (fanns redan): 2025-03-29 17:00:00+01:00
+2025-03-29 13:00:02,139 - INFO - ⏩ Skippad (fanns redan): 2025-03-29 18:00:00+01:00
+2025-03-29 13:00:02,140 - INFO - ⏩ Skippad (fanns redan): 2025-03-29 19:00:00+01:00
+2025-03-29 13:00:02,140 - INFO - ⏩ Skippad (fanns redan): 2025-03-29 20:00:00+01:00
+2025-03-29 13:00:02,140 - INFO - ⏩ Skippad (fanns redan): 2025-03-29 21:00:00+01:00
+2025-03-29 13:00:02,140 - INFO - ⏩ Skippad (fanns redan): 2025-03-29 22:00:00+01:00
+2025-03-29 13:00:02,140 - INFO - ⏩ Skippad (fanns redan): 2025-03-29 23:00:00+01:00
+2025-03-29 13:00:02,141 - INFO - 💾 Alla priser sparade.
+2025-03-29 13:00:02,141 - INFO - ==> spotpris.py klar
+Looking in indexes: https://pypi.org/simple, https://www.piwheels.org/simple
+Requirement already satisfied: pymysql in ./myvenv/lib/python3.11/site-packages (1.1.1)
+Requirement already satisfied: requests in ./myvenv/lib/python3.11/site-packages (2.32.3)
+Requirement already satisfied: charset-normalizer<4,>=2 in ./myvenv/lib/python3.11/site-packages (from requests) (3.4.1)
+Requirement already satisfied: idna<4,>=2.5 in ./myvenv/lib/python3.11/site-packages (from requests) (3.10)
+Requirement already satisfied: urllib3<3,>=1.21.1 in ./myvenv/lib/python3.11/site-packages (from requests) (2.3.0)
+Requirement already satisfied: certifi>=2017.4.17 in ./myvenv/lib/python3.11/site-packages (from requests) (2025.1.31)
+2025-03-30 13:00:02,570 - INFO - ==> spotpris.py startade
+2025-03-30 13:00:02,570 - INFO - 👉 Kör spotpris.py – hämtar från https://www.elprisetjustnu.se/api/v1/prices/2025/03-30_SE3.json
+2025-03-30 13:00:02,741 - INFO - ✅ 23 priser hämtade.
+2025-03-30 13:00:02,742 - INFO - ⏩ Skippad (fanns redan): 2025-03-30 00:00:00+01:00
+2025-03-30 13:00:02,743 - INFO - ⏩ Skippad (fanns redan): 2025-03-30 01:00:00+01:00
+2025-03-30 13:00:02,743 - INFO - ⏩ Skippad (fanns redan): 2025-03-30 03:00:00+02:00
+2025-03-30 13:00:02,743 - INFO - ⏩ Skippad (fanns redan): 2025-03-30 04:00:00+02:00
+2025-03-30 13:00:02,744 - INFO - ⏩ Skippad (fanns redan): 2025-03-30 05:00:00+02:00
+2025-03-30 13:00:02,744 - INFO - ⏩ Skippad (fanns redan): 2025-03-30 06:00:00+02:00
+2025-03-30 13:00:02,744 - INFO - ⏩ Skippad (fanns redan): 2025-03-30 07:00:00+02:00
+2025-03-30 13:00:02,744 - INFO - ⏩ Skippad (fanns redan): 2025-03-30 08:00:00+02:00
+2025-03-30 13:00:02,745 - INFO - ⏩ Skippad (fanns redan): 2025-03-30 09:00:00+02:00
+2025-03-30 13:00:02,745 - INFO - ⏩ Skippad (fanns redan): 2025-03-30 10:00:00+02:00
+2025-03-30 13:00:02,745 - INFO - ⏩ Skippad (fanns redan): 2025-03-30 11:00:00+02:00
+2025-03-30 13:00:02,745 - INFO - ⏩ Skippad (fanns redan): 2025-03-30 12:00:00+02:00
+2025-03-30 13:00:02,745 - INFO - ⏩ Skippad (fanns redan): 2025-03-30 13:00:00+02:00
+2025-03-30 13:00:02,746 - INFO - ⏩ Skippad (fanns redan): 2025-03-30 14:00:00+02:00
+2025-03-30 13:00:02,746 - INFO - ⏩ Skippad (fanns redan): 2025-03-30 15:00:00+02:00
+2025-03-30 13:00:02,746 - INFO - ⏩ Skippad (fanns redan): 2025-03-30 16:00:00+02:00
+2025-03-30 13:00:02,746 - INFO - ⏩ Skippad (fanns redan): 2025-03-30 17:00:00+02:00
+2025-03-30 13:00:02,746 - INFO - ⏩ Skippad (fanns redan): 2025-03-30 18:00:00+02:00
+2025-03-30 13:00:02,747 - INFO - ⏩ Skippad (fanns redan): 2025-03-30 19:00:00+02:00
+2025-03-30 13:00:02,747 - INFO - ⏩ Skippad (fanns redan): 2025-03-30 20:00:00+02:00
+2025-03-30 13:00:02,747 - INFO - ⏩ Skippad (fanns redan): 2025-03-30 21:00:00+02:00
+2025-03-30 13:00:02,747 - INFO - ⏩ Skippad (fanns redan): 2025-03-30 22:00:00+02:00
+2025-03-30 13:00:02,747 - INFO - ⏩ Skippad (fanns redan): 2025-03-30 23:00:00+02:00
+2025-03-30 13:00:02,747 - INFO - 💾 Alla priser sparade.
+2025-03-30 13:00:02,748 - INFO - ==> spotpris.py klar
+Looking in indexes: https://pypi.org/simple, https://www.piwheels.org/simple
+Requirement already satisfied: pymysql in ./myvenv/lib/python3.11/site-packages (1.1.1)
+Requirement already satisfied: requests in ./myvenv/lib/python3.11/site-packages (2.32.3)
+Requirement already satisfied: charset-normalizer<4,>=2 in ./myvenv/lib/python3.11/site-packages (from requests) (3.4.1)
+Requirement already satisfied: idna<4,>=2.5 in ./myvenv/lib/python3.11/site-packages (from requests) (3.10)
+Requirement already satisfied: urllib3<3,>=1.21.1 in ./myvenv/lib/python3.11/site-packages (from requests) (2.3.0)
+Requirement already satisfied: certifi>=2017.4.17 in ./myvenv/lib/python3.11/site-packages (from requests) (2025.1.31)
+2025-03-31 13:00:02,123 - INFO - ==> spotpris.py startade
+2025-03-31 13:00:02,123 - INFO - 👉 Kör spotpris.py – hämtar från https://www.elprisetjustnu.se/api/v1/prices/2025/03-31_SE3.json
+2025-03-31 13:00:02,274 - INFO - ✅ 24 priser hämtade.
+2025-03-31 13:00:02,276 - INFO - ⏩ Skippad (fanns redan): 2025-03-31 00:00:00+02:00
+2025-03-31 13:00:02,276 - INFO - ⏩ Skippad (fanns redan): 2025-03-31 01:00:00+02:00
+2025-03-31 13:00:02,277 - INFO - ⏩ Skippad (fanns redan): 2025-03-31 02:00:00+02:00
+2025-03-31 13:00:02,277 - INFO - ⏩ Skippad (fanns redan): 2025-03-31 03:00:00+02:00
+2025-03-31 13:00:02,277 - INFO - ⏩ Skippad (fanns redan): 2025-03-31 04:00:00+02:00
+2025-03-31 13:00:02,278 - INFO - ⏩ Skippad (fanns redan): 2025-03-31 05:00:00+02:00
+2025-03-31 13:00:02,278 - INFO - ⏩ Skippad (fanns redan): 2025-03-31 06:00:00+02:00
+2025-03-31 13:00:02,278 - INFO - ⏩ Skippad (fanns redan): 2025-03-31 07:00:00+02:00
+2025-03-31 13:00:02,278 - INFO - ⏩ Skippad (fanns redan): 2025-03-31 08:00:00+02:00
+2025-03-31 13:00:02,279 - INFO - ⏩ Skippad (fanns redan): 2025-03-31 09:00:00+02:00
+2025-03-31 13:00:02,279 - INFO - ⏩ Skippad (fanns redan): 2025-03-31 10:00:00+02:00
+2025-03-31 13:00:02,279 - INFO - ⏩ Skippad (fanns redan): 2025-03-31 11:00:00+02:00
+2025-03-31 13:00:02,280 - INFO - ⏩ Skippad (fanns redan): 2025-03-31 12:00:00+02:00
+2025-03-31 13:00:02,280 - INFO - ⏩ Skippad (fanns redan): 2025-03-31 13:00:00+02:00
+2025-03-31 13:00:02,280 - INFO - ⏩ Skippad (fanns redan): 2025-03-31 14:00:00+02:00
+2025-03-31 13:00:02,281 - INFO - ⏩ Skippad (fanns redan): 2025-03-31 15:00:00+02:00
+2025-03-31 13:00:02,281 - INFO - ⏩ Skippad (fanns redan): 2025-03-31 16:00:00+02:00
+2025-03-31 13:00:02,281 - INFO - ⏩ Skippad (fanns redan): 2025-03-31 17:00:00+02:00
+2025-03-31 13:00:02,281 - INFO - ⏩ Skippad (fanns redan): 2025-03-31 18:00:00+02:00
+2025-03-31 13:00:02,282 - INFO - ⏩ Skippad (fanns redan): 2025-03-31 19:00:00+02:00
+2025-03-31 13:00:02,282 - INFO - ⏩ Skippad (fanns redan): 2025-03-31 20:00:00+02:00
+2025-03-31 13:00:02,282 - INFO - ⏩ Skippad (fanns redan): 2025-03-31 21:00:00+02:00
+2025-03-31 13:00:02,283 - INFO - ⏩ Skippad (fanns redan): 2025-03-31 22:00:00+02:00
+2025-03-31 13:00:02,283 - INFO - ⏩ Skippad (fanns redan): 2025-03-31 23:00:00+02:00
+2025-03-31 13:00:02,283 - INFO - 💾 Alla priser sparade.
+2025-03-31 13:00:02,283 - INFO - ==> spotpris.py klar
+Looking in indexes: https://pypi.org/simple, https://www.piwheels.org/simple
+Requirement already satisfied: pymysql in ./myvenv/lib/python3.11/site-packages (1.1.1)
+Requirement already satisfied: requests in ./myvenv/lib/python3.11/site-packages (2.32.3)
+Requirement already satisfied: charset-normalizer<4,>=2 in ./myvenv/lib/python3.11/site-packages (from requests) (3.4.1)
+Requirement already satisfied: idna<4,>=2.5 in ./myvenv/lib/python3.11/site-packages (from requests) (3.10)
+Requirement already satisfied: urllib3<3,>=1.21.1 in ./myvenv/lib/python3.11/site-packages (from requests) (2.3.0)
+Requirement already satisfied: certifi>=2017.4.17 in ./myvenv/lib/python3.11/site-packages (from requests) (2025.1.31)
+2025-04-01 13:00:02,013 - INFO - ==> spotpris.py startade
+2025-04-01 13:00:02,014 - INFO - 👉 Kör spotpris.py – hämtar från https://www.elprisetjustnu.se/api/v1/prices/2025/04-01_SE3.json
+2025-04-01 13:00:22,037 - ERROR - ❌ Fel vid hämtning eller lagring: HTTPSConnectionPool(host='www.elprisetjustnu.se', port=443): Max retries exceeded with url: /api/v1/prices/2025/04-01_SE3.json (Caused by NameResolutionError("<urllib3.connection.HTTPSConnection object at 0x7fff2ac5d050>: Failed to resolve 'www.elprisetjustnu.se' ([Errno -3] Temporary failure in name resolution)"))
+2025-04-01 13:00:22,037 - INFO - ==> spotpris.py klar
+Looking in indexes: https://pypi.org/simple, https://www.piwheels.org/simple
+Requirement already satisfied: pymysql in ./myvenv/lib/python3.11/site-packages (1.1.1)
+Requirement already satisfied: requests in ./myvenv/lib/python3.11/site-packages (2.32.3)
+Requirement already satisfied: charset-normalizer<4,>=2 in ./myvenv/lib/python3.11/site-packages (from requests) (3.4.1)
+Requirement already satisfied: idna<4,>=2.5 in ./myvenv/lib/python3.11/site-packages (from requests) (3.10)
+Requirement already satisfied: urllib3<3,>=1.21.1 in ./myvenv/lib/python3.11/site-packages (from requests) (2.3.0)
+Requirement already satisfied: certifi>=2017.4.17 in ./myvenv/lib/python3.11/site-packages (from requests) (2025.1.31)
+2025-04-02 13:00:02,223 - INFO - ==> spotpris.py startade
+2025-04-02 13:00:02,224 - INFO - 👉 Kör spotpris.py – hämtar från https://www.elprisetjustnu.se/api/v1/prices/2025/04-02_SE3.json
+2025-04-02 13:00:03,303 - INFO - ✅ 24 priser hämtade.
+2025-04-02 13:00:03,305 - INFO - ⏩ Skippad (fanns redan): 2025-04-02 00:00:00+02:00
+2025-04-02 13:00:03,306 - INFO - ⏩ Skippad (fanns redan): 2025-04-02 01:00:00+02:00
+2025-04-02 13:00:03,306 - INFO - ⏩ Skippad (fanns redan): 2025-04-02 02:00:00+02:00
+2025-04-02 13:00:03,307 - INFO - ⏩ Skippad (fanns redan): 2025-04-02 03:00:00+02:00
+2025-04-02 13:00:03,307 - INFO - ⏩ Skippad (fanns redan): 2025-04-02 04:00:00+02:00
+2025-04-02 13:00:03,307 - INFO - ⏩ Skippad (fanns redan): 2025-04-02 05:00:00+02:00
+2025-04-02 13:00:03,308 - INFO - ⏩ Skippad (fanns redan): 2025-04-02 06:00:00+02:00
+2025-04-02 13:00:03,308 - INFO - ⏩ Skippad (fanns redan): 2025-04-02 07:00:00+02:00
+2025-04-02 13:00:03,308 - INFO - ⏩ Skippad (fanns redan): 2025-04-02 08:00:00+02:00
+2025-04-02 13:00:03,309 - INFO - ⏩ Skippad (fanns redan): 2025-04-02 09:00:00+02:00
+2025-04-02 13:00:03,309 - INFO - ⏩ Skippad (fanns redan): 2025-04-02 10:00:00+02:00
+2025-04-02 13:00:03,309 - INFO - ⏩ Skippad (fanns redan): 2025-04-02 11:00:00+02:00
+2025-04-02 13:00:03,309 - INFO - ⏩ Skippad (fanns redan): 2025-04-02 12:00:00+02:00
+2025-04-02 13:00:03,310 - INFO - ⏩ Skippad (fanns redan): 2025-04-02 13:00:00+02:00
+2025-04-02 13:00:03,310 - INFO - ⏩ Skippad (fanns redan): 2025-04-02 14:00:00+02:00
+2025-04-02 13:00:03,310 - INFO - ⏩ Skippad (fanns redan): 2025-04-02 15:00:00+02:00
+2025-04-02 13:00:03,311 - INFO - ⏩ Skippad (fanns redan): 2025-04-02 16:00:00+02:00
+2025-04-02 13:00:03,311 - INFO - ⏩ Skippad (fanns redan): 2025-04-02 17:00:00+02:00
+2025-04-02 13:00:03,311 - INFO - ⏩ Skippad (fanns redan): 2025-04-02 18:00:00+02:00
+2025-04-02 13:00:03,312 - INFO - ⏩ Skippad (fanns redan): 2025-04-02 19:00:00+02:00
+2025-04-02 13:00:03,312 - INFO - ⏩ Skippad (fanns redan): 2025-04-02 20:00:00+02:00
+2025-04-02 13:00:03,312 - INFO - ⏩ Skippad (fanns redan): 2025-04-02 21:00:00+02:00
+2025-04-02 13:00:03,313 - INFO - ⏩ Skippad (fanns redan): 2025-04-02 22:00:00+02:00
+2025-04-02 13:00:03,313 - INFO - ⏩ Skippad (fanns redan): 2025-04-02 23:00:00+02:00
+2025-04-02 13:00:03,313 - INFO - 💾 Alla priser sparade.
+2025-04-02 13:00:03,314 - INFO - ==> spotpris.py klar

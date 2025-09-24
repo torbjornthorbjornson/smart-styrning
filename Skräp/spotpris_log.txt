@@ -1,0 +1,38 @@
+2025-03-26 01:42:14,266 - INFO - ==> spotpris.py startade
+2025-03-26 01:42:14,266 - INFO - Försöker hämta elpriser för tomorrow från https://www.elprisetjustnu.se/api/v1/prices/2025-03-27_SE3.json
+2025-03-26 01:42:14,338 - ERROR - Fel vid hämtning av tomorrow (försök 1): 404 Client Error: Not Found for url: https://www.elprisetjustnu.se/api/v1/prices/2025-03-27_SE3.json
+2025-03-26 01:42:29,816 - INFO - ==> spotpris.py startade
+2025-03-26 01:42:29,816 - INFO - Försöker hämta elpriser för tomorrow från https://www.elprisetjustnu.se/api/v1/prices/2025-03-27_SE3.json
+2025-03-26 01:42:29,884 - ERROR - Fel vid hämtning av tomorrow (försök 1): 404 Client Error: Not Found for url: https://www.elprisetjustnu.se/api/v1/prices/2025-03-27_SE3.json
+2025-03-26 01:44:25,428 - INFO - ==> spotpris.py startade
+2025-03-26 01:44:25,428 - INFO - Försöker hämta elpriser för tomorrow från https://www.elprisetjustnu.se/api/v1/prices/2025-03-27_SE3.json
+2025-03-26 01:44:25,500 - ERROR - Fel vid hämtning av tomorrow (försök 1): 404 Client Error: Not Found for url: https://www.elprisetjustnu.se/api/v1/prices/2025-03-27_SE3.json
+2025-03-26 01:44:52,042 - INFO - ==> spotpris.py startade
+2025-03-26 01:44:52,046 - INFO - Försöker hämta elpriser för tomorrow från https://www.elprisetjustnu.se/api/v1/prices/2025-03-27_SE3.json
+2025-03-26 01:44:52,116 - ERROR - Fel vid hämtning av tomorrow (försök 1): 404 Client Error: Not Found for url: https://www.elprisetjustnu.se/api/v1/prices/2025-03-27_SE3.json
+2025-03-26 01:45:02,116 - INFO - Försöker hämta elpriser för tomorrow från https://www.elprisetjustnu.se/api/v1/prices/2025-03-27_SE3.json
+2025-03-26 01:45:02,206 - ERROR - Fel vid hämtning av tomorrow (försök 2): 404 Client Error: Not Found for url: https://www.elprisetjustnu.se/api/v1/prices/2025-03-27_SE3.json
+2025-03-26 01:45:12,206 - INFO - Försöker hämta elpriser för tomorrow från https://www.elprisetjustnu.se/api/v1/prices/2025-03-27_SE3.json
+2025-03-26 01:45:12,276 - ERROR - Fel vid hämtning av tomorrow (försök 3): 404 Client Error: Not Found for url: https://www.elprisetjustnu.se/api/v1/prices/2025-03-27_SE3.json
+2025-03-26 01:45:22,276 - INFO - Försöker hämta elpriser för tomorrow från https://www.elprisetjustnu.se/api/v1/prices/2025-03-27_SE3.json
+2025-03-26 01:45:22,343 - ERROR - Fel vid hämtning av tomorrow (försök 4): 404 Client Error: Not Found for url: https://www.elprisetjustnu.se/api/v1/prices/2025-03-27_SE3.json
+2025-03-26 01:45:32,343 - INFO - Försöker hämta elpriser för tomorrow från https://www.elprisetjustnu.se/api/v1/prices/2025-03-27_SE3.json
+2025-03-26 01:45:32,410 - ERROR - Fel vid hämtning av tomorrow (försök 5): 404 Client Error: Not Found for url: https://www.elprisetjustnu.se/api/v1/prices/2025-03-27_SE3.json
+2025-03-26 01:45:42,410 - WARNING - Misslyckades med att hämta tomorrow efter 5 försök.
+2025-03-26 01:45:42,411 - INFO - Försöker hämta elpriser för today från https://www.elprisetjustnu.se/api/v1/prices/2025-03-26_SE3.json
+2025-03-26 01:45:42,477 - ERROR - Fel vid hämtning av today (försök 1): 404 Client Error: Not Found for url: https://www.elprisetjustnu.se/api/v1/prices/2025-03-26_SE3.json
+2025-03-26 01:45:52,478 - INFO - Försöker hämta elpriser för today från https://www.elprisetjustnu.se/api/v1/prices/2025-03-26_SE3.json
+2025-03-26 01:45:52,546 - ERROR - Fel vid hämtning av today (försök 2): 404 Client Error: Not Found for url: https://www.elprisetjustnu.se/api/v1/prices/2025-03-26_SE3.json
+2025-03-26 01:46:02,547 - INFO - Försöker hämta elpriser för today från https://www.elprisetjustnu.se/api/v1/prices/2025-03-26_SE3.json
+2025-03-26 01:46:02,618 - ERROR - Fel vid hämtning av today (försök 3): 404 Client Error: Not Found for url: https://www.elprisetjustnu.se/api/v1/prices/2025-03-26_SE3.json
+2025-03-26 01:46:12,618 - INFO - Försöker hämta elpriser för today från https://www.elprisetjustnu.se/api/v1/prices/2025-03-26_SE3.json
+2025-03-26 01:46:12,689 - ERROR - Fel vid hämtning av today (försök 4): 404 Client Error: Not Found for url: https://www.elprisetjustnu.se/api/v1/prices/2025-03-26_SE3.json
+2025-03-26 01:46:22,689 - INFO - Försöker hämta elpriser för today från https://www.elprisetjustnu.se/api/v1/prices/2025-03-26_SE3.json
+2025-03-26 01:46:22,756 - ERROR - Fel vid hämtning av today (försök 5): 404 Client Error: Not Found for url: https://www.elprisetjustnu.se/api/v1/prices/2025-03-26_SE3.json
+2025-03-26 01:46:32,756 - WARNING - Misslyckades med att hämta today efter 5 försök.
+2025-03-26 01:46:32,756 - INFO - ==> spotpris.py klar
+2025-03-26 01:54:30,241 - INFO - ==> spotpris.py startade
+2025-03-26 01:54:30,242 - INFO - Försöker hämta elpriser för tomorrow från https://www.elprisetjustnu.se/api/v1/prices/2025-03-27_SE3.json
+2025-03-26 01:54:30,312 - ERROR - Fel vid hämtning av tomorrow (försök 1): 404 Client Error: Not Found for url: https://www.elprisetjustnu.se/api/v1/prices/2025-03-27_SE3.json
+2025-03-26 01:54:40,313 - INFO - Försöker hämta elpriser för tomorrow från https://www.elprisetjustnu.se/api/v1/prices/2025-03-27_SE3.json
+2025-03-26 01:54:40,381 - ERROR - Fel vid hämtning av tomorrow (försök 2): 404 Client Error: Not Found for url: https://www.elprisetjustnu.se/api/v1/prices/2025-03-27_SE3.json

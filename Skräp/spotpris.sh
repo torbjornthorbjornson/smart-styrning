@@ -1,0 +1,14 @@
+#!/bin/bash
+
+# Ange sökvägen till din virtuella miljö
+VENV_PATH="/home/runerova/myenv"
+
+# Aktivera den virtuella miljön
+source $VENV_PATH/bin/activate
+
+
+# Kör Python-skriptet
+python /home/runerova/smartweb/spotpris.py
+
+# Avaktivera den virtuella miljön
+deactivate

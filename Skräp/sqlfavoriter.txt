@@ -1,0 +1,3 @@
+USE weatherdb;
+SHOW TABLES;
+SELECT COUNT(*) FROM electricity_prices;
