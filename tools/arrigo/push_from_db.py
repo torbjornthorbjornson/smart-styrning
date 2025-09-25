@@ -1,18 +1,15 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-push_from_db.py (allt i ett)
+push_from_db.py
 - Hämtar elpriser från DB (UTC) och bygger rank 0..23
 - Räknar median, trösklar och maskar (extreme cheap/expensive)
 - Loggar in mot Arrigo
 - Läser PVL-variabellistan, bygger TA→index
 - Skriver PRICE_RANK(h), PRICE_STAMP, EC/EX-maskar
 - Skriver även OAT_mean_yday och OAT_mean_tomorrow
+- Nytt: Skriver Price_Val(0..23) = faktiska timpriser
 - Togglar PRICE_OK
-
-Thresholds för maskar styrs via miljövariabler:
-  ARRIGO_CHEAP_PCT   (default -0.30)  → t.ex. -0.30 betyder "cheap ≤ 70 % av median"
-  ARRIGO_EXP_PCT     (default +0.50)  → t.ex. +0.50 betyder "exp ≥ 150 % av median"
 """
 
 import os, re, base64
@@ -155,7 +152,7 @@ def build_rank_and_masks(rows):
     rank = [hour_to_rank[h] for h,_ in hour_price]
 
     log(f"📊 Median={median:.3f}, cheap_thr={cheap_thr:.3f}, exp_thr={exp_thr:.3f}")
-    return rank, {"EC_MASK_L":ecL,"EC_MASK_H":ecH,"EX_MASK_L":exL,"EX_MASK_H":exH}
+    return rank, {"EC_MASK_L":ecL,"EC_MASK_H":ecH,"EX_MASK_L":exL,"EX_MASK_H":exH}, hour_price
 
 # ---- OAT ----
 def daily_avg_oat(day_local: date):
@@ -170,7 +167,7 @@ def daily_avg_oat(day_local: date):
     return round(float(row["avgtemp"]),1) if row and row["avgtemp"] else None
 
 # ---- Push ----
-def push_to_arrigo(rank, masks, day_local, oat_yday, oat_tmr):
+def push_to_arrigo(rank, masks, day_local, oat_yday, oat_tmr, hour_price):
     login_url   = getenv_any(["ARRIGO_LOGIN_URL"], True)
     graphql_url = getenv_any(["ARRIGO_GRAPHQL_URL"], True)
     user        = getenv_any(["ARRIGO_USER","ARRIGO_USERNAME"], True)
@@ -187,11 +184,14 @@ def push_to_arrigo(rank, masks, day_local, oat_yday, oat_tmr):
     idx_price_ok=None
     idx_oat_yday=idx_oat_tmr=None
     idx_masks={}
+    idx_vals={}  # nytt för Price_Val
 
     for i,v in enumerate(vars_list):
         ta=(v.get("technicalAddress") or "").strip()
-        m=re.search(r"\.PRICE_RANK\((\d+)\)$",ta)
-        if m: idx_rank[int(m.group(1))]=i; continue
+        m_rank=re.search(r"\.PRICE_RANK\((\d+)\)$",ta)
+        if m_rank: idx_rank[int(m_rank.group(1))]=i; continue
+        m_val=re.search(r"\.Price_Val\((\d+)\)$",ta,re.IGNORECASE)
+        if m_val: idx_vals[int(m_val.group(1))]=i; continue
         if ta.endswith(".PRICE_OK"): idx_price_ok=i; continue
         if ta.endswith(".PRICE_STAMP"): idx_stamp=i; continue
         if ta.endswith(".OAT_mean_yday"): idx_oat_yday=i; continue
@@ -206,9 +206,15 @@ def push_to_arrigo(rank, masks, day_local, oat_yday, oat_tmr):
         log("🔒 PRICE_OK=0")
 
     writes=[]
+    # rank
     for h in range(24):
         if h in idx_rank:
             writes.append({"key":f"{pvl_b64}:{idx_rank[h]}","value":str(rank[h])})
+    # nytt: Price_Val
+    for h,price in hour_price:
+        if h in idx_vals:
+            writes.append({"key":f"{pvl_b64}:{idx_vals[h]}","value":f"{price:.2f}"})
+    # övrigt
     if idx_stamp is not None:
         writes.append({"key":f"{pvl_b64}:{idx_stamp}","value":day_local.strftime("%Y%m%d")})
     if idx_oat_yday is not None and oat_yday is not None:
@@ -231,11 +237,11 @@ def push_to_arrigo(rank, masks, day_local, oat_yday, oat_tmr):
 def main():
     which=os.getenv("RANK_WHEN","today")
     rows,day_local=fetch_prices(which)
-    rank,masks=build_rank_and_masks(rows)
+    rank,masks,hour_price=build_rank_and_masks(rows)
     today=date.today()
     oat_yday=daily_avg_oat(today-timedelta(days=1))
     oat_tmr =daily_avg_oat(today+timedelta(days=1))
-    push_to_arrigo(rank,masks,day_local,oat_yday,oat_tmr)
+    push_to_arrigo(rank,masks,day_local,oat_yday,oat_tmr,hour_price)
 
 if __name__=="__main__":
     try: main()
