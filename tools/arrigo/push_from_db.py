@@ -127,8 +127,8 @@ def build_rank_and_masks(rows):
     sorted_prices = sorted([p for _,p in hour_price])
     median = (sorted_prices[11] + sorted_prices[12])/2.0
 
-    cheap_pct = float(getenv_any(["ARRIGO_CHEAP_PCT"], default="-0.30"))
-    exp_pct   = float(getenv_any(["ARRIGO_EXP_PCT"],   default="+0.50"))
+    cheap_pct = float(getenv_any(["ARRIGO_CHEAP_PCT"], default="-0.50"))
+    exp_pct   = float(getenv_any(["ARRIGO_EXP_PCT"],   default="+1.50"))
     cheap_thr = median * (1.0 + cheap_pct)
     exp_thr   = median * (1.0 + exp_pct)
 
