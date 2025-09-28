@@ -84,7 +84,8 @@ def gql(url, token, query, variables, verify):
 
 # ---- Pris från DB ----
 def fetch_prices(which: str):
-    today_local = date.today()
+    # Bygg svensk kalenderdag
+    today_local = datetime.now(UTC).astimezone(TZ).date()
     day_local = today_local + timedelta(days=1) if which=="tomorrow" else today_local
     start_local = datetime.combine(day_local, time(0,0), tzinfo=TZ)
     end_local   = start_local + timedelta(days=1)
@@ -95,11 +96,19 @@ def fetch_prices(which: str):
 
     conn = pymysql.connect(**read_db_config())
     with conn, conn.cursor() as cur:
-        cur.execute("SELECT datetime, price FROM electricity_prices WHERE datetime >= %s AND datetime < %s ORDER BY datetime", (start_utc, end_utc))
+        cur.execute("""
+            SELECT datetime, price FROM electricity_prices
+            WHERE datetime >= %s AND datetime < %s
+            ORDER BY datetime
+        """, (start_utc, end_utc))
         rows = cur.fetchall()
+
+    if len(rows) != 24:
+        log(f"⚠️ Antal timmar i DB: {len(rows)} (förväntat 24)")
     return rows, day_local
 
 def normalize_to_24(rows):
+    """Bygg timmap utifrån svensk tid (UTC → Europe/Stockholm)."""
     per_hour = {h: [] for h in range(24)}
     for r in rows:
         h = r["datetime"].replace(tzinfo=UTC).astimezone(TZ).hour
@@ -109,17 +118,7 @@ def normalize_to_24(rows):
         if per_hour[h]:
             price = sum(per_hour[h])/len(per_hour[h])
         else:
-            # fyll med närmaste kända
-            left = h-1
-            while left>=0 and not per_hour[left]: left-=1
-            right = h+1
-            while right<=23 and not per_hour[right]: right+=1
-            if left>=0 and per_hour[left]:
-                price = sum(per_hour[left])/len(per_hour[left])
-            elif right<=23 and per_hour[right]:
-                price = sum(per_hour[right])/len(per_hour[right])
-            else:
-                price = 0
+            price = 0.0  # markera saknad timme
         out.append((h, price))
     return out
 
@@ -128,9 +127,8 @@ def build_rank_and_masks(rows):
     sorted_prices = sorted([p for _,p in hour_price])
     median = (sorted_prices[11] + sorted_prices[12])/2.0
 
-    # --- thresholds från miljövariabler ---
-    cheap_pct = float(getenv_any(["ARRIGO_CHEAP_PCT"], default="-0.30"))  # default -0.30
-    exp_pct   = float(getenv_any(["ARRIGO_EXP_PCT"],   default="+0.50"))  # default +0.50
+    cheap_pct = float(getenv_any(["ARRIGO_CHEAP_PCT"], default="-0.30"))
+    exp_pct   = float(getenv_any(["ARRIGO_EXP_PCT"],   default="+0.50"))
     cheap_thr = median * (1.0 + cheap_pct)
     exp_thr   = median * (1.0 + exp_pct)
 
@@ -146,7 +144,6 @@ def build_rank_and_masks(rows):
     ecL, ecH = pack_mask(cheap_hours)
     exL, exH = pack_mask(exp_hours)
 
-    # rank
     sorted_hours = sorted(range(24), key=lambda h: hour_price[h][1])
     hour_to_rank = {h:i for i,h in enumerate(sorted_hours)}
     rank = [hour_to_rank[h] for h,_ in hour_price]
@@ -184,13 +181,13 @@ def push_to_arrigo(rank, masks, day_local, oat_yday, oat_tmr, hour_price):
     idx_price_ok=None
     idx_oat_yday=idx_oat_tmr=None
     idx_masks={}
-    idx_vals={}  # nytt för Price_Val
+    idx_vals={}
 
     for i,v in enumerate(vars_list):
         ta=(v.get("technicalAddress") or "").strip()
-        m_rank=re.search(r"\.PRICE_RANK\((\d+)\)$",ta)
+        m_rank=re.search(r"\.price_rank(?:_|\()(\d+)\)?$", ta, re.IGNORECASE)
         if m_rank: idx_rank[int(m_rank.group(1))]=i; continue
-        m_val=re.search(r"\.Price_Val\((\d+)\)$",ta,re.IGNORECASE)
+        m_val=re.search(r"\.price_val(?:_|\()(\d+)\)?$", ta, re.IGNORECASE)
         if m_val: idx_vals[int(m_val.group(1))]=i; continue
         if ta.endswith(".PRICE_OK"): idx_price_ok=i; continue
         if ta.endswith(".PRICE_STAMP"): idx_stamp=i; continue
@@ -201,20 +198,20 @@ def push_to_arrigo(rank, masks, day_local, oat_yday, oat_tmr, hour_price):
         if ta.endswith(".EX_MASK_L"): idx_masks["EX_MASK_L"]=i; continue
         if ta.endswith(".EX_MASK_H"): idx_masks["EX_MASK_H"]=i; continue
 
+    log(f"🧭 PRICE_RANK map: {sorted(idx_rank.items())}")
+    log(f"🧭 Price_Val  map: {sorted(idx_vals.items())}")
+
     if idx_price_ok is not None:
         gql(graphql_url,token,"mutation($v:[VariableKeyValue!]!){writeData(variables:$v)}",{"v":[{"key":f"{pvl_b64}:{idx_price_ok}","value":"0"}]},verify)
         log("🔒 PRICE_OK=0")
 
     writes=[]
-    # rank
     for h in range(24):
         if h in idx_rank:
             writes.append({"key":f"{pvl_b64}:{idx_rank[h]}","value":str(rank[h])})
-    # nytt: Price_Val
     for h,price in hour_price:
         if h in idx_vals:
             writes.append({"key":f"{pvl_b64}:{idx_vals[h]}","value":f"{price:.2f}"})
-    # övrigt
     if idx_stamp is not None:
         writes.append({"key":f"{pvl_b64}:{idx_stamp}","value":day_local.strftime("%Y%m%d")})
     if idx_oat_yday is not None and oat_yday is not None:
