@@ -38,3 +38,16 @@ config.local.*
 *.bak
 *.old
 *.zip
+# Roterade / komprimerade loggar
+*.log.*
+*.gz
+
+# Tillfälliga skräpfiler som råkat skapas
+FROM
+SELECT
+ORDER
+LIMIT
+UTC-intervall
+
+# Övrigt skräp
+Skräp/
