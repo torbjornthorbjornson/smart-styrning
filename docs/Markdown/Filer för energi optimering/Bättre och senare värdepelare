@@ -1,0 +1,83 @@
+# 05_Värdepelare.md
+## 💎 Kärnan i Adaptiv Driftsmodell
+
+### 🌍 Syfte
+Systemet är inte skapat för att “styra maskiner”.  
+Det är byggt för att **förstå människor, byggnader och energi** — och få dem att samspela.  
+Det handlar lika mycket om omtanke som om optimering.
+
+> “Tekniken ska inte styra människan.  
+> Den ska hjälpa människan att leva smartare, bekvämare och billigare.”
+
+---
+
+## 🧭 Våra fem värdepelare
+
+### 1️⃣ Ekonomi – “Varje watt räknas”
+- All styrning ska minimera totalkostnad, inte bara energiförbrukning.  
+- Systemet ska alltid välja **billigaste möjliga tid** utan att tumma på komfort.  
+- Användaren ska förstå var besparingarna kommer ifrån – i realtid.
+
+> 💬 “Det du inte mäter kan du inte förbättra. Det du mäter ska du förstå.”
+
+---
+
+### 2️⃣ Komfort – “Ingen ska frysa för att spara”
+- Komfort är inte motsatsen till effektivitet, det är dess mål.  
+- Systemet lär sig hur byggnaden reagerar och styr förväntan.  
+- Prioritering mellan värme och varmvatten sker intelligent – inte slumpmässigt.  
+- Övergångar ska vara mjuka, förutsägbara och mänskliga.
+
+> 💬 “Smart styrning märks inte – den bara fungerar.”
+
+---
+
+### 3️⃣ Omtanke – “Moduler som samarbetar”
+- Värme, varmvatten, ventilation, sol och lagring är **kompisar**, inte rivaler.  
+- En modul kan avstå timmar till en annan som har större behov.  
+- Systemet kommunicerar genom logik, inte genom konflikter.  
+- Människans roll är att styra riktningen, inte alla detaljer.
+
+> 💬 “Om varmvatten blev klar tidigare – låt värmen få låna lite kraft.”
+
+---
+
+### 4️⃣ Innovation – “Tänk längre än manualen”
+- EXOL och Python, gammalt och nytt, ska kunna samexistera.  
+- Självlärning, AI och mänsklig erfarenhet ska kombineras.  
+- Varje ny idé testas metodiskt men med lekfull nyfikenhet.  
+- Systemet ska kunna växa, lära och anpassa sig – utan att börja om.
+
+> 💬 “Om någon säger att det inte går – då börjar vi där.”
+
+---
+
+### 5️⃣ Samverkan – “Helheten är viktigare än delarna”
+- All logik bygger på balans mellan energikälla, behov och tid.  
+- Systemet ska se fastigheten som ett **ekosystem** – inte isolerade komponenter.  
+- Kommunikation (API, Arrigo, Modbus, MQTT) är lika viktig som styrningen.  
+- Människan ska känna sig som en del av helheten, inte utanför den.
+
+> 💬 “Det är inte bara styrning. Det är orkestrering.”
+
+---
+
+## 🪄 Slutmål
+Att skapa ett system som:
+- Tänker själv.  
+- Samarbetar med sin omgivning.  
+- Gör rätt sak i rätt tid – utan att du ber om det.  
+- Och som du kan vara stolt över att ha byggt.
+
+> ❤️ “När reläerna klapprar i takt och graferna andas – då lever systemet.”
+
+---
+
+## ✨ Slutord
+Detta är inte bara ett styrsystem.  
+Det är en **levande arkitektur** byggd av teknik, erfarenhet och omtanke.  
+När du trycker “RUN” i EXOL eller ser kurvorna röra sig på skärmen,  
+är det inte bara kod som körs – det är **ditt tänkande i rörelse.**
+
+---
+

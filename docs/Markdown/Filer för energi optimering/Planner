@@ -1,0 +1,139 @@
+# 04_Planner_Vision.md
+## ⚙️ Planner – Vision, Struktur & Nästa Steg
+
+### 🧩 Övergripande syfte
+Planner är hjärtat i hela den adaptiva styrningen.  
+Dess uppgift är att ta reda på **när** under dygnet varmvatten (eller annan last) ska vara aktiv,  
+utifrån pris, kapacitet, budget, tidfönster och användarpreferenser.
+
+Planner fattar beslut utifrån principen:
+> “Gör rätt sak vid rätt tid — men bara en gång per cykel.”
+
+---
+
+## 📐 Grundlogik
+
+1. **Inläsning av aktiv profil (R):**  
+   Hämtar runtime-värden från den profil som valts i HMI.  
+   Exempel: `VVP_P1_H_BASE → VVP_H_BASE_R`
+
+2. **Clampning:**  
+   Säkerställer giltiga värden: 0–24 timmar, 0–96 perioder.
+
+3. **Trigger-hantering:**  
+   Planner körs endast när något förändrats:
+   - UI → Profiländring (via `VVP_UI_CHANGE_FLAG`)
+   - Profilbyte (`VVP_PROFILE_UI <> VVP_PROFILE`)
+   - Manuell start (`VVP_PLAN_NOW`)
+   - Självinlärning (t.ex. `VV_Control` sätter `VVP_PLAN_NOW = 1`)
+
+4. **Planeringskropp:**  
+   Planen byggs i 96 kvartstimmar utifrån prioritering:
+   1. Billigaste perioder (`RANK_W`)
+   2. Budget i ankarfönster (Morgon/kväll)
+   3. In-row och gap-regler
+   4. Slack (extra kapacitet vid behov)
+   5. Trim (ta bort dyraste om planen överskrider målet)
+
+5. **Snapshot:**  
+   Lagrar resultat och förbereder för nästa cykel.
+
+---
+
+## 🧮 Aktuellt läge (status Q4 2025)
+
+✅ *Profiler synkas korrekt mellan HMI och runtime*  
+✅ *Plan triggas bara en gång per cykel*  
+✅ *Basplan och seedning fungerar (billigast först)*  
+✅ *Ankarfönster börjar fungera (morgon/kväll)*  
+⚙️ *Clampning fungerar men behöver finjusteras för extrema värden*  
+⚙️ *Inrow/gap behöver förbättrad prioriteringslogik*  
+⚙️ *Trim behöver tydligare funktion eller tas bort helt*  
+🚧 *Självinlärningen (VV_Control) ger feedback men integreras inte ännu*
+
+---
+
+## 🎯 Steg för steg framåt
+
+### **Steg 1 – Stabilisering (pågående)**
+Syfte: Undvika överdrivet antal timmar (89–96) och dubbletter.
+- Säkerställ att `pickedP` aldrig överskrider `needP + CAP_SLACK_P`.
+- Håll fast vid “plan körs max en gång/cykel”.
+- Bekräfta att `VVP_PLAN_BUSY` fungerar som återinträdeslås.
+
+### **Steg 2 – Förfining av ankarfönster**
+Syfte: Exakta fönster, rätt kvartsomvandling och respekt för budget.
+- Kontrollera att `m_startI`, `m_lenI`, `e_startI`, `e_lenI` konverteras 1:1 från timmar (×4).
+- Inför clampning av längd: `budgetM_P ≤ m_lenI`, `budgetE_P ≤ e_lenI`.
+- Säkerställ att planering aldrig fyller utanför definierade fönster.
+- Testa edge-case: wrap-around (t.ex. 22:00–02:00).
+
+### **Steg 3 – Inrow och Gap-regler**
+Syfte: Jämn fördelning och effektbegränsning.
+- Revidera logik för `MAX_INROW_P` och `MAX_GAP_P`.
+- Säkerställ att billigaste timmar prioriteras även inom dessa regler.
+- Kontrollera interaktion med slack (så gap-fill inte överskriver budget).
+
+### **Steg 4 – Trim-funktionens framtid**
+Syfte: Utvärdera behov.
+- Om trim används som “nödbroms” → håll kvar.  
+- Om den lappar över logikfel → ta bort och hantera i gap/inrow istället.  
+- Dokumentera vilken effekt trim har vid olika scenarier.
+
+### **Steg 5 – Samspel med självinlärning**
+Syfte: Göra Planner adaptiv.  
+- När VV_Control rapporterar avvikelse (`err_h`), justera `VVP_H_BASE_R`.
+- Skapa gränssnitt mellan Planner och Controller:  
+  “Hur gick det igår?” → “Justera planen i natt.”
+- Låt Planner svara på feedback genom att uppdatera profilens basvärde.
+
+### **Steg 6 – Diagnostik och visuell verifikation**
+Syfte: Gör det mätbart.
+- Lägg till `PLAN_CNT_VV`, `haveM_P`, `haveE_P`, `pickedP` i grafisk vy.
+- Skapa färgkodad 96-periodgraf i HMI eller webinterface:
+  - Blå = basperiod
+  - Grön = ankarperiod
+  - Gul = slack
+  - Röd = trim
+
+---
+
+## 💡 Förslag: ny budgetlogik (för framtida version)
+Om både `BUDGET_M_MIN` och `BUDGET_E_MIN` är angivna:  
+→ slå ihop dessa till ett sammanlagt värde och lägg till i `CAP_SLACK_H_R`.  
+Då får systemet automatisk kompensation mellan dyra och billiga timmar,  
+utan att överlasta planen.
+
+---
+
+## 🔍 Säkerhets- och robusthetsprinciper
+
+| Risk | Åtgärd |
+|------|---------|
+| Plan körs för ofta | Lås med `VVP_PLAN_BUSY` + flaggsamling |
+| Felaktiga timmar (89h-bugg) | clampning av `needP`, `CAP_SLACK_P` och `pickedP` |
+| Oändliga gapfyllningsloopar | Bryt efter `pickedP >= slackTargetP` |
+| Fel typkonvertering | använd konsekvent `CvR`, `CvI`, `CvX` beroende på källa |
+| Förlorad synk mellan UI och profil | Skuggsystem (`_PREV`) + `VVP_UI_CHANGE_FLAG` |
+
+---
+
+## 📊 Vision
+När Planner är klar ska den:
+- Tänka före varje dag – inte reagera i efterhand.  
+- Självjustera förbrukning mot pris och behov.  
+- Ge konsekvent styrning oavsett väder, tid eller belastning.  
+- Kunna förklara *varför* den planerade som den gjorde.  
+
+> “Planner är inte bara en kalkylator — det är ett sinne för timing.”
+
+---
+
+## 🧭 Sammanfattning
+Planner är det som skiljer ett vanligt styrsystem från en **adaptiv intelligens**.  
+Den förbinder människa och maskin genom logik, förutsägelse och självjustering.  
+När den fungerar till 100 % blir den navet i hela systemet,  
+och grunden för kommande AI-styrda versioner.
+
+---
+

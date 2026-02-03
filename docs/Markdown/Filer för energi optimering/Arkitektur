@@ -1,0 +1,147 @@
+# 03_Arkitektur_helhet.md
+## 🧠 Adaptiv Driftsmodell – Helhetsarkitektur
+
+### 🌍 Grundidé
+Systemet “Smart Fastighetsstyrning” bygger på en adaptiv (självlärande) styrning för värme, varmvatten och energifördelning.  
+All logik följer principen: **en källa, ett beslut, många resultat.**  
+Varje modul har sin roll men samverkar genom gemensamma variabler och gemensamma mål.
+
+Målet är att skapa **världens bästa energioptimeringssystem** — inte genom slump, utan genom:
+- Fysisk förståelse av byggnaden.
+- Datadriven planering med självinlärning.
+- Omtanke mellan moduler (“kompislogik”).
+- Låg energikostnad utan att tumma på komfort.
+
+---
+
+## 🧩 Systemets huvuddelar
+
+| Modul | Huvuduppgift | Typ |
+|-------|---------------|-----|
+| **Estimator** | Räknar fram basbehov (h/timmar, dygnsprofil) baserat på profil, väder, topologi | Matematiskt block |
+| **Planner** | Skapar plan i 96 kvartstimmar utifrån basbehov, prisranking och ankare | Logiskt block |
+| **Controller** | Verkställer plan, hanterar växling, övervakning, självinlärning | Reglerande block |
+| **Push/Pull (Pi/Arrigo)** | Kommunicerar data till/ från överordnat system | Kommunikationsblock |
+| **Runtime Snapshot** | Lagrar och återanvänder lärda värden | Diagnostiskt block |
+
+Alla delar bygger på samma grundtanke:
+> *Data flödar endast åt ett håll – beslut fattas centralt i driftsmodellen, inte i HMI eller UI.*
+
+---
+
+## 🔁 Samspel och beroenden
+
+### 1. Estimator
+Tar in data som:  
+- utetemperatur, värmebehov, topologi (byggnadstyp), profiler, och tidigare mönster.  
+Ger ut:  
+- `VVP_H_BASE` = basbehov i timmar.  
+- Initierar värden till Planner.
+
+### 2. Planner
+Hjärnan för dygnsplanen.  
+Fyller ut `VV_PLAN[0..95]` med aktivt schema baserat på:
+- Billigast-princip (RANK_W)  
+- Ankare (morgon/kväll)  
+- Budget (minuter per fönster)  
+- Gap och in-row regler  
+- Slack (extra kapacitet)
+
+Planner är också den modul som reagerar på:
+- UI-förändring  
+- Profilbyte  
+- Manuell trigging  
+och körs **endast en gång per cykel**.
+
+### 3. Controller
+Verkställer planerade perioder i realtid.  
+Den reglerar:
+- `DO_VV` (digitalt utgångsvärde)  
+- Temperaturgränser  
+- Lärande (t.ex. hur lång tid produktionen tar, återhämtning, m.m.)
+
+Controller kan även påverka Planner genom feedback:
+> “Jag blev klar tidigare än planerat” → returnerar “cap slack” till Planner.  
+> “Jag hann inte klart” → begär ökad budget till nästa cykel.
+
+---
+
+## 💬 Modulernas samverkan (”kompislogik”)
+
+Systemet behandlar alla processer som “vänner”:
+- Varmvatten kan erbjuda värmen oanvända timmar.
+- Värmen kan lämna tillbaka effekt vid låg efterfrågan.
+- Om båda är nöjda → energilagring eller laddning prioriteras.
+- Allt sker under principen **“omtanke och samverkan”**.
+
+---
+
+## ⚙️ Centrala styrprinciper
+
+| Princip | Förklaring |
+|----------|-------------|
+| **Billigast först** | All planering sker utifrån prisrank (`RANK_W`), men med respekt för tidsfönster. |
+| **Clampning** | Alla användarvärden begränsas till giltiga intervall (0–96 perioder, 0–24 timmar). |
+| **Återhållsamhet** | Systemet väljer aldrig fler timmar än nödvändigt. |
+| **Lärande** | Efter varje cykel uppdateras runtime-värden. |
+| **Oberoende** | UI och plan är separata; UI ändrar inte drift utan commit via flaggor. |
+
+---
+
+## 🧮 Variabelfilosofi (EXOL-standard)
+
+| Typ | Prefix | Betydelse |
+|------|---------|-----------|
+| `R` | Runtime (beräknad) | används i realtid, t.ex. `VVP_H_BASE_R` |
+| `UI` | Användargränssnitt | HMI-data som ändras manuellt |
+| `I` | Index | används för periodräkning (0–95) |
+| `L` | Latch | tillfälliga engångssignaler |
+| `X` | Timer / Tid / Dag | används för kvartsbaserade loopar |
+| `P` | Period | används för antal kvartstimmar |
+
+---
+
+## 🧠 Självinlärning & AI
+
+Målet är att varje del ska kunna *reflektera över sitt eget beteende*.  
+Exempel:
+- Controller mäter hur lång tid VV-produktionen tar → ger feedback till Planner.  
+- Planner justerar nästa dags budget.  
+- Estimator finjusterar topologi och helgfaktor baserat på resultat.
+
+Så småningom ska systemet förstå:
+> “Jag har en kall natt framför mig och höga elpriser i morgon —  
+jag laddar värme eller varmvatten redan nu.”
+
+---
+
+## 🔋 Framtida moduler
+
+| Modul | Funktion | Status |
+|--------|-----------|--------|
+| **Battery Manager** | Styr laddning/ urladdning efter pris och behov | Planerad |
+| **Solar Integration** | Styr förbrukning utifrån solproduktion | Planerad |
+| **Effect Guard** | Jämnar ut effektuttag, skyddar huvudsäkring | Delvis implementerad |
+| **Predictive AI** | Prognoser baserade på väder och historik | Planerad |
+| **Visualization Dashboard** | Grafisk vy över alla 96 perioder | Pågående |
+
+---
+
+## 🪄 Filosofi
+Systemet ska vara:
+- Självförklarande.
+- Självlärande.
+- Självjusterande.
+
+Målet är **ett system som tänker som en människa – men reagerar som en maskin.**
+
+---
+
+## 🔚 Sammanfattning
+
+Den adaptiva driftsmodellen är **ett ekosystem av logik**.  
+Den är byggd för att leva länge, växa över tid och anpassa sig till verkligheten.
+
+När Planner fungerar som tänkt blir den inte bara en del i systemet —  
+den blir *navet som alla andra moduler snurrar kring.*
+

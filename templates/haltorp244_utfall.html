@@ -1,0 +1,233 @@
+{% extends "base.html" %}
+{% block content %}
+
+<h2>Hältorp 244 – Planerad drift utifrån elpris</h2>
+<p style="margin-top:-6px; color:#555;">
+  Visar vilka 15-minutersperioder som väljs för <strong>värme</strong> och <strong>varmvatten</strong> baserat på billigaste elpriset.
+</p>
+
+<form method="get" action="" style="margin-bottom: 1em;">
+  <label for="datum">Välj datum:</label>
+  <input type="date" id="datum" name="datum" value="{{ selected_date }}">
+  <button type="submit">Visa</button>
+</form>
+
+<p><strong>Valt datum:</strong> {{ selected_date }}</p>
+
+{% if no_price %}
+  <p style="color: orange;"><strong>⚠️ Inga elpriser publicerade för {{ selected_date }}.</strong></p>
+{% else %}
+
+<div style="max-width:1000px; margin: 10px auto 14px; padding: 10px 12px; border:1px solid #e5e7eb; border-radius:10px; background:#fafafa;">
+  <div style="font-weight:600; margin-bottom:6px;">Färgförklaring (driftläge)</div>
+
+  <div style="display:flex; flex-wrap:wrap; gap:12px; align-items:center; font-size:0.95em; color:#333;">
+    <span><span style="display:inline-block; width:14px; height:14px; background:#1e40af; border-radius:3px; vertical-align:middle; margin-right:6px;"></span>
+      Ingen drift
+    </span>
+
+    <span><span style="display:inline-block; width:14px; height:14px; background:#16a34a; border-radius:3px; vertical-align:middle; margin-right:6px;"></span>
+      Värme (relä)
+    </span>
+
+    <span><span style="display:inline-block; width:14px; height:14px; background:#f59e0b; border-radius:3px; vertical-align:middle; margin-right:6px;"></span>
+      Varmvatten (relä)
+    </span>
+
+    <span><span style="display:inline-block; width:14px; height:14px; background:#7c3aed; border-radius:3px; vertical-align:middle; margin-right:6px;"></span>
+      Värme + varmvatten samtidigt
+    </span>
+  </div>
+
+  <div style="margin-top:8px; color:#666; font-size:0.9em;">
+    Stapelhöjden visar <strong>elpris (kr/kWh)</strong>. Färgen visar vilket driftläge som är planerat under perioden.
+  </div>
+</div>
+
+<div id="nowBadge" style="max-width:1000px; margin: 0 auto 8px; font-weight:600;"></div>
+
+<div class="chart-wrapper">
+  <canvas id="elprisChart"></canvas>
+</div>
+
+<p><strong>Valda perioder för styrning ({{ top_n }} st, kronologiskt):</strong>
+  {% if selected_labels_chrono %}
+    {{ selected_labels_chrono | join(", ") }}
+  {% else %}-{% endif %}
+</p>
+
+<h3>Prislista – billigast → dyrast</h3>
+<table class="梯">
+  <thead><tr><th>#</th><th>Tid</th><th style="text-align:right;">Pris (kr/kWh)</th></tr></thead>
+  <tbody>
+    {% for row in sorted_by_price %}
+    <tr>
+      <td>{{ loop.index }}</td>
+      <td>{{ row.label }}</td>
+      <td style="text-align:right;">{{ row.price | float | round(4) }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
+
+<script>
+const labels    = {{ labels      | tojson | default("[]") }};
+const values    = {{ values      | tojson | default("[]") }};
+const barColors = {{ bar_colors  | tojson | default("[]") }};
+
+Chart.register(ChartDataLabels);
+
+const selectedDate = "{{ selected_date }}"; // YYYY-MM-DD
+
+function pad2(n){ return String(n).padStart(2,'0'); }
+
+function getNowIndexIfToday(){
+  const now = new Date();
+  const todayStr = `${now.getFullYear()}-${pad2(now.getMonth()+1)}-${pad2(now.getDate())}`;
+  if (selectedDate !== todayStr) return null;
+  const minutes = now.getHours()*60 + now.getMinutes();
+  return Math.floor(minutes / 15);
+}
+
+function idxToTime(idx){
+  const total = idx * 15;
+  const h = pad2(Math.floor(total/60));
+  const m = pad2(total % 60);
+  return `${h}:${m}`;
+}
+
+// Plugin: ritar vertikal streckad NU-linje
+const nowLinePlugin = {
+  id: 'nowLine',
+  afterDraw(chart, args, opts) {
+    const idx = opts.index;
+    if (idx == null || idx < 0) return;
+
+    const xScale = chart.scales.x;
+    const yScale = chart.scales.y;
+    if (!xScale || !yScale) return;
+
+    const x = xScale.getPixelForValue(idx);
+    const ctx = chart.ctx;
+
+    ctx.save();
+    ctx.beginPath();
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = 'rgba(0,0,0,0.55)';
+    ctx.setLineDash([6, 6]);
+    ctx.moveTo(x, yScale.top);
+    ctx.lineTo(x, yScale.bottom);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    ctx.fillStyle = 'rgba(0,0,0,0.75)';
+    ctx.font = 'bold 12px sans-serif';
+    ctx.fillText('NU', x + 6, yScale.top + 14);
+    ctx.restore();
+  }
+};
+
+Chart.register(nowLinePlugin);
+
+if (labels.length && values.length) {
+  const ctx = document.getElementById('elprisChart').getContext('2d');
+
+  const chart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: labels,
+      datasets: [{
+        label: "kr/kWh",
+        data: values,
+        backgroundColor: barColors
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      layout: { padding: { top: 40 } },
+      plugins: {
+        legend: { display: false },
+        nowLine: { index: getNowIndexIfToday() },
+
+        datalabels: {
+          display: function(ctx) {
+            const lbl = ctx.chart.data.labels[ctx.dataIndex] || "";
+            return lbl.endsWith(":00");
+          },
+          anchor: 'end',
+          align: 'start',
+          offset: -65,
+          rotation: -90,
+          color: '#000',
+          font: { weight: 'bold', size: 11.5 },
+          formatter: (val) => (val ?? 0).toLocaleString('sv-SE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " kr"
+        },
+
+        tooltip: {
+          callbacks: {
+            label: (ctx) => {
+              const v = ctx.raw ?? 0;
+              return v.toLocaleString('sv-SE', {minimumFractionDigits: 4, maximumFractionDigits: 4}) + " kr/kWh";
+            }
+          }
+        }
+      },
+      scales: {
+        y: {
+          beginAtZero: true,
+          suggestedMax: Math.max(...values, 0) * 1.15,
+          title: { display: true, text: 'kr/kWh' }
+        },
+        x: {
+          title: { display: true, text: 'Tidpunkt (svensk tid)' },
+          ticks: {
+            callback: function(value) {
+              const lbl = this.getLabelForValue(value);
+              return lbl.endsWith(":00") ? lbl : "";
+            },
+            maxRotation: 0,
+            autoSkip: false
+          }
+        }
+      }
+    }
+  });
+
+  function updateNow(){
+    const idx = getNowIndexIfToday();
+    const badge = document.getElementById("nowBadge");
+    if (!badge) return;
+
+    if (idx == null) {
+      badge.textContent = "";
+      chart.options.plugins.nowLine.index = null;
+      chart.update('none');
+      return;
+    }
+
+    badge.textContent = `⏱️ Just nu: 15-min-period ${idx+1}/96 (start ${idxToTime(idx)})`;
+    chart.options.plugins.nowLine.index = idx;
+    chart.update('none');
+  }
+
+  updateNow();
+  setInterval(updateNow, 30000);
+}
+</script>
+
+{% endif %}
+
+<style>
+.chart-wrapper { max-width: 1000px; margin: 0 auto; height: 500px; }
+canvas { width: 100% !important; height: 100% !important; display: block; }
+table.梯 { border-collapse: collapse; width: 100%; margin-top: 10px; font-size: 0.95em; }
+table.梯 th, table.梯 td { padding: 8px 12px; border-bottom: 1px solid #e5e7eb; }
+table.梯 thead th { background: #f7f7f7; }
+table.梯 tbody tr:nth-child(odd) { background: #fbfdff; }
+</style>
+
+{% endblock %}

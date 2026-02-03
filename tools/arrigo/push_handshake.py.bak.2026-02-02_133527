@@ -1,0 +1,196 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+push_handshake.py
+Robust handshake-loop mot Arrigo (EXOL)
+
+- Läser PI_PUSH_REQ / PI_PUSH_ACK / PI_PUSH_DAY samt TD_READY / TM_READY
+- Pushar priser/rank/masker när REQ=1 och ACK=0
+- Sätter endast ACK=1 (EXOL nollar själv)
+- Återhämtar sig från 401 (re-login) både vid read, push och write
+"""
+
+import os
+import time
+import requests
+from datetime import date, timedelta
+
+from push_from_db import (
+    fetch_prices,
+    build_rank_and_masks,
+    daily_avg_oat,
+    build_verify,
+    ensure_b64,
+    gql,
+    arrigo_login,
+)
+
+# === ENV ===
+LOGIN_URL   = os.getenv("ARRIGO_LOGIN_URL")
+GRAPHQL_URL = os.getenv("ARRIGO_GRAPHQL_URL")
+USER        = os.getenv("ARRIGO_USER") or os.getenv("ARRIGO_USERNAME")
+PASS        = os.getenv("ARRIGO_PASS") or os.getenv("ARRIGO_PASSWORD")
+PVL_RAW     = os.getenv("ARRIGO_PVL_B64") or os.getenv("ARRIGO_PVL_PATH")
+VERIFY      = build_verify()
+
+# === Technical addresses ===
+TA_REQ      = "Huvudcentral_C1.PI_PUSH_REQ"
+TA_ACK      = "Huvudcentral_C1.PI_PUSH_ACK"
+TA_DAY      = "Huvudcentral_C1.PI_PUSH_DAY"
+TA_TD_READY = "Huvudcentral_C1.TD_READY"
+TA_TM_READY = "Huvudcentral_C1.TM_READY"
+
+
+def log(msg: str) -> None:
+    print(time.strftime("%H:%M:%S"), msg, flush=True)
+
+
+def to_int(v, default=0) -> int:
+    try:
+        return int(float(v))
+    except Exception:
+        return default
+
+
+def require_env():
+    missing = []
+    if not LOGIN_URL:   missing.append("ARRIGO_LOGIN_URL")
+    if not GRAPHQL_URL: missing.append("ARRIGO_GRAPHQL_URL")
+    if not USER:        missing.append("ARRIGO_USER/ARRIGO_USERNAME")
+    if not PASS:        missing.append("ARRIGO_PASS/ARRIGO_PASSWORD")
+    if not PVL_RAW:     missing.append("ARRIGO_PVL_B64/ARRIGO_PVL_PATH")
+    if missing:
+        raise SystemExit("Saknar ENV: " + ", ".join(missing))
+
+
+def login() -> str:
+    return arrigo_login(LOGIN_URL, USER, PASS, VERIFY)
+
+
+def read_vars(token: str, pvl_b64: str) -> dict:
+    q = """
+    query($path:String!){
+      data(path:$path){
+        variables { technicalAddress value }
+      }
+    }
+    """
+    data = gql(GRAPHQL_URL, token, q, {"path": pvl_b64}, VERIFY)
+    vars_list = (data.get("data") or {}).get("variables") or []
+    return {
+        v.get("technicalAddress"): v.get("value")
+        for v in vars_list
+        if v.get("technicalAddress")
+    }
+
+
+def write_var(token: str, pvl_b64: str, tech_addr: str, value) -> None:
+    m = "mutation($v:[VariableKeyValue!]!){writeData(variables:$v)}"
+    gql(
+        GRAPHQL_URL,
+        token,
+        m,
+        {"v": [{"key": f"{pvl_b64}:{tech_addr}", "value": str(value)}]},
+        VERIFY,
+    )
+
+
+def call_with_relogin(token: str, fn, *args, **kwargs):
+    """
+    Kör fn(token, ...) och om 401 -> re-login och kör en gång till.
+    Returnerar (result, token).
+    """
+    try:
+        return fn(token, *args, **kwargs), token
+    except requests.exceptions.HTTPError as e:
+        code = getattr(getattr(e, "response", None), "status_code", None)
+        if code == 401:
+            log("🔑 401 – loggar in igen och försöker om")
+            token = login()
+            return fn(token, *args, **kwargs), token
+        raise
+
+
+def main():
+    require_env()
+    pvl_b64 = ensure_b64(PVL_RAW)
+
+    token = login()
+    log("🔌 Startar handshake-loop mot Arrigo")
+
+    while True:
+        # --- READ ---
+        try:
+            vals, token = call_with_relogin(token, read_vars, pvl_b64)
+        except Exception as e:
+            log(f"❌ Fel vid read_vars: {e!r}")
+            time.sleep(15)
+            continue
+
+        req      = to_int(vals.get(TA_REQ))
+        ack      = to_int(vals.get(TA_ACK))
+        day      = to_int(vals.get(TA_DAY))
+        td_ready = to_int(vals.get(TA_TD_READY))
+        tm_ready = to_int(vals.get(TA_TM_READY))
+
+        log(f"📅 Loopstatus: REQ={req}, ACK={ack}, DAY={day}, TD_READY={td_ready}, TM_READY={tm_ready}")
+
+        # --- PUSH ---
+        if req == 1 and ack == 0:
+            which = "today" if day == 0 else "tomorrow"
+
+            if which == "today" and td_ready == 1:
+                log("✅ Dagens priser redan klara – hoppar")
+                time.sleep(30)
+                continue
+
+            if which == "tomorrow" and tm_ready == 1:
+                log("✅ Morgondagens priser redan klara – hoppar")
+                time.sleep(30)
+                continue
+
+            rows, day_local = fetch_prices(which)
+
+            if which == "tomorrow" and len(rows) < 90:
+                log("⚠️ Morgondagens priser saknas – väntar")
+                time.sleep(60)
+                continue
+
+            log(f"📤 Push ({which}) – {len(rows)} perioder")
+
+            rank, ec, ex, slot_price = build_rank_and_masks(rows)
+
+            today = date.today()
+            oat_yday = daily_avg_oat(today - timedelta(days=1))
+            oat_tmr  = daily_avg_oat(today + timedelta(days=1))
+
+            # push_to_arrigo kan också råka få 401 -> re-login -> kör igen
+            try:
+                from push_from_db import push_to_arrigo
+
+                def _do_push(tok):
+                    return push_to_arrigo(rank, ec, ex, day_local, oat_yday, oat_tmr, slot_price)
+
+                _, token = call_with_relogin(token, _do_push)
+            except Exception as e:
+                log(f"❌ Push misslyckades: {e!r}")
+                time.sleep(30)
+                continue
+
+            # --- ACK ---
+            try:
+                def _do_ack(tok):
+                    write_var(tok, pvl_b64, TA_ACK, 1)
+
+                _, token = call_with_relogin(token, _do_ack)
+                log("✅ PI_PUSH_ACK satt till 1")
+            except Exception as e:
+                log(f"❌ Kunde inte sätta ACK: {e!r}")
+                time.sleep(30)
+                continue
+
+        time.sleep(30)
+
+
+if __name__ == "__main__":
+    main()

@@ -1,0 +1,72 @@
+# 🧭 01 – Värdepelare för Adaptiv Driftsmodell
+
+## 🎯 Syfte
+Att skapa **världens mest intelligenta och omtänksamma energioptimeringssystem** för fastigheter.  
+Ett system som tänker, lär och samarbetar – där varje modul förstår helheten.  
+Systemet ska aldrig bara “styra” – det ska **vårda energi** med respekt för ekonomi, komfort och miljö.
+
+---
+
+## 🪜 Grundprinciper
+1. **En källa till sanning:**  
+   Alla beslut baseras på en och samma uppsättning profilvärden.  
+   Ingen dubbelloggik, inga parallella triggers.
+
+2. **Tydlighet före magi:**  
+   Koden ska gå att läsa, förstå och felsöka utan gissningar.  
+   Det får gärna vara smart, men aldrig otydligt.
+
+3. **Adaptiv intelligens:**  
+   Systemet ska lära sig av sina misstag och förbättra sig över tid.  
+   Självinlärningen ska vara mätbar, begriplig och kunna stängas av.
+
+4. **Omtanke mellan moduler:**  
+   Värme, varmvatten, sol, batteri och elbil ska samarbeta.  
+   Om en modul har resurser över, erbjuder den hjälp till en annan.  
+   Energi ska flyta dit den gör mest nytta – inte där reglerna är enklast.
+
+5. **Ekonomisk optimering:**  
+   All styrning utgår från kostnad per komfortnivå.  
+   Billigast möjliga drift utan märkbar försämring i upplevd kvalitet.
+
+6. **Komfort utan kompromiss:**  
+   Temperaturen ska kännas jämn och trygg även vid extrem optimering.  
+   Systemet får aldrig “jaga ekonomi” så att användaren märker obehag.
+
+7. **Förutsägbarhet:**  
+   Inga okontrollerade slingor eller multipla triggers.  
+   Planer körs en gång per cykel, med tydliga villkor och spärrar.
+
+8. **Självrespekt:**  
+   Systemet ska kunna tala om *varför* det gör som det gör.  
+   Allt som sker ska kunna loggas, följas och förstås i efterhand.
+
+---
+
+## ⚙️ Praktiska riktlinjer
+- All kod i **EXOL** följer språkets regler strikt:  
+  en variabel per rad, inga THEN, ingen inline-logik.
+- All tid hanteras som **index (0–95)** för att undvika sommartidsproblem.  
+- All styrning ska vara **deterministisk** – samma in ger samma ut.  
+- Självinlärning sker vid **dygnsskifte (23:59)** och triggar plan automatiskt.  
+- Planeringslogik och runtime styrning hålls **separata men synkade**.
+
+---
+
+## 🧩 Prioritetsordning
+| Nivå | Fokus | Beskrivning |
+|------|--------|-------------|
+| 1️⃣ | **Robusthet** | Systemet ska alltid fungera, även utan extern data. |
+| 2️⃣ | **Ekonomi** | Optimera kostnad och effektavgifter. |
+| 3️⃣ | **Komfort** | Ingen komfortförlust tillåts. |
+| 4️⃣ | **Samarbete** | Alla moduler väger in varandras behov. |
+| 5️⃣ | **Inlärning** | Justera basnivåer över tid utifrån utfall. |
+| 6️⃣ | **Innovation** | Nya idéer får plats när de stärker kärnan. |
+
+---
+
+## 🌍 Värdeord
+**Empati – Logik – Transparens – Långsiktighet – Glädje – Precision**
+
+Systemet ska inte bara vara smart.  
+Det ska kännas som att det bryr sig.

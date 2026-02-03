@@ -1,12 +1,12 @@
 {% extends "base.html" %}
 {% block content %}
-<h2>Styrning – Billigaste timmarna för drift</h2>
+<h2>Styrning – Billigaste perioderna för drift</h2>
 
 <form method="get" action="/styrning" style="margin-bottom: 1em;">
   <label for="datum">Välj datum:</label>
   <input type="date" id="datum" name="datum" value="{{ selected_date }}">
 
-  <label for="n" style="margin-left: 12px;">Antal billiga timmar (N):</label>
+  <label for="n" style="margin-left: 12px;">Antal perioder timmar (N x 15 min):</label>
   <input type="number" id="n" name="n" min="1" max="24" value="{{ top_n }}" style="width: 70px;">
   <button type="submit">Visa</button>
 </form>
@@ -21,7 +21,7 @@
   <canvas id="elprisChart"></canvas>
 </div>
 
-<p><strong>Valda timmar för styrning ({{ top_n }} st, kronologiskt):</strong>
+<p><strong>Valda perioder för styrning ({{ top_n }} st, kronologiskt):</strong>
   {% if selected_labels_chrono %}
     {{ selected_labels_chrono | join(", ") }}
   {% else %}-{% endif %}
@@ -69,18 +69,25 @@ if (labels.length && values.length) {
     options: {
       responsive: true,
       maintainAspectRatio: false,
-      layout: { padding: { top: 120 } },   // extra utrymme för etiketter
+      layout: { padding: { top: 40 } },   // extra utrymme för etiketter
       plugins: {
         legend: { display: false },
         datalabels: {
-          display: true,
+          display: function(ctx) {
+            const lbl = ctx.chart.data.labels[ctx.dataIndex] || "";
+            return lbl.endsWith(":00");    // bara på hel timme
+          },
           anchor: 'end',
-          align: 'end',
+          align: 'start',   // flytta upp texten lite
+          offset: -65,        // extra marginal ovanför stapeln
           rotation: -90,
           color: '#000',
-          font: { weight: 'bold', size: 16 },
+          font: { weight: 'bold', size: 11.5 },   // mindre font
           formatter: (val) => {
-            return (val ?? 0).toLocaleString('sv-SE', {minimumFractionDigits: 2, maximumFractionDigits: 2}) + " kr";
+            return (val ?? 0).toLocaleString('sv-SE', {
+              minimumFractionDigits: 2,
+              maximumFractionDigits: 2
+            }) + " kr";
           }
         },
         tooltip: {
@@ -99,7 +106,15 @@ if (labels.length && values.length) {
           title: { display: true, text: 'kr/kWh' }
         },
         x: {
-          title: { display: true, text: 'Tidpunkt (svensk tid)' }
+          title: { display: true, text: 'Tidpunkt (svensk tid)' },
+          ticks: {
+            callback: function(value, index, ticks) {
+              const lbl = this.getLabelForValue(value);
+              return lbl.endsWith(":00") ? lbl : "";   // visa bara heltimmar
+            },
+            maxRotation: 0,
+            autoSkip: false
+          }
         }
       }
     }

@@ -17,6 +17,24 @@ def get_connection():
         cursorclass=pymysql.cursors.DictCursor
     )
 
+def db_read_plan(site_code: str, plan_type: str, day_local):
+    conn = get_connection()
+    try:
+        with conn.cursor() as cur:
+            cur.execute("""
+                SELECT periods
+                FROM arrigo_plan_cache
+                WHERE site_code=%s AND plan_type=%s AND day_local=%s
+                ORDER BY fetched_at DESC
+                LIMIT 1
+            """, (site_code, plan_type, day_local))
+            row = cur.fetchone()
+            if not row:
+                return None
+            return json.loads(row["periods"])
+    finally:
+        conn.close()
+
 # === Tidszoner och hjälpare för "svensk dag" -> UTC-intervall ===
 STHLM = pytz.timezone("Europe/Stockholm")
 UTC = pytz.UTC
@@ -118,7 +136,7 @@ def styrning():
                 for (p, i) in pairs
             ]
 
-        return render_template(
+        return render_template(           
             "styrning.html",
             selected_date=selected_date,
             labels=labels,
@@ -133,6 +151,141 @@ def styrning():
 
     except Exception as e:
         return f"Fel vid hämtning av elprisdata: {e}"
+
+@app.route("/haltorp244/utfall")
+def haltorp244_utfall():
+    # Datumval: använd alltid svensk kalenderdag som fallback
+    selected_date_str = request.args.get("datum")
+    if selected_date_str:
+        selected_date = datetime.strptime(selected_date_str, "%Y-%m-%d").date()
+    else:
+        selected_date = today_local_date()
+
+    # --- Utfallsplan från Arrigo/EXOL (96 x 15 min) ---
+    heat_plan_96 = db_read_plan("HALTORP244", "HEAT_PLAN", selected_date) or [0] * 96
+    vv_plan_96   = db_read_plan("HALTORP244", "VV_PLAN",   selected_date) or [0] * 96
+
+    heat_ones = sum(heat_plan_96)
+    vv_ones   = sum(vv_plan_96)
+
+    # Mappa 96 -> 24 (timme = aktiv om någon av 4 kvartingar är 1)
+    heat_plan_24 = [1 if sum(heat_plan_96[h*4:(h+1)*4]) > 0 else 0 for h in range(24)]
+    vv_plan_24   = [1 if sum(vv_plan_96[h*4:(h+1)*4])   > 0 else 0 for h in range(24)]
+
+    # Hur många billigaste timmar som ska markeras (kan ändras via ?n=6)
+    try:
+        top_n = int(request.args.get("n", "4"))
+    except ValueError:
+        top_n = 4
+    if top_n < 1:
+        top_n = 1
+
+    no_price = False
+    labels = []
+    values = []
+    gräns = 0.0
+
+    try:
+        utc_start, utc_end = local_day_to_utc_window(selected_date)
+
+        conn = get_connection()
+        with conn.cursor() as cursor:
+            cursor.execute("""
+                SELECT datetime, price FROM electricity_prices
+                WHERE datetime >= %s AND datetime < %s
+                ORDER BY datetime
+            """, (utc_start, utc_end))
+            priser = cursor.fetchall()
+
+        if not priser:
+            no_price = True
+            selected_idx = []
+            bar_colors = []
+            selected_labels_chrono = []
+            sorted_by_price = []
+        else:
+            labels = [utc_naive_to_local_label(row["datetime"]) for row in priser if row.get("price") is not None]
+            values = [float(row["price"]) for row in priser if row.get("price") is not None]
+
+            pairs = [(values[i], i) for i in range(len(values))]
+            pairs.sort(key=lambda t: (t[0], t[1]))
+
+            N = min(max(top_n, 1), len(pairs))
+            chosen = pairs[:N]
+            selected_idx = [i for _, i in chosen]
+
+            gräns = max((values[i] for i in selected_idx), default=0.0)
+            selected_labels_chrono = [labels[i] for i in sorted(selected_idx)]
+            sorted_by_price = [{"label": labels[i], "price": values[i]} for (p, i) in pairs]
+
+            # Färga efter utfallet (4 lägen)
+            # blå    = inget
+            # grön   = värme
+            # orange = varmvatten
+            # lila   = värme + varmvatten
+            if len(values) == 96:
+                bar_colors = []
+                for i in range(96):
+                    h = 1 if heat_plan_96[i] == 1 else 0
+                    v = 1 if vv_plan_96[i] == 1 else 0
+                    if h and v:
+                        bar_colors.append("purple")
+                    elif h:
+                        bar_colors.append("green")
+                    elif v:
+                        bar_colors.append("orange")
+                    else:
+                        bar_colors.append("blue")
+            elif len(values) == 24:
+                bar_colors = []
+                for i in range(24):
+                    h = 1 if heat_plan_24[i] == 1 else 0
+                    v = 1 if vv_plan_24[i] == 1 else 0
+                    if h and v:
+                        bar_colors.append("purple")
+                    elif h:
+                        bar_colors.append("green")
+                    elif v:
+                        bar_colors.append("orange")
+                    else:
+                        bar_colors.append("blue")
+            else:
+                bar_colors = ["blue"] * len(values)
+
+            # DEBUG (kan tas bort senare)
+            print(
+                "DEBUG utfall:",
+                "day=", selected_date,
+                "len(values)=", len(values),
+                "greens=", bar_colors.count("green"),
+                "oranges=", bar_colors.count("orange"),
+                "purples=", bar_colors.count("purple"),
+                "heat_ones=", heat_ones,
+                "vv_ones=", vv_ones
+            )
+
+        return render_template(
+            "haltorp244_utfall.html",
+            selected_date=selected_date,
+            labels=labels,
+            values=values,
+            gräns=gräns,
+            no_price=no_price,
+            top_n=top_n,
+            selected_labels_chrono=selected_labels_chrono,
+            sorted_by_price=sorted_by_price,
+            bar_colors=bar_colors,
+            heat_ones=heat_ones,
+            vv_ones=vv_ones,
+            heat_plan_24=heat_plan_24,
+            vv_plan_24=vv_plan_24
+        )
+
+    except Exception as e:
+        return f"Fel vid hämtning av elprisdata (Hältorp 244): {e}"
+
+
+
 
 @app.route("/vision")
 def vision():
