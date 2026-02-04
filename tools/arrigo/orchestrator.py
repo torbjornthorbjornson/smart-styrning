@@ -27,7 +27,10 @@ USER        = os.getenv("ARRIGO_USER") or os.getenv("ARRIGO_USERNAME")
 PASS        = os.getenv("ARRIGO_PASS") or os.getenv("ARRIGO_PASSWORD")
 
 PVL_RAW = os.getenv("ARRIGO_PVL_B64") or os.getenv("ARRIGO_PVL_PATH")
+if not PVL_RAW:
+    raise SystemExit("Saknar ARRIGO_PVL_B64 eller ARRIGO_PVL_PATH")
 PVL_B64 = ensure_b64(PVL_RAW)
+
 VERIFY  = build_verify()
 
 TA_REQ      = "Huvudcentral_C1.PI_PUSH_REQ"
@@ -55,6 +58,11 @@ M_WRITE = "mutation($v:[VariableKeyValue!]!){ writeData(variables:$v) }"
 DB_NAME   = "smart_styrning"
 MYCNF     = "/home/runerova/.my.cnf"
 SITE_CODE = os.getenv("SITE_CODE", "HALTORP244")
+
+
+class TransientAPIError(Exception):
+    pass
+
 
 def log(msg):
     print(time.strftime("%H:%M:%S"), msg, flush=True)
@@ -125,18 +133,31 @@ def arrigo_login():
 def gql(token, query, variables):
     if not GRAPHQL_URL:
         raise SystemExit("Saknar ARRIGO_GRAPHQL_URL")
-    r = requests.post(
-        GRAPHQL_URL,
-        headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json"},
-        json={"query": query, "variables": variables},
-        timeout=30,
-        verify=VERIFY,
-    )
-    r.raise_for_status()
-    j = r.json()
-    if "errors" in j:
-        raise RuntimeError("GraphQL-fel: " + str(j["errors"]))
-    return j
+
+    try:
+        r = requests.post(
+            GRAPHQL_URL,
+            headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json"},
+            json={"query": query, "variables": variables},
+            timeout=30,
+            verify=VERIFY,
+        )
+
+        # Transienta fel (Arrigo/Reverse proxy)
+        if r.status_code in (429, 502, 503, 504):
+            raise TransientAPIError(f"{r.status_code} {r.reason}")
+
+        r.raise_for_status()
+
+        j = r.json()
+        if "errors" in j:
+            raise RuntimeError("GraphQL-fel: " + str(j["errors"]))
+        return j
+
+    except requests.exceptions.Timeout as e:
+        raise TransientAPIError(f"timeout: {e}") from e
+    except requests.exceptions.ConnectionError as e:
+        raise TransientAPIError(f"connection: {e}") from e
 
 def read_vals_and_idx(token):
     j = gql(token, Q_READ, {"p": PVL_B64})
@@ -209,8 +230,8 @@ def handle_price_handshake(token, vals, idx_map):
             return "ok"
 
         rows, day_local = fetch_prices(which)
-        if which == "tomorrow" and len(rows) < 90:
-            log("⚠️ Morgondagens priser saknas i DB – väntar")
+        if which == "tomorrow" and len(rows) < 96:
+            log(f"⚠️ Morgondagens priser saknas i DB ({len(rows)}/96) – väntar")
             return "wait_tomorrow"
 
         log(f"📤 Push {which}: {len(rows)} perioder")
@@ -232,11 +253,17 @@ def main():
     log("🔌 Orchestrator start (handshake + VV/HEAT readback)")
 
     sleep_ok = 10
-    sleep_wait = 60
+    sleep_wait = 15   # snabbare retry när morgondagens priser saknas
 
     while True:
         try:
             vals, idx_map = read_vals_and_idx(token)
+
+        except TransientAPIError as e:
+            log(f"⚠️ Transient API (read): {e} – backoff 20s")
+            time.sleep(20)
+            continue
+
         except requests.HTTPError as e:
             if e.response is not None and e.response.status_code == 401:
                 log("🔑 401 på read – relogin")
@@ -244,6 +271,7 @@ def main():
                 time.sleep(2)
                 continue
             raise
+
         except Exception as e:
             log(f"❌ Read error: {e}")
             time.sleep(5)
@@ -260,6 +288,12 @@ def main():
             handle_plan_readback(token, vals, idx_map, TA_VV_CHANGED, TA_VV_ACK, BASE_VV, "VV_PLAN")
             handle_plan_readback(token, vals, idx_map, TA_HEAT_CHANGED, TA_HEAT_ACK, BASE_HEAT, "HEAT_PLAN")
             status = handle_price_handshake(token, vals, idx_map)
+
+        except TransientAPIError as e:
+            log(f"⚠️ Transient API (loop): {e} – backoff 20s")
+            time.sleep(20)
+            continue
+
         except requests.HTTPError as e:
             if e.response is not None and e.response.status_code == 401:
                 log("🔑 401 under write/push – relogin")
@@ -267,6 +301,7 @@ def main():
                 time.sleep(2)
                 continue
             raise
+
         except Exception as e:
             log(f"❌ Loop error: {e}")
             status = "ok"
