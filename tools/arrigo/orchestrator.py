@@ -33,6 +33,9 @@ PVL_B64 = ensure_b64(PVL_RAW)
 
 VERIFY  = build_verify()
 
+# =========================
+# EXOL flags (prefixade TA)
+# =========================
 TA_REQ      = "Huvudcentral_C1.PI_PUSH_REQ"
 TA_ACK      = "Huvudcentral_C1.PI_PUSH_ACK"
 TA_DAY      = "Huvudcentral_C1.PI_PUSH_DAY"
@@ -59,12 +62,18 @@ DB_NAME   = "smart_styrning"
 MYCNF     = "/home/runerova/.my.cnf"
 SITE_CODE = os.getenv("SITE_CODE", "HALTORP244")
 
+# =========================
+# Tuning / självläkning
+# =========================
+SLEEP_OK_SEC      = 10
+SLEEP_WAIT_SEC    = 15   # snabbare retry när TM saknas i DB
+ACK_PULSE_SEC     = 2.0  # hur länge vi låter ACK stå "hög" innan vi får städa
+STUCK_MAX_SEC     = 120  # om REQ/ACK eller CHANGED/ACK fastnar i 1/1 → re-arm
 
 class TransientAPIError(Exception):
     pass
 
-
-def log(msg):
+def log(msg: str):
     print(time.strftime("%H:%M:%S"), msg, flush=True)
 
 def to_int(x, default=0):
@@ -143,7 +152,7 @@ def gql(token, query, variables):
             verify=VERIFY,
         )
 
-        # Transienta fel (Arrigo/Reverse proxy)
+        # Transienta fel (proxy/Arrigo)
         if r.status_code in (429, 502, 503, 504):
             raise TransientAPIError(f"{r.status_code} {r.reason}")
 
@@ -201,7 +210,102 @@ def read_plan_array(vals, base):
             missing += 1
     return out, missing
 
-def handle_plan_readback(token, vals, idx_map, changed_ta, ack_ta, base, plan_type):
+# ---------------------------------------------------------
+# Självläkning / "ACK är en puls"
+# ---------------------------------------------------------
+class PulseState:
+    def __init__(self):
+        self.push_ack_set_at = None
+        self.vv_ack_set_at   = None
+        self.heat_ack_set_at = None
+
+        # "stuck timers" för 1/1
+        self.push_stuck_since = None
+        self.vv_stuck_since   = None
+        self.heat_stuck_since = None
+
+def pulse_set_ack(token, idx, ta_ack, value, state_attr_name, ps: PulseState):
+    write_by_ta(token, idx, ta_ack, value)
+    setattr(ps, state_attr_name, time.monotonic())
+
+def maybe_clear_ack_pulse(token, vals, idx, ta_req, ta_ack, ps: PulseState):
+    """
+    För push-handshake:
+    - Om REQ=0 & ACK=1 -> städa ACK=0
+    - Om REQ=1 & ACK=1 -> om fastnar för länge -> städa ACK=0 (re-arm)
+    - Om vi själva nyss satte ACK=1 -> vänta minst ACK_PULSE_SEC innan vi städar
+    """
+    req = to_int(vals.get(ta_req, 0))
+    ack = to_int(vals.get(ta_ack, 0))
+
+    now = time.monotonic()
+
+    # Städa direkt när REQ släppts (robust mot "hängande ack")
+    if req == 0 and ack == 1:
+        log("🧹 PI_PUSH_ACK=1 men REQ=0 → nollar ACK")
+        write_by_ta(token, idx, ta_ack, 0)
+        ps.push_ack_set_at = None
+        ps.push_stuck_since = None
+        return
+
+    # Stuck-detektion för 1/1
+    if req == 1 and ack == 1:
+        if ps.push_stuck_since is None:
+            ps.push_stuck_since = now
+        # Om vi nyss satt ack (puls), ge EXOL lite tid
+        if ps.push_ack_set_at is not None and (now - ps.push_ack_set_at) < ACK_PULSE_SEC:
+            return
+        if (now - ps.push_stuck_since) >= STUCK_MAX_SEC:
+            log(f"🧯 Stuck REQ=1 ACK=1 i >= {STUCK_MAX_SEC}s → re-arm: ACK=0")
+            write_by_ta(token, idx, ta_ack, 0)
+            ps.push_ack_set_at = None
+            ps.push_stuck_since = None
+        return
+
+    # om inte 1/1 längre – reset stuck timer
+    ps.push_stuck_since = None
+
+def maybe_clear_plan_ack_pulse(token, vals, idx, ta_changed, ta_ack, label, ps: PulseState, ack_attr: str, stuck_attr: str):
+    """
+    För plan-readback:
+    - CHANGED=0 & ACK=1 -> städa ACK=0
+    - CHANGED=1 & ACK=1 -> om fastnar för länge -> städa ACK=0 (re-arm)
+    - om vi själva nyss satte ACK=1 -> vänta ACK_PULSE_SEC innan städ
+    """
+    changed = to_int(vals.get(ta_changed, 0))
+    ack     = to_int(vals.get(ta_ack, 0))
+    now = time.monotonic()
+
+    if changed == 0 and ack == 1:
+        log(f"🧹 {label}_ACK=1 men {label}_CHANGED=0 → nollar ACK")
+        write_by_ta(token, idx, ta_ack, 0)
+        setattr(ps, ack_attr, None)
+        setattr(ps, stuck_attr, None)
+        return
+
+    if changed == 1 and ack == 1:
+        stuck_since = getattr(ps, stuck_attr)
+        if stuck_since is None:
+            setattr(ps, stuck_attr, now)
+
+        ack_set_at = getattr(ps, ack_attr)
+        if ack_set_at is not None and (now - ack_set_at) < ACK_PULSE_SEC:
+            return
+
+        stuck_since = getattr(ps, stuck_attr)
+        if (now - stuck_since) >= STUCK_MAX_SEC:
+            log(f"🧯 Stuck {label}_CHANGED=1 {label}_ACK=1 i >= {STUCK_MAX_SEC}s → re-arm: ACK=0")
+            write_by_ta(token, idx, ta_ack, 0)
+            setattr(ps, ack_attr, None)
+            setattr(ps, stuck_attr, None)
+        return
+
+    setattr(ps, stuck_attr, None)
+
+# ---------------------------------------------------------
+# Core handlers
+# ---------------------------------------------------------
+def handle_plan_readback(token, vals, idx_map, changed_ta, ack_ta, base, plan_type, ps: PulseState):
     changed = to_int(vals.get(changed_ta, 0))
     ack     = to_int(vals.get(ack_ta, 0))
     if changed == 1 and ack == 0:
@@ -209,19 +313,27 @@ def handle_plan_readback(token, vals, idx_map, changed_ta, ack_ta, base, plan_ty
         arr, missing = read_plan_array(vals, base)
         ones, ts = db_upsert_plan(plan_type, day_local, arr)
         log(f"✅ Readback {plan_type}: ones={ones} missing={missing} saved_utc={ts}")
-        write_by_ta(token, idx_map, ack_ta, 1)
+        pulse_set_ack(token, idx_map, ack_ta, 1,
+                      "vv_ack_set_at" if plan_type == "VV_PLAN" else "heat_ack_set_at",
+                      ps)
         log(f"✅ {plan_type}_ACK=1 skriven")
 
-def handle_price_handshake(token, vals, idx_map):
+def handle_price_handshake(token, vals, idx_map, ps: PulseState):
     req = to_int(vals.get(TA_REQ, 0))
     ack = to_int(vals.get(TA_ACK, 0))
     day = to_int(vals.get(TA_DAY, 0))
     td_ready = to_int(vals.get(TA_TD_READY, 0))
     tm_ready = to_int(vals.get(TA_TM_READY, 0))
 
+    # 1) städning / re-arm (viktig för overnight)
+    maybe_clear_ack_pulse(token, vals, idx_map, TA_REQ, TA_ACK, ps)
+
+    # 2) normal push när EXOL ber om det
     if req == 1 and ack == 0:
         which = "today" if day == 0 else "tomorrow"
 
+        # Om EXOL redan markerat READY, då ska vi inte pusha igen.
+        # (Denna check är okej – men re-armen ovan gör att vi inte fastnar.)
         if which == "tomorrow" and tm_ready == 1:
             log("✅ TM_READY=1 – skip push")
             return "ok"
@@ -230,18 +342,22 @@ def handle_price_handshake(token, vals, idx_map):
             return "ok"
 
         rows, day_local = fetch_prices(which)
+
+        # Tomorrow måste vara full 96 för att vi inte ska råka pusha halv-data
         if which == "tomorrow" and len(rows) < 96:
             log(f"⚠️ Morgondagens priser saknas i DB ({len(rows)}/96) – väntar")
             return "wait_tomorrow"
 
         log(f"📤 Push {which}: {len(rows)} perioder")
         rank, ec, ex, slot_price = build_rank_and_masks(rows)
+
         today = date.today()
         oat_yday = daily_avg_oat(today - timedelta(days=1))
         oat_tmr  = daily_avg_oat(today + timedelta(days=1))
+
         push_to_arrigo(rank, ec, ex, day_local, oat_yday, oat_tmr, slot_price)
 
-        write_by_ta(token, idx_map, TA_ACK, 1)
+        pulse_set_ack(token, idx_map, TA_ACK, 1, "push_ack_set_at", ps)
         log("✅ PI_PUSH_ACK=1 skriven")
         return "ok"
 
@@ -250,10 +366,9 @@ def handle_price_handshake(token, vals, idx_map):
 def main():
     ensure_db_tables()
     token = arrigo_login()
-    log("🔌 Orchestrator start (handshake + VV/HEAT readback)")
+    ps = PulseState()
 
-    sleep_ok = 10
-    sleep_wait = 15   # snabbare retry när morgondagens priser saknas
+    log("🔌 Orchestrator start (prices handshake + VV/HEAT readback)")
 
     while True:
         try:
@@ -285,9 +400,18 @@ def main():
         )
 
         try:
-            handle_plan_readback(token, vals, idx_map, TA_VV_CHANGED, TA_VV_ACK, BASE_VV, "VV_PLAN")
-            handle_plan_readback(token, vals, idx_map, TA_HEAT_CHANGED, TA_HEAT_ACK, BASE_HEAT, "HEAT_PLAN")
-            status = handle_price_handshake(token, vals, idx_map)
+            # Plan-ACK: städ/re-arm (så CHANGED inte fastnar)
+            maybe_clear_plan_ack_pulse(token, vals, idx_map, TA_VV_CHANGED, TA_VV_ACK,
+                                       "VV_PLAN", ps, "vv_ack_set_at", "vv_stuck_since")
+            maybe_clear_plan_ack_pulse(token, vals, idx_map, TA_HEAT_CHANGED, TA_HEAT_ACK,
+                                       "HEAT_PLAN", ps, "heat_ack_set_at", "heat_stuck_since")
+
+            # Plan-readback när CHANGED=1 & ACK=0
+            handle_plan_readback(token, vals, idx_map, TA_VV_CHANGED, TA_VV_ACK, BASE_VV, "VV_PLAN", ps)
+            handle_plan_readback(token, vals, idx_map, TA_HEAT_CHANGED, TA_HEAT_ACK, BASE_HEAT, "HEAT_PLAN", ps)
+
+            # Prices handshake
+            status = handle_price_handshake(token, vals, idx_map, ps)
 
         except TransientAPIError as e:
             log(f"⚠️ Transient API (loop): {e} – backoff 20s")
@@ -306,7 +430,7 @@ def main():
             log(f"❌ Loop error: {e}")
             status = "ok"
 
-        time.sleep(sleep_wait if status == "wait_tomorrow" else sleep_ok)
+        time.sleep(SLEEP_WAIT_SEC if status == "wait_tomorrow" else SLEEP_OK_SEC)
 
 if __name__ == "__main__":
     main()
