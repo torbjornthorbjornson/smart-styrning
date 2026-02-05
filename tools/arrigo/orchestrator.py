@@ -335,17 +335,18 @@ def handle_price_handshake(token, vals, idx_map, ps: PulseState):
         # Om EXOL redan markerat READY, då ska vi inte pusha igen.
         # (Denna check är okej – men re-armen ovan gör att vi inte fastnar.)
         if which == "tomorrow" and tm_ready == 1:
-            log("ℹ️ TM_READY=1 – ingen push behövs, men ACK ska ges")
-            pulse_set_ack(token, idx_map, TA_ACK, 1, "push_ack_set_at", ps)
+            log("✅ TM_READY=1 – skip push")
             return "ok"
         if which == "today" and td_ready == 1:
-            log("ℹ️ TD_READY=1 – ingen push behövs, men ACK ska ges")
-            pulse_set_ack(token, idx_map, TA_ACK, 1, "push_ack_set_at", ps)
+            log("✅ TD_READY=1 – skip push")
             return "ok"
 
         rows, day_local = fetch_prices(which)
 
         # Tomorrow måste vara full 96 för att vi inte ska råka pusha halv-data
+        if which == "tomorrow" and len(rows) < 96:
+            log(f"⚠️ Morgondagens priser saknas i DB ({len(rows)}/96) – väntar")
+            return "wait_tomorrow"
 
         log(f"📤 Push {which}: {len(rows)} perioder")
         rank, ec, ex, slot_price = build_rank_and_masks(rows)
