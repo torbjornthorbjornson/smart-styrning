@@ -31,13 +31,15 @@ USER        = os.getenv("ARRIGO_USER") or os.getenv("ARRIGO_USERNAME")
 PASS        = os.getenv("ARRIGO_PASS") or os.getenv("ARRIGO_PASSWORD")
 
 PVL_RAW = os.getenv("ARRIGO_PVL_B64") or os.getenv("ARRIGO_PVL_PATH")
+if not PVL_RAW:
+    raise SystemExit("Saknar ARRIGO_PVL_B64 eller ARRIGO_PVL_PATH")
 PVL_B64 = ensure_b64(PVL_RAW)
 
 VERIFY = build_verify()
 
-TA_REQ      = "Huvudcentral_C1.PI_PUSH_REQ"
-TA_ACK      = "Huvudcentral_C1.PI_PUSH_ACK"
-TA_DAY      = "Huvudcentral_C1.PI_PUSH_DAY"
+TA_REQ = "Huvudcentral_C1.PI_PUSH_REQ"
+TA_ACK = "Huvudcentral_C1.PI_PUSH_ACK"
+TA_DAY = "Huvudcentral_C1.PI_PUSH_DAY"
 
 Q_READ  = "query($p:String!){ data(path:$p){ variables{ technicalAddress value } } }"
 M_WRITE = "mutation($v:[VariableKeyValue!]!){ writeData(variables:$v) }"
@@ -48,8 +50,8 @@ M_WRITE = "mutation($v:[VariableKeyValue!]!){ writeData(variables:$v) }"
 DB_NAME = "smart_styrning"
 MYCNF   = "/home/runerova/.my.cnf"
 
-# =========================
 SLEEP_SEC = 4
+
 # =========================
 
 def log(msg):
@@ -73,6 +75,9 @@ def read_db_config():
         cursorclass=pymysql.cursors.DictCursor,
     )
 
+# =========================
+# Arrigo helpers
+# =========================
 def arrigo_login():
     r = requests.post(
         LOGIN_URL,
@@ -115,14 +120,16 @@ def write_ta(token, idx, ta, val):
     gql(token, M_WRITE, {"v": [{"key": key, "value": str(val)}]})
 
 # =========================
-# DB → LOKAL TID (KORREKT)
+# DB → LOKALT DYGN → LOKAL TID
 # =========================
 def db_fetch_prices_for_day(day_local: date):
-    start_local = datetime.combine(day_local, dtime(0,0), tzinfo=TZ)
-    end_local   = start_local + timedelta(days=1)
-
-    start_utc = start_local.astimezone(UTC).replace(tzinfo=None)
-    end_utc   = end_local.astimezone(UTC).replace(tzinfo=None)
+    """
+    Hämtar exakt det svenska dygnet som UTC-intervall,
+    returnerar priser med *lokal tidszon kvar* (Europe/Stockholm).
+    """
+    local_midnight = datetime.combine(day_local, dtime(0, 0), tzinfo=TZ)
+    utc_start = local_midnight.astimezone(UTC).replace(tzinfo=None)
+    utc_end   = (local_midnight + timedelta(days=1)).astimezone(UTC).replace(tzinfo=None)
 
     conn = pymysql.connect(**read_db_config())
     with conn, conn.cursor() as cur:
@@ -131,16 +138,15 @@ def db_fetch_prices_for_day(day_local: date):
             FROM electricity_prices
             WHERE datetime >= %s AND datetime < %s
             ORDER BY datetime
-        """, (start_utc, end_utc))
+        """, (utc_start, utc_end))
         rows = cur.fetchall()
 
-    # 🔑 KRITISKT: konvertera UTC → lokal tid innan ranking
     out = []
     for r in rows:
         dt_utc = r["datetime"].replace(tzinfo=UTC)
         dt_local = dt_utc.astimezone(TZ)
         out.append({
-            "datetime": dt_local.replace(tzinfo=None),
+            "datetime": dt_local,   # behåll tzinfo!
             "price": r["price"],
         })
 
@@ -171,25 +177,23 @@ def main():
         log(f"REQ={req} DAY={day} ACK={ack}")
 
         if req == 1 and ack == 0:
-            which = "today" if day == 0 else "tomorrow"
-            day_local = datetime.now(TZ).date()
-            if which == "tomorrow":
-                day_local += timedelta(days=1)
+            # 0 = today, 1 = tomorrow (lokalt dygn)
+            base_day = datetime.now(UTC).astimezone(TZ).date()
+            day_local = base_day + timedelta(days=day)
 
             rows = db_fetch_prices_for_day(day_local)
 
             if len(rows) != 96:
-                log(f"⏳ {which}: DB har {len(rows)}/96 → väntar")
+                log(f"⏳ {day_local}: DB har {len(rows)}/96 → väntar")
                 time.sleep(SLEEP_SEC)
                 continue
 
-            log(f"📤 Push {which} ({day_local})")
+            log(f"📤 Push dag {day_local}")
 
             rank, ec, ex, slot_price = build_rank_and_masks(rows)
 
-            today = datetime.now(TZ).date()
-            oat_yday = daily_avg_oat(today - timedelta(days=1))
-            oat_tmr  = daily_avg_oat(today + timedelta(days=1))
+            oat_yday = daily_avg_oat(day_local - timedelta(days=1))
+            oat_tmr  = daily_avg_oat(day_local + timedelta(days=1))
 
             push_to_arrigo(
                 rank, ec, ex,
