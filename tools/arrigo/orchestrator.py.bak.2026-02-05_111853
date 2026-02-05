@@ -346,6 +346,9 @@ def handle_price_handshake(token, vals, idx_map, ps: PulseState):
         rows, day_local = fetch_prices(which)
 
         # Tomorrow måste vara full 96 för att vi inte ska råka pusha halv-data
+        if which == "tomorrow" and len(rows) < 96:
+            log(f"⚠️ Morgondagens priser saknas i DB ({len(rows)}/96) – väntar")
+            return "wait_tomorrow"
 
         log(f"📤 Push {which}: {len(rows)} perioder")
         rank, ec, ex, slot_price = build_rank_and_masks(rows)
