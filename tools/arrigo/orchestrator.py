@@ -38,8 +38,6 @@ VERIFY = build_verify()
 TA_REQ      = "Huvudcentral_C1.PI_PUSH_REQ"
 TA_ACK      = "Huvudcentral_C1.PI_PUSH_ACK"
 TA_DAY      = "Huvudcentral_C1.PI_PUSH_DAY"
-TA_TD_READY = "Huvudcentral_C1.TD_READY"
-TA_TM_READY = "Huvudcentral_C1.TM_READY"
 
 Q_READ  = "query($p:String!){ data(path:$p){ variables{ technicalAddress value } } }"
 M_WRITE = "mutation($v:[VariableKeyValue!]!){ writeData(variables:$v) }"
@@ -51,13 +49,9 @@ DB_NAME = "smart_styrning"
 MYCNF   = "/home/runerova/.my.cnf"
 
 # =========================
-# Loop
-# =========================
 SLEEP_SEC = 4
+# =========================
 
-# =========================
-# Helpers
-# =========================
 def log(msg):
     print(time.strftime("%H:%M:%S"), msg, flush=True)
 
@@ -121,7 +115,7 @@ def write_ta(token, idx, ta, val):
     gql(token, M_WRITE, {"v": [{"key": key, "value": str(val)}]})
 
 # =========================
-# Prislogik (EXAKT som spotpris.py)
+# DB → LOKAL TID (KORREKT)
 # =========================
 def db_fetch_prices_for_day(day_local: date):
     start_local = datetime.combine(day_local, dtime(0,0), tzinfo=TZ)
@@ -140,7 +134,17 @@ def db_fetch_prices_for_day(day_local: date):
         """, (start_utc, end_utc))
         rows = cur.fetchall()
 
-    return rows
+    # 🔑 KRITISKT: konvertera UTC → lokal tid innan ranking
+    out = []
+    for r in rows:
+        dt_utc = r["datetime"].replace(tzinfo=UTC)
+        dt_local = dt_utc.astimezone(TZ)
+        out.append({
+            "datetime": dt_local.replace(tzinfo=None),
+            "price": r["price"],
+        })
+
+    return out
 
 # =========================
 # Main
@@ -166,7 +170,6 @@ def main():
 
         log(f"REQ={req} DAY={day} ACK={ack}")
 
-        # Endast svara när EXOL begär
         if req == 1 and ack == 0:
             which = "today" if day == 0 else "tomorrow"
             day_local = datetime.now(TZ).date()
