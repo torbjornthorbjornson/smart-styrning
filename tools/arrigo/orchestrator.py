@@ -17,22 +17,23 @@ from push_from_db import (
 )
 
 # =========================
-# Tidszoner (FACIT)
+# TIDSZONER – FACIT (KOPIA FRÅN FUNGERANDE KOD)
 # =========================
 STHLM = pytz.timezone("Europe/Stockholm")
 UTC   = pytz.UTC
+PERIODS = 96
 
 def today_local_date():
-    return datetime.now(STHLM).date()
+    return datetime.now(UTC).astimezone(STHLM).date()
 
-# DB lagrar LOKAL TID (SYSTEM) – inget UTC-hokus-pokus här
-def local_day_window(local_date):
-    start = datetime.combine(local_date, dtime(0, 0))
-    end   = start + timedelta(days=1)
-    return start, end
+def local_day_to_utc_window(local_date: date):
+    local_midnight = STHLM.localize(datetime.combine(local_date, dtime(0, 0)))
+    utc_start = local_midnight.astimezone(UTC).replace(tzinfo=None)
+    utc_end   = (local_midnight + timedelta(days=1)).astimezone(UTC).replace(tzinfo=None)
+    return utc_start, utc_end
 
 # =========================
-# Arrigo / EXOL
+# ARRIGO / EXOL
 # =========================
 LOGIN_URL   = os.getenv("ARRIGO_LOGIN_URL")
 GRAPHQL_URL = os.getenv("ARRIGO_GRAPHQL_URL")
@@ -82,7 +83,7 @@ def read_db_config():
     )
 
 # =========================
-# Arrigo helpers
+# ARRIGO HELPERS
 # =========================
 def arrigo_login():
     r = requests.post(
@@ -126,10 +127,10 @@ def write_ta(token, idx, ta, val):
     gql(token, M_WRITE, {"v": [{"key": key, "value": str(val)}]})
 
 # =========================
-# DB → LOKALT DYGN
+# DB → SVENSKT DYGN (FACIT)
 # =========================
 def db_fetch_prices_for_day(day_local: date):
-    start, end = local_day_window(day_local)
+    utc_start, utc_end = local_day_to_utc_window(day_local)
 
     conn = pymysql.connect(**read_db_config())
     with conn, conn.cursor() as cur:
@@ -138,13 +139,13 @@ def db_fetch_prices_for_day(day_local: date):
             FROM electricity_prices
             WHERE datetime >= %s AND datetime < %s
             ORDER BY datetime
-        """, (start, end))
+        """, (utc_start, utc_end))
         rows = cur.fetchall()
 
     return rows
 
 # =========================
-# Main loop (MINIMAL HANDSHAKE)
+# MAIN LOOP – HANDSHAKE
 # =========================
 def main():
     token = arrigo_login()
@@ -172,28 +173,36 @@ def main():
             target_day = base_day + timedelta(days=day)
 
             rows = db_fetch_prices_for_day(target_day)
-            if len(rows) == 96:
-                log(f"📤 Push {target_day}")
+            log(f"📥 DB rows: {len(rows)} för {target_day}")
 
-                rank, ec, ex, slot_price = build_rank_and_masks(rows)
+            rank, ec, ex, slot_price = build_rank_and_masks(rows)
 
-                oat_yday = daily_avg_oat(target_day - timedelta(days=1))
-                oat_tmr  = daily_avg_oat(target_day + timedelta(days=1))
+            oat_yday = daily_avg_oat(target_day - timedelta(days=1))
+            oat_tmr  = daily_avg_oat(target_day + timedelta(days=1))
 
-                push_to_arrigo(
-                    rank, ec, ex,
-                    target_day,
-                    oat_yday,
-                    oat_tmr,
-                    slot_price
-                )
+            log(f"📤 Push {target_day}")
+            push_to_arrigo(
+                rank, ec, ex,
+                target_day,
+                oat_yday,
+                oat_tmr,
+                slot_price
+            )
 
-                write_ta(token, idx, TA_ACK, 1)
-                log("✅ PI_PUSH_ACK=1")
-            else:
-                log(f"⏳ {target_day}: {len(rows)}/96 perioder")
+            write_ta(token, idx, TA_ACK, 1)
+            log("✅ PI_PUSH_ACK=1")
+
+            # === READBACK – BEVIS PÅ WRITE ===
+            vals_after, _ = read_vals_and_idx(token)
+            log("🔍 READBACK efter push (PRICE_RANK):")
+            for i in range(96):
+                ta = f"Huvudcentral_C1.PRICE_RANK({i})"
+                log(f"  {ta} = {vals_after.get(ta)}")
 
         time.sleep(SLEEP_SEC)
 
+# =========================
+# ENTRYPOINT
+# =========================
 if __name__ == "__main__":
     main()
