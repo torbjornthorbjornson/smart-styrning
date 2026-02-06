@@ -1,12 +1,162 @@
-# --- Orchestrator state ---
-last_pushed = {
-    "day": None,
-    "stamp": None,
-}
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 
+"""
+Arrigo Orchestrator – MINIMAL & KORREKT
+- EXOL äger PI_PUSH_REQ och PI_PUSH_DAY
+- Pi svarar ENDAST med PI_PUSH_ACK = 1
+- UTC-hantering = FACIT (svenskt dygn → UTC-fönster)
+- Ingen gissning, ingen forcing, ingen loop-manipulation
+"""
+
+import os
+import time
+from datetime import datetime, date, timedelta, time as dtime
+import pytz
+import pymysql
+import requests
+from configparser import ConfigParser
+
+from push_from_db import (
+    build_rank_and_masks,
+    daily_avg_oat,
+    push_to_arrigo,
+    ensure_b64,
+    build_verify,
+)
+
+# ============================================================
+# TID – FACIT
+# ============================================================
+STHLM = pytz.timezone("Europe/Stockholm")
+UTC   = pytz.UTC
+
+def today_local_date():
+    return datetime.now(UTC).astimezone(STHLM).date()
+
+def local_day_to_utc_window(local_date: date):
+    local_midnight = STHLM.localize(datetime.combine(local_date, dtime(0, 0)))
+    utc_start = local_midnight.astimezone(UTC).replace(tzinfo=None)
+    utc_end   = (local_midnight + timedelta(days=1)).astimezone(UTC).replace(tzinfo=None)
+    return utc_start, utc_end
+
+# ============================================================
+# ARRIGO
+# ============================================================
+LOGIN_URL   = os.getenv("ARRIGO_LOGIN_URL")
+GRAPHQL_URL = os.getenv("ARRIGO_GRAPHQL_URL")
+USER        = os.getenv("ARRIGO_USER") or os.getenv("ARRIGO_USERNAME")
+PASS        = os.getenv("ARRIGO_PASS") or os.getenv("ARRIGO_PASSWORD")
+
+PVL_RAW = os.getenv("ARRIGO_PVL_B64") or os.getenv("ARRIGO_PVL_PATH")
+if not PVL_RAW:
+    raise SystemExit("Saknar ARRIGO_PVL_B64 / ARRIGO_PVL_PATH")
+PVL_B64 = ensure_b64(PVL_RAW)
+
+VERIFY = build_verify()
+
+TA_REQ = "Huvudcentral_C1.PI_PUSH_REQ"
+TA_ACK = "Huvudcentral_C1.PI_PUSH_ACK"
+TA_DAY = "Huvudcentral_C1.PI_PUSH_DAY"
+
+Q_READ  = "query($p:String!){ data(path:$p){ variables{ technicalAddress value } } }"
+M_WRITE = "mutation($v:[VariableKeyValue!]!){ writeData(variables:$v) }"
+
+# ============================================================
+# DB
+# ============================================================
+DB_NAME = "smart_styrning"
+MYCNF   = "/home/runerova/.my.cnf"
+
+def read_db_config():
+    cfg = ConfigParser()
+    cfg.read(MYCNF)
+    return dict(
+        host="localhost",
+        user=cfg["client"]["user"],
+        password=cfg["client"]["password"],
+        database=DB_NAME,
+        charset="utf8mb4",
+        cursorclass=pymysql.cursors.DictCursor,
+    )
+
+# ============================================================
+# ARRIGO HELPERS
+# ============================================================
+def log(msg):
+    print(time.strftime("%H:%M:%S"), msg, flush=True)
+
+def to_int(v, d=0):
+    try:
+        return int(float(v))
+    except Exception:
+        return d
+
+def arrigo_login():
+    r = requests.post(
+        LOGIN_URL,
+        json={"username": USER, "password": PASS},
+        timeout=20,
+        verify=VERIFY,
+    )
+    r.raise_for_status()
+    tok = r.json().get("authToken")
+    if not tok:
+        raise SystemExit("Login utan token")
+    return tok
+
+def gql(token, query, variables):
+    r = requests.post(
+        GRAPHQL_URL,
+        headers={"Authorization": f"Bearer {token}"},
+        json={"query": query, "variables": variables},
+        timeout=30,
+        verify=VERIFY,
+    )
+    r.raise_for_status()
+    j = r.json()
+    if "errors" in j:
+        raise RuntimeError(j["errors"])
+    return j["data"]
+
+def read_vals_and_idx(token):
+    data = gql(token, Q_READ, {"p": PVL_B64})
+    vars_list = data["data"]["variables"]
+    vals, idx = {}, {}
+    for i, v in enumerate(vars_list):
+        ta = v["technicalAddress"]
+        vals[ta] = v.get("value")
+        idx[ta] = i
+    return vals, idx
+
+def write_ta(token, idx, ta, val):
+    key = f"{PVL_B64}:{idx[ta]}"
+    gql(token, M_WRITE, {"v": [{"key": key, "value": str(val)}]})
+
+# ============================================================
+# DB → SVENSKT DYGN → UTC (FACIT)
+# ============================================================
+def db_fetch_prices_for_day(day_local: date):
+    utc_start, utc_end = local_day_to_utc_window(day_local)
+
+    conn = pymysql.connect(**read_db_config())
+    with conn, conn.cursor() as cur:
+        cur.execute("""
+            SELECT datetime, price
+            FROM electricity_prices
+            WHERE datetime >= %s AND datetime < %s
+            ORDER BY datetime
+        """, (utc_start, utc_end))
+        rows = cur.fetchall()
+
+    return rows
+
+# ============================================================
+# MAIN
+# ============================================================
 def main():
     token = arrigo_login()
-    log("🔌 Orchestrator startad (stateful, stamp-safe)")
+    log("🔌 Orchestrator startad (UTC-facit, EXOL-master)")
 
     while True:
         try:
@@ -19,55 +169,42 @@ def main():
                 continue
             raise
 
-        req  = to_int(vals.get(TA_REQ))
-        ack  = to_int(vals.get(TA_ACK))
-        day  = to_int(vals.get(TA_DAY))
-        stamp = to_int(vals.get("Huvudcentral_C1.PRICE_STAMP"), -1)
+        req = to_int(vals.get(TA_REQ))
+        ack = to_int(vals.get(TA_ACK))
+        day = to_int(vals.get(TA_DAY))
 
-        log(f"REQ={req} ACK={ack} DAY={day} STAMP={stamp}")
+        log(f"REQ={req} ACK={ack} DAY={day}")
 
-        # --- Vänta tills EXOL verkligen begär ---
-        if req != 1 or ack != 0:
-            time.sleep(SLEEP_SEC)
-            continue
+        # ===== ENDASTE AKTION =====
+        if req == 1 and ack == 0:
+            base_day = today_local_date()
+            target_day = base_day + timedelta(days=day)
 
-        # --- Dublettskydd: samma dag + samma stamp ---
-        if last_pushed["day"] == day and last_pushed["stamp"] == stamp:
-            log("⏸️ Samma DAY+STAMP redan pushad – väntar")
-            time.sleep(SLEEP_SEC)
-            continue
+            rows = db_fetch_prices_for_day(target_day)
+            if len(rows) != 96:
+                log(f"⏳ {target_day}: {len(rows)}/96 perioder – väntar")
+                time.sleep(4)
+                continue
 
-        # --- Bestäm lokalt dygn (FACIT) ---
-        target_day = today_local_date() + timedelta(days=day)
+            log(f"📤 Push {target_day} (svenskt dygn)")
 
-        rows = db_fetch_prices_for_day(target_day)
+            rank, ec, ex, slot_price = build_rank_and_masks(rows)
 
-        if len(rows) != 96:
-            log(f"⏳ {target_day}: DB har {len(rows)}/96 → väntar")
-            time.sleep(SLEEP_SEC)
-            continue
+            oat_yday = daily_avg_oat(target_day - timedelta(days=1))
+            oat_tmr  = daily_avg_oat(target_day + timedelta(days=1))
 
-        log(f"📤 Push dag={target_day} stamp={stamp}")
+            push_to_arrigo(
+                rank, ec, ex,
+                target_day,
+                oat_yday,
+                oat_tmr,
+                slot_price
+            )
 
-        rank, ec, ex, slot_price = build_rank_and_masks(rows)
+            write_ta(token, idx, TA_ACK, 1)
+            log("✅ PI_PUSH_ACK=1 (EXOL tar över nu)")
 
-        oat_yday = daily_avg_oat(target_day - timedelta(days=1))
-        oat_tmr  = daily_avg_oat(target_day + timedelta(days=1))
+        time.sleep(4)
 
-        push_to_arrigo(
-            rank, ec, ex,
-            target_day,
-            oat_yday,
-            oat_tmr,
-            slot_price
-        )
-
-        # --- Ack: EN gång ---
-        write_ta(token, idx, TA_ACK, 1)
-        log("✅ PI_PUSH_ACK=1")
-
-        # --- Minns vad vi pushade ---
-        last_pushed["day"]   = day
-        last_pushed["stamp"] = stamp
-
-        time.sleep(SLEEP_SEC)
+if __name__ == "__main__":
+    main()
