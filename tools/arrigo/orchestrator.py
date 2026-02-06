@@ -162,7 +162,185 @@ def main():
                 continue
             raise
 
+        req = to_int#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
+import os, time
+from datetime import datetime, date, timedelta, time as dtime
+import pytz
+import requests
+import pymysql
+from configparser import ConfigParser
+
+from push_from_db import (
+    fetch_prices,
+    build_rank_and_masks,
+    daily_avg_oat,
+    push_to_arrigo,
+    ensure_b64,
+    build_verify,
+)
+
+# =========================
+# TID & PERIODER
+# =========================
+STHLM = pytz.timezone("Europe/Stockholm")
+UTC   = pytz.UTC
+PERIODS = 96
+
+def today_local():
+    return datetime.now(UTC).astimezone(STHLM).date()
+
+# =========================
+# ARRIGO
+# =========================
+LOGIN_URL   = os.getenv("ARRIGO_LOGIN_URL")
+GRAPHQL_URL = os.getenv("ARRIGO_GRAPHQL_URL")
+USER        = os.getenv("ARRIGO_USER") or os.getenv("ARRIGO_USERNAME")
+PASS        = os.getenv("ARRIGO_PASS") or os.getenv("ARRIGO_PASSWORD")
+
+PVL_RAW = os.getenv("ARRIGO_PVL_B64") or os.getenv("ARRIGO_PVL_PATH")
+if not PVL_RAW:
+    raise SystemExit("Saknar ARRIGO_PVL_B64 / ARRIGO_PVL_PATH")
+
+PVL_B64 = ensure_b64(PVL_RAW)
+VERIFY  = build_verify()
+
+TA_REQ = "Huvudcentral_C1.PI_PUSH_REQ"
+TA_ACK = "Huvudcentral_C1.PI_PUSH_ACK"
+TA_DAY = "Huvudcentral_C1.PI_PUSH_DAY"
+
+Q_READ  = "query($p:String!){ data(path:$p){ variables{ technicalAddress value } } }"
+M_WRITE = "mutation($v:[VariableKeyValue!]!){ writeData(variables:$v) }"
+
+SLEEP_SEC = 3
+
+# =========================
+# LOG
+# =========================
+def log(msg):
+    print(time.strftime("%H:%M:%S"), msg, flush=True)
+
+def to_int(v):
+    try:
+        return int(float(v))
+    except Exception:
+        return 0
+
+# =========================
+# ARRIGO HELPERS
+# =========================
+def arrigo_login():
+    r = requests.post(
+        LOGIN_URL,
+        json={"username": USER, "password": PASS},
+        timeout=20,
+        verify=VERIFY,
+    )
+    r.raise_for_status()
+    tok = r.json().get("authToken")
+    if not tok:
+        raise SystemExit("Login utan token")
+    return tok
+
+def gql(token, query, variables):
+    r = requests.post(
+        GRAPHQL_URL,
+        headers={"Authorization": f"Bearer {token}"},
+        json={"query": query, "variables": variables},
+        timeout=30,
+        verify=VERIFY,
+    )
+    r.raise_for_status()
+    j = r.json()
+    if "errors" in j:
+        raise RuntimeError(j["errors"])
+    return j["data"]
+
+def read_vals_and_idx(token):
+    data = gql(token, Q_READ, {"p": PVL_B64})
+    vars_list = data["data"]["variables"]
+    vals, idx = {}, {}
+    for i, v in enumerate(vars_list):
+        ta = v["technicalAddress"]
+        vals[ta] = v.get("value")
+        idx[ta] = i
+    return vals, idx
+
+def write_ta(token, idx, ta, value):
+    key = f"{PVL_B64}:{idx[ta]}"
+    gql(token, M_WRITE, {"v": [{"key": key, "value": str(value)}]})
+
+# =========================
+# MAIN LOOP
+# =========================
+def main():
+    token = arrigo_login()
+    log("🔌 Orchestrator startad")
+
+    while True:
+        try:
+            vals, idx = read_vals_and_idx(token)
+        except requests.HTTPError as e:
+            if e.response is not None and e.response.status_code == 401:
+                log("🔑 401 → loggar in igen")
+                token = arrigo_login()
+                time.sleep(2)
+                continue
+            raise
+
         req = to_int(vals.get(TA_REQ))
+        ack = to_int(vals.get(TA_ACK))
+        day = to_int(vals.get(TA_DAY))
+
+        log(f"REQ={req} ACK={ack} DAY={day}")
+
+        # =========================
+        # ENDA BESLUTET I SYSTEMET
+        # =========================
+        if req == 1 and ack == 0:
+            target_day = today_local() + timedelta(days=day)
+            which = "today" if day == 0 else "tomorrow"
+
+            log(f"📥 EXOL begär {which} ({target_day})")
+
+            rows, _ = fetch_prices(which)
+            log(f"📊 DB-perioder: {len(rows)}")
+
+            rank, ec, ex, slot_price = build_rank_and_masks(rows)
+
+            oat_yday = daily_avg_oat(target_day - timedelta(days=1))
+            oat_tmr  = daily_avg_oat(target_day + timedelta(days=1))
+
+            log("📤 Pushar till Arrigo…")
+            push_to_arrigo(
+                rank,
+                ec,
+                ex,
+                target_day,
+                oat_yday,
+                oat_tmr,
+                slot_price,
+            )
+
+            # === ACK exakt en gång ===
+            write_ta(token, idx, TA_ACK, 1)
+            log("✅ PI_PUSH_ACK=1")
+
+            # === READBACK-BEVIS ===
+            vals_after, _ = read_vals_and_idx(token)
+            for h in (0, 16, 32, 48):
+                ta = f"Huvudcentral_C1.PRICE_RANK({h})"
+                log(f"🔍 {ta} = {vals_after.get(ta)}")
+
+        time.sleep(SLEEP_SEC)
+
+# =========================
+# ENTRY
+# =========================
+if __name__ == "__main__":
+    main()
+(vals.get(TA_REQ))
         ack = to_int(vals.get(TA_ACK))
         day = to_int(vals.get(TA_DAY))
 
