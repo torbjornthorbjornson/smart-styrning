@@ -338,41 +338,6 @@ def main():
 # =========================
 # ENTRY
 # =========================
-if __name__ == "__main__":
-    main()
-(vals.get(TA_REQ))
-        ack = to_int(vals.get(TA_ACK))
-        day = to_int(vals.get(TA_DAY))
-
-        log(f"REQ={req} ACK={ack} DAY={day}")
-
-        if req == 1 and ack == 0:
-            base_day = today_local_date()
-            target_day = base_day + timedelta(days=day)
-
-            rows = db_fetch_prices_for_day(target_day)
-            log(f"📥 DB rows: {len(rows)} för {target_day}")
-
-            rank, ec, ex, slot_price = build_rank_and_masks(rows)
-
-            oat_yday = daily_avg_oat(target_day - timedelta(days=1))
-            oat_tmr  = daily_avg_oat(target_day + timedelta(days=1))
-
-            log(f"📤 Push {target_day}")
-            push_to_arrigo(
-                rank,
-                ec,
-                ex,
-                target_day,
-                oat_yday,
-                oat_tmr,
-                slot_price,
-            )
-
-            write_ack(token, pvl_b64, vals, 1)
-            log("✅ PI_PUSH_ACK=1")
-
-        time.sleep(SLEEP_SEC)
 
 # =========================
 # ENTRYPOINT
