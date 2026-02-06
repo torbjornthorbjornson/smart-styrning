@@ -25,11 +25,12 @@ UTC   = pytz.UTC
 def today_local_date():
     return datetime.now(UTC).astimezone(STHLM).date()
 
-def local_day_to_utc_window(local_date: date):
-    local_midnight = STHLM.localize(datetime.combine(local_date, dtime(0, 0)))
-    utc_start = local_midnight.astimezone(UTC).replace(tzinfo=None)
-    utc_end   = (local_midnight + timedelta(days=1)).astimezone(UTC).replace(tzinfo=None)
-    return utc_start, utc_end
+def local_day_to_utc_window(local_date):
+    # DB lagrar lokal tid (SYSTEM), inte UTC
+    start = datetime.combine(local_date, dtime(0, 0))
+    end   = start + timedelta(days=1)
+    return start, end
+
 
 # =========================
 # Arrigo / EXOL
