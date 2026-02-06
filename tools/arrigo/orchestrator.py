@@ -3,7 +3,7 @@
 
 import os, time
 from datetime import datetime, date, timedelta, time as dtime
-from zoneinfo import ZoneInfo
+import pytz
 import pymysql
 import requests
 from configparser import ConfigParser
@@ -17,10 +17,19 @@ from push_from_db import (
 )
 
 # =========================
-# Tidszoner
+# Tidszoner (EXAKT SAMMA SOM RESTEN AV SYSTEMET)
 # =========================
-TZ  = ZoneInfo("Europe/Stockholm")
-UTC = ZoneInfo("UTC")
+STHLM = pytz.timezone("Europe/Stockholm")
+UTC   = pytz.UTC
+
+def today_local_date():
+    return datetime.now(UTC).astimezone(STHLM).date()
+
+def local_day_to_utc_window(local_date: date):
+    local_midnight = STHLM.localize(datetime.combine(local_date, dtime(0, 0)))
+    utc_start = local_midnight.astimezone(UTC).replace(tzinfo=None)
+    utc_end   = (local_midnight + timedelta(days=1)).astimezone(UTC).replace(tzinfo=None)
+    return utc_start, utc_end
 
 # =========================
 # Arrigo / EXOL
@@ -53,7 +62,6 @@ MYCNF   = "/home/runerova/.my.cnf"
 SLEEP_SEC = 4
 
 # =========================
-
 def log(msg):
     print(time.strftime("%H:%M:%S"), msg, flush=True)
 
@@ -120,16 +128,10 @@ def write_ta(token, idx, ta, val):
     gql(token, M_WRITE, {"v": [{"key": key, "value": str(val)}]})
 
 # =========================
-# DB → LOKALT DYGN → LOKAL TID
+# DB → SVENSKT DYGN (FACIT)
 # =========================
 def db_fetch_prices_for_day(day_local: date):
-    """
-    Hämtar exakt det svenska dygnet som UTC-intervall,
-    returnerar priser med *lokal tidszon kvar* (Europe/Stockholm).
-    """
-    local_midnight = datetime.combine(day_local, dtime(0, 0), tzinfo=TZ)
-    utc_start = local_midnight.astimezone(UTC).replace(tzinfo=None)
-    utc_end   = (local_midnight + timedelta(days=1)).astimezone(UTC).replace(tzinfo=None)
+    utc_start, utc_end = local_day_to_utc_window(day_local)
 
     conn = pymysql.connect(**read_db_config())
     with conn, conn.cursor() as cur:
@@ -141,16 +143,7 @@ def db_fetch_prices_for_day(day_local: date):
         """, (utc_start, utc_end))
         rows = cur.fetchall()
 
-    out = []
-    for r in rows:
-        dt_utc = r["datetime"].replace(tzinfo=UTC)
-        dt_local = dt_utc.astimezone(TZ)
-        out.append({
-            "datetime": dt_local,   # behåll tzinfo!
-            "price": r["price"],
-        })
-
-    return out
+    return rows
 
 # =========================
 # Main
@@ -177,27 +170,26 @@ def main():
         log(f"REQ={req} DAY={day} ACK={ack}")
 
         if req == 1 and ack == 0:
-            # 0 = today, 1 = tomorrow (lokalt dygn)
-            base_day = datetime.now(UTC).astimezone(TZ).date()
-            day_local = base_day + timedelta(days=day)
+            base_day = today_local_date()
+            target_day = base_day + timedelta(days=day)
 
-            rows = db_fetch_prices_for_day(day_local)
+            rows = db_fetch_prices_for_day(target_day)
 
             if len(rows) != 96:
-                log(f"⏳ {day_local}: DB har {len(rows)}/96 → väntar")
+                log(f"⏳ {target_day}: DB har {len(rows)}/96 → väntar")
                 time.sleep(SLEEP_SEC)
                 continue
 
-            log(f"📤 Push dag {day_local}")
+            log(f"📤 Push dag {target_day}")
 
             rank, ec, ex, slot_price = build_rank_and_masks(rows)
 
-            oat_yday = daily_avg_oat(day_local - timedelta(days=1))
-            oat_tmr  = daily_avg_oat(day_local + timedelta(days=1))
+            oat_yday = daily_avg_oat(target_day - timedelta(days=1))
+            oat_tmr  = daily_avg_oat(target_day + timedelta(days=1))
 
             push_to_arrigo(
                 rank, ec, ex,
-                day_local,
+                target_day,
                 oat_yday,
                 oat_tmr,
                 slot_price
