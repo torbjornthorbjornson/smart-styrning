@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import os, time
+import os
+import time
 from datetime import datetime, date, timedelta, time as dtime
 import pytz
 import pymysql
@@ -12,16 +13,14 @@ from push_from_db import (
     build_rank_and_masks,
     daily_avg_oat,
     push_to_arrigo,
-    ensure_b64,
     build_verify,
 )
 
 # =========================
-# TIDSZONER – FACIT (KOPIA FRÅN FUNGERANDE KOD)
+# TIDSZONER – FACIT
 # =========================
 STHLM = pytz.timezone("Europe/Stockholm")
 UTC   = pytz.UTC
-PERIODS = 96
 
 def today_local_date():
     return datetime.now(UTC).astimezone(STHLM).date()
@@ -39,11 +38,6 @@ LOGIN_URL   = os.getenv("ARRIGO_LOGIN_URL")
 GRAPHQL_URL = os.getenv("ARRIGO_GRAPHQL_URL")
 USER        = os.getenv("ARRIGO_USER") or os.getenv("ARRIGO_USERNAME")
 PASS        = os.getenv("ARRIGO_PASS") or os.getenv("ARRIGO_PASSWORD")
-
-PVL_RAW = os.getenv("ARRIGO_PVL_B64") or os.getenv("ARRIGO_PVL_PATH")
-if not PVL_RAW:
-    raise SystemExit("Saknar ARRIGO_PVL_B64 eller ARRIGO_PVL_PATH")
-PVL_B64 = ensure_b64(PVL_RAW)
 
 VERIFY = build_verify()
 
@@ -83,7 +77,7 @@ def read_db_config():
     )
 
 # =========================
-# ARRIGO HELPERS
+# ARRIGO BAS-HJÄLPARE
 # =========================
 def arrigo_login():
     r = requests.post(
@@ -112,48 +106,54 @@ def gql(token, query, variables):
         raise RuntimeError(j["errors"])
     return j["data"]
 
-def read_vals_and_idx(token):
-    data = gql(token, Q_READ, {"p": PVL_B64})
-    vars_list = data["data"]["variables"]
-    vals, idx = {}, {}
-    for i, v in enumerate(vars_list):
-        ta = v["technicalAddress"]
-        vals[ta] = v.get("value")
-        idx[ta] = i
-    return vals, idx
+def read_vals(token, pvl_b64):
+    data = gql(token, Q_READ, {"p": pvl_b64})
+    return {v["technicalAddress"]: v.get("value") for v in data["data"]["variables"]}
 
-def write_ta(token, idx, ta, val):
-    key = f"{PVL_B64}:{idx[ta]}"
-    gql(token, M_WRITE, {"v": [{"key": key, "value": str(val)}]})
+def write_ack(token, pvl_b64, vals, ack_val):
+    # hitta ACK-index dynamiskt
+    for i, (ta, _) in enumerate(vals.items()):
+        if ta.endswith(".PI_PUSH_ACK"):
+            gql(
+                token,
+                M_WRITE,
+                {"v": [{"key": f"{pvl_b64}:{i}", "value": str(ack_val)}]},
+            )
+            return
 
 # =========================
-# DB → SVENSKT DYGN (FACIT)
+# DB → PRISER
 # =========================
 def db_fetch_prices_for_day(day_local: date):
     utc_start, utc_end = local_day_to_utc_window(day_local)
 
     conn = pymysql.connect(**read_db_config())
     with conn, conn.cursor() as cur:
-        cur.execute("""
+        cur.execute(
+            """
             SELECT datetime, price
             FROM electricity_prices
             WHERE datetime >= %s AND datetime < %s
             ORDER BY datetime
-        """, (utc_start, utc_end))
-        rows = cur.fetchall()
-
-    return rows
+            """,
+            (utc_start, utc_end),
+        )
+        return cur.fetchall()
 
 # =========================
-# MAIN LOOP – HANDSHAKE
+# MAIN – TUNN ORCHESTRATOR
 # =========================
 def main():
     token = arrigo_login()
     log("🔌 Orchestrator startad")
 
+    pvl_b64 = os.getenv("ARRIGO_PVL_B64") or os.getenv("ARRIGO_PVL_PATH")
+    if not pvl_b64:
+        raise SystemExit("Saknar ARRIGO_PVL_*")
+
     while True:
         try:
-            vals, idx = read_vals_and_idx(token)
+            vals = read_vals(token, pvl_b64)
         except requests.HTTPError as e:
             if e.response is not None and e.response.status_code == 401:
                 log("🔑 401 → relogin")
@@ -182,22 +182,17 @@ def main():
 
             log(f"📤 Push {target_day}")
             push_to_arrigo(
-                rank, ec, ex,
+                rank,
+                ec,
+                ex,
                 target_day,
                 oat_yday,
                 oat_tmr,
-                slot_price
+                slot_price,
             )
 
-            write_ta(token, idx, TA_ACK, 1)
+            write_ack(token, pvl_b64, vals, 1)
             log("✅ PI_PUSH_ACK=1")
-
-            # === READBACK – BEVIS PÅ WRITE ===
-            vals_after, _ = read_vals_and_idx(token)
-            log("🔍 READBACK efter push (PRICE_RANK):")
-            for i in range(96):
-                ta = f"Huvudcentral_C1.PRICE_RANK({i})"
-                log(f"  {ta} = {vals_after.get(ta)}")
 
         time.sleep(SLEEP_SEC)
 
