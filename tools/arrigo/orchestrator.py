@@ -193,11 +193,7 @@ def main():
             else:
                 log(f"⏳ {target_day}: {len(rows)}/96 perioder – väntar")
 
-        # --- ACK CLEAR ---
-        if req == 0 and ack == 1:
-            write_ta(token, idx, TA_ACK, 0)
-            log("🔄 PI_PUSH_ACK=0")
-
+        
         time.sleep(SLEEP_SEC)
 
 if __name__ == "__main__":
