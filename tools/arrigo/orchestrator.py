@@ -107,7 +107,6 @@ def arrigo_login():
         LOGIN_URL,
         json={"username": USER, "password": PASS},
         timeout=20,
-        verify=VERIFY,
     )
     r.raise_for_status()
     tok = r.json().get("authToken")
@@ -122,7 +121,6 @@ def gql(token, query, variables):
         headers={"Authorization": f"Bearer {token}"},
         json={"query": query, "variables": variables},
         timeout=30,
-        verify=VERIFY,
     )
     r.raise_for_status()
     j = r.json()
@@ -209,17 +207,18 @@ def main():
 
             log("📤 Pushar till Arrigo")
             push_to_arrigo(
-                gql_fn,
-                token,  
-                pvl_b64        
-                rank,
-                ec_masks,
-                ex_masks,
-                day_local,
-                oat_yday,
-                oat_tmr,
-                slot_price,
+            gql,          # ← korrekt GraphQL-funktion
+            token,        # ← orchestrator äger token
+            PVL_B64,      # ← korrekt variabel
+            rank,
+            ec_masks,
+            ex_masks,
+            target_day,   # ← rätt variabel
+            oat_yday,
+            oat_tmr,
+            slot_price,
             )
+
 
             write_ack(token, idx, 1)
             log("✅ PI_PUSH_ACK satt")
