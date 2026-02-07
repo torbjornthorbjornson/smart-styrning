@@ -13,8 +13,6 @@ from push_from_db import (
     build_rank_and_masks,
     daily_avg_oat,
     push_to_arrigo,   # OBS: ska bli token-lös i nästa steg
-    ensure_b64,
-    build_verify,
 )
 
 # ==================================================
@@ -58,8 +56,8 @@ PVL_RAW = os.getenv("ARRIGO_PVL_B64") or os.getenv("ARRIGO_PVL_PATH")
 if not PVL_RAW:
     raise SystemExit("Saknar ARRIGO_PVL_B64 / ARRIGO_PVL_PATH")
 
-PVL_B64 = ensure_b64(PVL_RAW)
-VERIFY  = build_verify()
+PVL_B64 = PVL_RAW
+
 
 TA_REQ = "Huvudcentral_C1.PI_PUSH_REQ"
 TA_ACK = "Huvudcentral_C1.PI_PUSH_ACK"
@@ -211,11 +209,13 @@ def main():
 
             log("📤 Pushar till Arrigo")
             push_to_arrigo(
-                token,          # OBS: token ägs här
+                gql_fn,
+                token,  
+                pvl_b64        
                 rank,
                 ec_masks,
                 ex_masks,
-                target_day,
+                day_local,
                 oat_yday,
                 oat_tmr,
                 slot_price,
