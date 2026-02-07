@@ -12,188 +12,43 @@ from configparser import ConfigParser
 from push_from_db import (
     build_rank_and_masks,
     daily_avg_oat,
-    push_to_arrigo,
+    push_to_arrigo,   # OBS: ska bli token-lös i nästa steg
+    ensure_b64,
     build_verify,
 )
 
-# =========================
+# ==================================================
 # TIDSZONER – FACIT
-# =========================
-STHLM = pytz.timezone("Europe/Stockholm")
-UTC   = pytz.UTC
+# ==================================================
+# MariaDB lagrar electricity_prices.datetime som UTC (naiv DATETIME).
+# spotpris.py skriver UTC som kan spänna över två kalenderdygn.
+#
+# Orchestratorn definierar ett LOKALT svenskt dygn (Europe/Stockholm)
+# och översätter detta till ett UTC-fönster vid DB-frågor.
+#
+# Detta är ENDA platsen där lokal ↔ UTC-konvertering sker.
+# Se: TODO/016_TIME_CONTRACT/README.md
 
-def today_local_date():
+UTC   = pytz.UTC
+STHLM = pytz.timezone("Europe/Stockholm")
+
+
+def today_local_date() -> date:
+    """Returnerar dagens datum i svensk lokal tid."""
     return datetime.now(UTC).astimezone(STHLM).date()
 
+
 def local_day_to_utc_window(local_date: date):
+    """Bygger UTC-fönster för ett helt svenskt lokalt dygn."""
     local_midnight = STHLM.localize(datetime.combine(local_date, dtime(0, 0)))
     utc_start = local_midnight.astimezone(UTC).replace(tzinfo=None)
     utc_end   = (local_midnight + timedelta(days=1)).astimezone(UTC).replace(tzinfo=None)
     return utc_start, utc_end
 
-# =========================
-# ARRIGO / EXOL
-# =========================
-LOGIN_URL   = os.getenv("ARRIGO_LOGIN_URL")
-GRAPHQL_URL = os.getenv("ARRIGO_GRAPHQL_URL")
-USER        = os.getenv("ARRIGO_USER") or os.getenv("ARRIGO_USERNAME")
-PASS        = os.getenv("ARRIGO_PASS") or os.getenv("ARRIGO_PASSWORD")
 
-VERIFY = build_verify()
-
-TA_REQ = "Huvudcentral_C1.PI_PUSH_REQ"
-TA_ACK = "Huvudcentral_C1.PI_PUSH_ACK"
-TA_DAY = "Huvudcentral_C1.PI_PUSH_DAY"
-
-Q_READ  = "query($p:String!){ data(path:$p){ variables{ technicalAddress value } } }"
-M_WRITE = "mutation($v:[VariableKeyValue!]!){ writeData(variables:$v) }"
-
-# =========================
-# DB
-# =========================
-DB_NAME = "smart_styrning"
-MYCNF   = "/home/runerova/.my.cnf"
-SLEEP_SEC = 4
-
-def log(msg):
-    print(time.strftime("%H:%M:%S"), msg, flush=True)
-
-def to_int(x, d=0):
-    try:
-        return int(float(x))
-    except Exception:
-        return d
-
-def read_db_config():
-    cfg = ConfigParser()
-    cfg.read(MYCNF)
-    return dict(
-        host="localhost",
-        user=cfg["client"]["user"],
-        password=cfg["client"]["password"],
-        database=DB_NAME,
-        charset="utf8mb4",
-        cursorclass=pymysql.cursors.DictCursor,
-    )
-
-# =========================
-# ARRIGO BAS-HJÄLPARE
-# =========================
-def arrigo_login():
-    r = requests.post(
-        LOGIN_URL,
-        json={"username": USER, "password": PASS},
-        timeout=20,
-        verify=VERIFY,
-    )
-    r.raise_for_status()
-    tok = r.json().get("authToken")
-    if not tok:
-        raise SystemExit("Login utan token")
-    return tok
-
-def gql(token, query, variables):
-    r = requests.post(
-        GRAPHQL_URL,
-        headers={"Authorization": f"Bearer {token}"},
-        json={"query": query, "variables": variables},
-        timeout=30,
-        verify=VERIFY,
-    )
-    r.raise_for_status()
-    j = r.json()
-    if "errors" in j:
-        raise RuntimeError(j["errors"])
-    return j["data"]
-
-def read_vals(token, pvl_b64):
-    data = gql(token, Q_READ, {"p": pvl_b64})
-    return {v["technicalAddress"]: v.get("value") for v in data["data"]["variables"]}
-
-def write_ack(token, pvl_b64, vals, ack_val):
-    # hitta ACK-index dynamiskt
-    for i, (ta, _) in enumerate(vals.items()):
-        if ta.endswith(".PI_PUSH_ACK"):
-            gql(
-                token,
-                M_WRITE,
-                {"v": [{"key": f"{pvl_b64}:{i}", "value": str(ack_val)}]},
-            )
-            return
-
-# =========================
-# DB → PRISER
-# =========================
-def db_fetch_prices_for_day(day_local: date):
-    utc_start, utc_end = local_day_to_utc_window(day_local)
-
-    conn = pymysql.connect(**read_db_config())
-    with conn, conn.cursor() as cur:
-        cur.execute(
-            """
-            SELECT datetime, price
-            FROM electricity_prices
-            WHERE datetime >= %s AND datetime < %s
-            ORDER BY datetime
-            """,
-            (utc_start, utc_end),
-        )
-        return cur.fetchall()
-
-# =========================
-# MAIN – TUNN ORCHESTRATOR
-# =========================
-def main():
-    token = arrigo_login()
-    log("🔌 Orchestrator startad")
-
-    pvl_b64 = os.getenv("ARRIGO_PVL_B64") or os.getenv("ARRIGO_PVL_PATH")
-    if not pvl_b64:
-        raise SystemExit("Saknar ARRIGO_PVL_*")
-
-    while True:
-        try:
-            vals = read_vals(token, pvl_b64)
-        except requests.HTTPError as e:
-            if e.response is not None and e.response.status_code == 401:
-                log("🔑 401 → relogin")
-                token = arrigo_login()
-                time.sleep(2)
-                continue
-            raise
-
-        req = to_int#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-
-import os, time
-from datetime import datetime, date, timedelta, time as dtime
-import pytz
-import requests
-import pymysql
-from configparser import ConfigParser
-
-from push_from_db import (
-    fetch_prices,
-    build_rank_and_masks,
-    daily_avg_oat,
-    push_to_arrigo,
-    ensure_b64,
-    build_verify,
-)
-
-# =========================
-# TID & PERIODER
-# =========================
-STHLM = pytz.timezone("Europe/Stockholm")
-UTC   = pytz.UTC
-PERIODS = 96
-
-def today_local():
-    return datetime.now(UTC).astimezone(STHLM).date()
-
-# =========================
-# ARRIGO
-# =========================
+# ==================================================
+# ARRIGO / EXOL – KONFIG
+# ==================================================
 LOGIN_URL   = os.getenv("ARRIGO_LOGIN_URL")
 GRAPHQL_URL = os.getenv("ARRIGO_GRAPHQL_URL")
 USER        = os.getenv("ARRIGO_USER") or os.getenv("ARRIGO_USERNAME")
@@ -213,23 +68,42 @@ TA_DAY = "Huvudcentral_C1.PI_PUSH_DAY"
 Q_READ  = "query($p:String!){ data(path:$p){ variables{ technicalAddress value } } }"
 M_WRITE = "mutation($v:[VariableKeyValue!]!){ writeData(variables:$v) }"
 
-SLEEP_SEC = 3
 
-# =========================
-# LOG
-# =========================
+# ==================================================
+# DB / INFRA
+# ==================================================
+DB_NAME   = "smart_styrning"
+MYCNF     = "/home/runerova/.my.cnf"
+SLEEP_SEC = 4
+
+
 def log(msg):
     print(time.strftime("%H:%M:%S"), msg, flush=True)
 
-def to_int(v):
-    try:
-        return int(float(v))
-    except Exception:
-        return 0
 
-# =========================
-# ARRIGO HELPERS
-# =========================
+def to_int(x, default=0):
+    try:
+        return int(float(x))
+    except Exception:
+        return default
+
+
+def read_db_config():
+    cfg = ConfigParser()
+    cfg.read(MYCNF)
+    return dict(
+        host="localhost",
+        user=cfg["client"]["user"],
+        password=cfg["client"]["password"],
+        database=DB_NAME,
+        charset="utf8mb4",
+        cursorclass=pymysql.cursors.DictCursor,
+    )
+
+
+# ==================================================
+# ARRIGO API – HJÄLPARE
+# ==================================================
 def arrigo_login():
     r = requests.post(
         LOGIN_URL,
@@ -242,6 +116,7 @@ def arrigo_login():
     if not tok:
         raise SystemExit("Login utan token")
     return tok
+
 
 def gql(token, query, variables):
     r = requests.post(
@@ -257,6 +132,7 @@ def gql(token, query, variables):
         raise RuntimeError(j["errors"])
     return j["data"]
 
+
 def read_vals_and_idx(token):
     data = gql(token, Q_READ, {"p": PVL_B64})
     vars_list = data["data"]["variables"]
@@ -267,13 +143,35 @@ def read_vals_and_idx(token):
         idx[ta] = i
     return vals, idx
 
-def write_ta(token, idx, ta, value):
-    key = f"{PVL_B64}:{idx[ta]}"
+
+def write_ack(token, idx, value):
+    key = f"{PVL_B64}:{idx[TA_ACK]}"
     gql(token, M_WRITE, {"v": [{"key": key, "value": str(value)}]})
 
-# =========================
-# MAIN LOOP
-# =========================
+
+# ==================================================
+# DB → PRISER
+# ==================================================
+def db_fetch_prices_for_day(day_local: date):
+    utc_start, utc_end = local_day_to_utc_window(day_local)
+
+    conn = pymysql.connect(**read_db_config())
+    with conn, conn.cursor() as cur:
+        cur.execute(
+            """
+            SELECT datetime, price
+            FROM electricity_prices
+            WHERE datetime >= %s AND datetime < %s
+            ORDER BY datetime
+            """,
+            (utc_start, utc_end),
+        )
+        return cur.fetchall()
+
+
+# ==================================================
+# MAIN – ORCHESTRATOR
+# ==================================================
 def main():
     token = arrigo_login()
     log("🔌 Orchestrator startad")
@@ -283,7 +181,7 @@ def main():
             vals, idx = read_vals_and_idx(token)
         except requests.HTTPError as e:
             if e.response is not None and e.response.status_code == 401:
-                log("🔑 401 → loggar in igen")
+                log("🔑 401 → relogin")
                 token = arrigo_login()
                 time.sleep(2)
                 continue
@@ -295,52 +193,42 @@ def main():
 
         log(f"REQ={req} ACK={ack} DAY={day}")
 
-        # =========================
-        # ENDA BESLUTET I SYSTEMET
-        # =========================
+        # ==================================================
+        # BESLUT: SKA NYA PRISER PUSHAS TILL ARRIGO?
+        # ==================================================
         if req == 1 and ack == 0:
-            target_day = today_local() + timedelta(days=day)
-            which = "today" if day == 0 else "tomorrow"
 
-            log(f"📥 EXOL begär {which} ({target_day})")
+            target_day = today_local_date() + timedelta(days=day)
+            log(f"📥 EXOL begär priser för lokalt dygn: {target_day}")
 
-            rows, _ = fetch_prices(which)
+            rows = db_fetch_prices_for_day(target_day)
             log(f"📊 DB-perioder: {len(rows)}")
 
-            rank, ec, ex, slot_price = build_rank_and_masks(rows)
+            rank, ec_masks, ex_masks, slot_price = build_rank_and_masks(rows)
 
             oat_yday = daily_avg_oat(target_day - timedelta(days=1))
             oat_tmr  = daily_avg_oat(target_day + timedelta(days=1))
 
-            log("📤 Pushar till Arrigo…")
+            log("📤 Pushar till Arrigo")
             push_to_arrigo(
+                token,          # OBS: token ägs här
                 rank,
-                ec,
-                ex,
+                ec_masks,
+                ex_masks,
                 target_day,
                 oat_yday,
                 oat_tmr,
                 slot_price,
             )
 
-            # === ACK exakt en gång ===
-            write_ta(token, idx, TA_ACK, 1)
-            log("✅ PI_PUSH_ACK=1")
-
-            # === READBACK-BEVIS ===
-            vals_after, _ = read_vals_and_idx(token)
-            for h in (0, 16, 32, 48):
-                ta = f"Huvudcentral_C1.PRICE_RANK({h})"
-                log(f"🔍 {ta} = {vals_after.get(ta)}")
+            write_ack(token, idx, 1)
+            log("✅ PI_PUSH_ACK satt")
 
         time.sleep(SLEEP_SEC)
 
-# =========================
-# ENTRY
-# =========================
 
-# =========================
+# ==================================================
 # ENTRYPOINT
-# =========================
+# ==================================================
 if __name__ == "__main__":
     main()
