@@ -185,6 +185,7 @@ def db_fetch_prices_for_day(day_local: date):
         )
         return cur.fetchall()
 
+
 # =========================
 # MAIN – TUNN ORCHESTRATOR
 # =========================
@@ -214,15 +215,8 @@ def main():
             raise
 
 
-# =========================
-# TID & PERIODER
-# =========================
-STHLM = pytz.timezone("Europe/Stockholm")
-UTC   = pytz.UTC
-PERIODS = 96
 
-def today_local():
-    return datetime.now(UTC).astimezone(STHLM).date()
+
 
 # =========================
 # ARRIGO
