@@ -1,9 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-
 import os
 import time
 from datetime import datetime, date, timedelta, time as dtime
@@ -23,24 +20,43 @@ from push_from_db import (
 # =========================
 # TIDSZONER – FACIT
 # =========================
-# electricity_prices.datetime lagras som UTC (naiv DATETIME).
-# Lokalt dygn (Europe/Stockholm) byggs explicit i kod.
-# Se: TODO/016_TIME_CONTRACT/README.md
-
-
+# NOTE:
+# MariaDB stores electricity_prices.datetime as UTC (naive DATETIME).
+# spotpris.py writes UTC timestamps that may span two calendar dates.
+# orchestrator defines a LOCAL Swedish day (Europe/Stockholm)
+# and translates it into a UTC window when querying the database.
+# This is the ONLY place where local ↔ UTC conversion happens.
+# See: TODO/016_TIME_CONTRACT/README.md
 
 UTC   = pytz.UTC
 STHLM = pytz.timezone("Europe/Stockholm")
 
 
 def today_local_date():
+    """
+    Return today's date in local Swedish time (Europe/Stockholm).
+    Used only to decide which local day (today / tomorrow) EXOL refers to.
+    """
     return datetime.now(UTC).astimezone(STHLM).date()
 
+
 def local_day_to_utc_window(local_date: date):
+    """
+    Build the UTC time window corresponding to one full Swedish local day.
+
+    Input:
+        local_date (date): Swedish local calendar date
+
+    Output:
+        (utc_start, utc_end): naive UTC datetimes suitable for MariaDB queries
+
+    This logic MUST remain consistent with the system time contract.
+    """
     local_midnight = STHLM.localize(datetime.combine(local_date, dtime(0, 0)))
     utc_start = local_midnight.astimezone(UTC).replace(tzinfo=None)
     utc_end   = (local_midnight + timedelta(days=1)).astimezone(UTC).replace(tzinfo=None)
     return utc_start, utc_end
+
 
 # =========================
 # ARRIGO / EXOL
@@ -59,9 +75,15 @@ TA_DAY = "Huvudcentral_C1.PI_PUSH_DAY"
 Q_READ  = "query($p:String!){ data(path:$p){ variables{ technicalAddress value } } }"
 M_WRITE = "mutation($v:[VariableKeyValue!]!){ writeData(variables:$v) }"
 
+
 # =========================
-# DB
+# DB / INFRASTRUCTURE
 # =========================
+# - Reads MariaDB credentials from ~/.my.cnf
+# - Provides small helpers for logging and safe int parsing
+# - No business logic or time semantics live here
+# - Safe to reuse across orchestrator versions
+
 DB_NAME = "smart_styrning"
 MYCNF   = "/home/runerova/.my.cnf"
 SLEEP_SEC = 4
@@ -86,6 +108,14 @@ def read_db_config():
         charset="utf8mb4",
         cursorclass=pymysql.cursors.DictCursor,
     )
+
+# =========================
+# ARRIGO API – INFRASTRUCTURE
+# =========================
+# Thin wrappers around Arrigo REST / GraphQL APIs.
+# - No business logic
+# - No time or date semantics
+# - Safe to keep unchanged unless Arrigo API changes
 
 # =========================
 # ARRIGO BAS-HJÄLPARE
@@ -132,6 +162,10 @@ def write_ack(token, pvl_b64, vals, ack_val):
             )
             return
 
+# DB innehåller UTC-datetime som kan vara splittrade över kalenderdygn.
+# Denna funktion hämtar exakt ett lokalt dygn (Europe/Stockholm)
+# genom att bygga ett UTC-fönster ovanpå lagringen.
+
 # =========================
 # DB → PRISER
 # =========================
@@ -155,17 +189,23 @@ def db_fetch_prices_for_day(day_local: date):
 # MAIN – TUNN ORCHESTRATOR
 # =========================
 def main():
+    # Logga in mot Arrigo och hämta initial token
     token = arrigo_login()
     log("🔌 Orchestrator startad")
 
+    # PVL-pekare (kan vara base64 eller klartext)
     pvl_b64 = os.getenv("ARRIGO_PVL_B64") or os.getenv("ARRIGO_PVL_PATH")
     if not pvl_b64:
         raise SystemExit("Saknar ARRIGO_PVL_*")
 
+    # Orchestratorn lever kontinuerligt
     while True:
         try:
+            # Läs alla variabler under PVL från Arrigo
             vals = read_vals(token, pvl_b64)
+
         except requests.HTTPError as e:
+            # Förväntat beteende: token kan löpa ut
             if e.response is not None and e.response.status_code == 401:
                 log("🔑 401 → relogin")
                 token = arrigo_login()
@@ -173,24 +213,6 @@ def main():
                 continue
             raise
 
-        req = to_int#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-
-import os, time
-from datetime import datetime, date, timedelta, time as dtime
-import pytz
-import requests
-import pymysql
-from configparser import ConfigParser
-
-from push_from_db import (
-    fetch_prices,
-    build_rank_and_masks,
-    daily_avg_oat,
-    push_to_arrigo,
-    ensure_b64,
-    build_verify,
-)
 
 # =========================
 # TID & PERIODER
