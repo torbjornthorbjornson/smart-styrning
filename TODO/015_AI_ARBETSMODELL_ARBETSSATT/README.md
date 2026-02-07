@@ -69,3 +69,70 @@ Detta dokument skapades efter flera dagars intensiv felsökning och är ett
 resultat av lärdomar.
 
 Ändras endast medvetet.
+
+
+# 015 – AI-arbetsmodell & arbetssätt
+
+## Var du är just nu (min tolkning)
+
+Du är:
+
+- systemtänkare ✔️  
+- stark på logik, flöden, kontrakt, regler ✔️  
+- jobbar i Visual Studio / VS Code ✔️  
+- har Copilot, men litar inte riktigt på den ✔️  
+- vill ha hjälp nära koden, inte i ett chattflöde ✔️  
+- vill att verktyget:
+  - pekar på fel  
+  - respekterar existerande kod  
+  - inte hittar på nytt  
+
+Det är exakt den profilen där ChatGPT i fri text är sämst lämpad.
+
+---
+
+## Vad som faktiskt funkar bättre (idag)
+
+### 1️⃣ GitHub Copilot – men rätt använt
+
+Copilot har två personligheter:
+
+❌ **Det man hatar**
+- autocomplete som gissar
+- fyller i hela funktioner
+- “hjälpsam men farlig”
+
+EOFras endast medvetet.ment** för både människa och system.
+runerova@raspberrypi:/home $ cat > ~/smartweb/TODO/015_AI_ARBETSMODELL/README.md <<'EOF'
+# 015 – AI-arbetsmodell & arbetssätt
+
+## Var du är just nu (min tolkning)
+
+Du är:
+
+- systemtänkare ✔️  
+- stark på logik, flöden, kontrakt, regler ✔️  
+- jobbar i Visual Studio / VS Code ✔️  
+- har Copilot, men litar inte riktigt på den ✔️  
+- vill ha hjälp nära koden, inte i ett chattflöde ✔️  
+- vill att verktyget:
+  - pekar på fel  
+  - respekterar existerande kod  
+  - inte hittar på nytt  
+
+Det är exakt den profilen där ChatGPT i fri text är sämst lämpad.
+
+---
+
+## Vad som faktiskt funkar bättre (idag)
+
+### 1️⃣ GitHub Copilot – men rätt använt
+
+Copilot har två personligheter:
+
+❌ **Det man hatar**
+- autocomplete som gissar
+- fyller i hela funktioner
+- “hjälpsam men farlig”
+
+EOFras endast medvetet.ment** för både människa och system.
