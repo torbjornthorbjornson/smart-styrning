@@ -1,9 +1,13 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
 import os
 import time
 from datetime import datetime, date, timedelta, time as dtime
+
 import pytz
 import pymysql
 import requests
@@ -19,8 +23,15 @@ from push_from_db import (
 # =========================
 # TIDSZONER – FACIT
 # =========================
-STHLM = pytz.timezone("Europe/Stockholm")
+# electricity_prices.datetime lagras som UTC (naiv DATETIME).
+# Lokalt dygn (Europe/Stockholm) byggs explicit i kod.
+# Se: TODO/016_TIME_CONTRACT/README.md
+
+
+
 UTC   = pytz.UTC
+STHLM = pytz.timezone("Europe/Stockholm")
+
 
 def today_local_date():
     return datetime.now(UTC).astimezone(STHLM).date()
