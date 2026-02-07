@@ -11,9 +11,11 @@ import requests
 from configparser import ConfigParser
 
 from push_from_db import (
+    fetch_prices,
     build_rank_and_masks,
     daily_avg_oat,
     push_to_arrigo,
+    ensure_b64,
     build_verify,
 )
 
@@ -66,7 +68,12 @@ GRAPHQL_URL = os.getenv("ARRIGO_GRAPHQL_URL")
 USER        = os.getenv("ARRIGO_USER") or os.getenv("ARRIGO_USERNAME")
 PASS        = os.getenv("ARRIGO_PASS") or os.getenv("ARRIGO_PASSWORD")
 
-VERIFY = build_verify()
+PVL_RAW = os.getenv("ARRIGO_PVL_B64") or os.getenv("ARRIGO_PVL_PATH")
+if not PVL_RAW:
+    raise SystemExit("Saknar ARRIGO_PVL_B64 / ARRIGO_PVL_PATH")
+
+PVL_B64 = ensure_b64(PVL_RAW)
+VERIFY  = build_verify()
 
 TA_REQ = "Huvudcentral_C1.PI_PUSH_REQ"
 TA_ACK = "Huvudcentral_C1.PI_PUSH_ACK"
@@ -184,7 +191,7 @@ def db_fetch_prices_for_day(day_local: date):
             (utc_start, utc_end),
         )
         return cur.fetchall()
-
+    
 
 # =========================
 # MAIN – TUNN ORCHESTRATOR
@@ -217,31 +224,6 @@ def main():
 
 
 
-
-# =========================
-# ARRIGO
-# =========================
-LOGIN_URL   = os.getenv("ARRIGO_LOGIN_URL")
-GRAPHQL_URL = os.getenv("ARRIGO_GRAPHQL_URL")
-USER        = os.getenv("ARRIGO_USER") or os.getenv("ARRIGO_USERNAME")
-PASS        = os.getenv("ARRIGO_PASS") or os.getenv("ARRIGO_PASSWORD")
-
-PVL_RAW = os.getenv("ARRIGO_PVL_B64") or os.getenv("ARRIGO_PVL_PATH")
-if not PVL_RAW:
-    raise SystemExit("Saknar ARRIGO_PVL_B64 / ARRIGO_PVL_PATH")
-
-PVL_B64 = ensure_b64(PVL_RAW)
-VERIFY  = build_verify()
-
-TA_REQ = "Huvudcentral_C1.PI_PUSH_REQ"
-TA_ACK = "Huvudcentral_C1.PI_PUSH_ACK"
-TA_DAY = "Huvudcentral_C1.PI_PUSH_DAY"
-
-Q_READ  = "query($p:String!){ data(path:$p){ variables{ technicalAddress value } } }"
-M_WRITE = "mutation($v:[VariableKeyValue!]!){ writeData(variables:$v) }"
-
-SLEEP_SEC = 3
-
 # =========================
 # LOG
 # =========================
@@ -254,49 +236,6 @@ def to_int(v):
     except Exception:
         return 0
 
-# =========================
-# ARRIGO HELPERS
-# =========================
-def arrigo_login():
-    r = requests.post(
-        LOGIN_URL,
-        json={"username": USER, "password": PASS},
-        timeout=20,
-        verify=VERIFY,
-    )
-    r.raise_for_status()
-    tok = r.json().get("authToken")
-    if not tok:
-        raise SystemExit("Login utan token")
-    return tok
-
-def gql(token, query, variables):
-    r = requests.post(
-        GRAPHQL_URL,
-        headers={"Authorization": f"Bearer {token}"},
-        json={"query": query, "variables": variables},
-        timeout=30,
-        verify=VERIFY,
-    )
-    r.raise_for_status()
-    j = r.json()
-    if "errors" in j:
-        raise RuntimeError(j["errors"])
-    return j["data"]
-
-def read_vals_and_idx(token):
-    data = gql(token, Q_READ, {"p": PVL_B64})
-    vars_list = data["data"]["variables"]
-    vals, idx = {}, {}
-    for i, v in enumerate(vars_list):
-        ta = v["technicalAddress"]
-        vals[ta] = v.get("value")
-        idx[ta] = i
-    return vals, idx
-
-def write_ta(token, idx, ta, value):
-    key = f"{PVL_B64}:{idx[ta]}"
-    gql(token, M_WRITE, {"v": [{"key": key, "value": str(value)}]})
 
 # =========================
 # MAIN LOOP
