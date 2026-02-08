@@ -76,7 +76,7 @@ def arrigo_login(login_url, user, password, verify):
     if not tok: raise SystemExit("Inget authToken i login-svar")
     return tok
 
-def gql(url, token, query, variables, verify):
+def gql(url, token, query, variables):
     r = requests.post(url, headers={"Authorization": f"Bearer {token}"},
         json={"query": query, "variables": variables}, timeout=30, verify=verify)
     r.raise_for_status()
@@ -170,17 +170,14 @@ def daily_avg_oat(day_local: date):
     return round(float(row["avgtemp"]),1) if row and row["avgtemp"] else None
 
 # ---- Push ----
-def push_to_arrigo(rank, masks, day_local, oat_yday, oat_tmr):
-    login_url   = getenv_any(["ARRIGO_LOGIN_URL"], True)
-    graphql_url = getenv_any(["ARRIGO_GRAPHQL_URL"], True)
-    user        = getenv_any(["ARRIGO_USER","ARRIGO_USERNAME"], True)
-    password    = getenv_any(["ARRIGO_PASS","ARRIGO_PASSWORD"], True)
-    pvl_raw     = getenv_any(["ARRIGO_PVL_B64","ARRIGO_PVL_PATH"], True)
-    pvl_b64     = ensure_b64(pvl_raw)
-    verify      = build_verify()
+def push_to_arrigo(gql, token, pvl_b64, rank, masks, day_local, oat_yday, oat_tmr):
 
-    token = arrigo_login(login_url,user,password,verify)
-    data = gql(graphql_url,token,'query($path:String!){ data(path:$path){ variables{ technicalAddress } } }',{"path":pvl_b64},verify)
+    
+    data = gql(
+    "query($path:String!){ data(path:$path){ variables{ technicalAddress } } }",
+    {"path": pvl_b64},
+)
+
     vars_list = (data.get("data") or {}).get("variables") or []
 
     idx_rank, idx_stamp = {}, None
@@ -202,7 +199,7 @@ def push_to_arrigo(rank, masks, day_local, oat_yday, oat_tmr):
         if ta.endswith(".EX_MASK_H"): idx_masks["EX_MASK_H"]=i; continue
 
     if idx_price_ok is not None:
-        gql(graphql_url,token,"mutation($v:[VariableKeyValue!]!){writeData(variables:$v)}",{"v":[{"key":f"{pvl_b64}:{idx_price_ok}","value":"0"}]},verify)
+        gql(graphql_url,token,"mutation($v:[VariableKeyValue!]!){writeData(variables:$v)}",{"v":[{"key":f"{pvl_b64}:{idx_price_ok}","value":"0"}]})
         log("🔒 PRICE_OK=0")
 
     writes=[]
@@ -220,11 +217,11 @@ def push_to_arrigo(rank, masks, day_local, oat_yday, oat_tmr):
             writes.append({"key":f"{pvl_b64}:{idx_masks[k]}","value":str(v)})
     log(f"🧩 Masks: {masks}")
 
-    gql(graphql_url,token,"mutation($v:[VariableKeyValue!]!){writeData(variables:$v)}",{"v":writes},verify)
+    gql(graphql_url,token,"mutation($v:[VariableKeyValue!]!){writeData(variables:$v)}",{"v":writes})
     log(f"✅ Skrev {len(writes)} variabler")
 
     if idx_price_ok is not None:
-        gql(graphql_url,token,"mutation($v:[VariableKeyValue!]!){writeData(variables:$v)}",{"v":[{"key":f"{pvl_b64}:{idx_price_ok}","value":"1"}]},verify)
+        gql(graphql_url,token,"mutation($v:[VariableKeyValue!]!){writeData(variables:$v)}",{"v":[{"key":f"{pvl_b64}:{idx_price_ok}","value":"1"}]})
         log("🔓 PRICE_OK=1")
 
 # ---- Main ----
