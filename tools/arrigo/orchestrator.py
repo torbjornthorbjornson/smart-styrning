@@ -10,7 +10,7 @@ import requests
 from configparser import ConfigParser
 
 from push_from_db import (
-    build_rank_and_masks,
+    rank, masks = build_rank_and_masks(rows)
     daily_avg_oat,
     push_to_arrigo,   # OBS: ska bli token-lös i nästa steg
 )
@@ -200,24 +200,24 @@ def main():
             rows = db_fetch_prices_for_day(target_day)
             log(f"📊 DB-perioder: {len(rows)}")
 
-            rank, ec_masks, ex_masks, slot_price = build_rank_and_masks(rows)
+            push_to_arrigo(gql, token, PVL_B64, rank, masks, target_day, oat_yday, oat_tmr)
+
 
             oat_yday = daily_avg_oat(target_day - timedelta(days=1))
             oat_tmr  = daily_avg_oat(target_day + timedelta(days=1))
 
             log("📤 Pushar till Arrigo")
             push_to_arrigo(
-            gql,          # ← korrekt GraphQL-funktion
-            token,        # ← orchestrator äger token
-            PVL_B64,      # ← korrekt variabel
-            rank,
-            ec_masks,
-            ex_masks,
-            target_day,   # ← rätt variabel
-            oat_yday,
-            oat_tmr,
-            slot_price,
-            )
+                gql,      # GraphQL-funktionen
+                token,    # giltig Arrigo-token
+                PVL_B64,  # base64-kodad sökväg till PVL
+                rank,
+                masks,    # dictionary med både EC- och EX-masker
+                target_day,
+                oat_yday,
+                oat_tmr,
+)
+
 
 
             write_ack(token, idx, 1)
