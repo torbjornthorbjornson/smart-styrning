@@ -236,15 +236,7 @@ def push_to_arrigo(gql, token, pvl_b64, rank, masks, day_local, oat_yday, oat_tm
 
         log("🔓 PRICE_OK=1")
 
-# ---- Main ----
-def main():
-    which=os.getenv("RANK_WHEN","today")
-    rows,day_local=fetch_prices(which)
-    rank,masks=build_rank_and_masks(rows)
-    today=date.today()
-    oat_yday=daily_avg_oat(today-timedelta(days=1))
-    oat_tmr =daily_avg_oat(today+timedelta(days=1))
-    push_to_arrigo(rank,masks,day_local,oat_yday,oat_tmr)
+
 
 # OBS: denna modul körs inte fristående längre
 # push_to_arrigo() anropas av orchestrator
