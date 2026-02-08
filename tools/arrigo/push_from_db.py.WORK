@@ -78,7 +78,7 @@ def arrigo_login(login_url, user, password, verify):
 
 def gql(url, token, query, variables):
     r = requests.post(url, headers={"Authorization": f"Bearer {token}"},
-        json={"query": query, "variables": variables}, timeout=30, verify=verify)
+        json={"query": query, "variables": variables}, timeout=30,)
     r.raise_for_status()
     j = r.json()
     if "errors" in j:
@@ -199,7 +199,11 @@ def push_to_arrigo(gql, token, pvl_b64, rank, masks, day_local, oat_yday, oat_tm
         if ta.endswith(".EX_MASK_H"): idx_masks["EX_MASK_H"]=i; continue
 
     if idx_price_ok is not None:
-        gql(graphql_url,token,"mutation($v:[VariableKeyValue!]!){writeData(variables:$v)}",{"v":[{"key":f"{pvl_b64}:{idx_price_ok}","value":"0"}]})
+        gql(
+            "mutation($v:[VariableKeyValue!]!){writeData(variables:$v)}",
+            {"v":[{"key":f"{pvl_b64}:{idx_price_ok}","value":"0"}]}
+  )
+
         log("🔒 PRICE_OK=0")
 
     writes=[]
@@ -217,11 +221,19 @@ def push_to_arrigo(gql, token, pvl_b64, rank, masks, day_local, oat_yday, oat_tm
             writes.append({"key":f"{pvl_b64}:{idx_masks[k]}","value":str(v)})
     log(f"🧩 Masks: {masks}")
 
-    gql(graphql_url,token,"mutation($v:[VariableKeyValue!]!){writeData(variables:$v)}",{"v":writes})
+    gql(
+        "mutation($v:[VariableKeyValue!]!){writeData(variables:$v)}",
+        {"v":writes}
+   )
+
     log(f"✅ Skrev {len(writes)} variabler")
 
     if idx_price_ok is not None:
-        gql(graphql_url,token,"mutation($v:[VariableKeyValue!]!){writeData(variables:$v)}",{"v":[{"key":f"{pvl_b64}:{idx_price_ok}","value":"1"}]})
+        gql(
+        "mutation($v:[VariableKeyValue!]!){writeData(variables:$v)}",
+        {"v":[{"key":f"{pvl_b64}:{idx_price_ok}","value":"1"}]}
+        )
+
         log("🔓 PRICE_OK=1")
 
 # ---- Main ----
@@ -234,7 +246,5 @@ def main():
     oat_tmr =daily_avg_oat(today+timedelta(days=1))
     push_to_arrigo(rank,masks,day_local,oat_yday,oat_tmr)
 
-if __name__=="__main__":
-    try: main()
-    except Exception as e:
-        log(f"💥 Fel: {e}"); raise
+# OBS: denna modul körs inte fristående längre
+# push_to_arrigo() anropas av orchestrator
