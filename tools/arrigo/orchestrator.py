@@ -7,13 +7,15 @@ from datetime import datetime, date, timedelta, time as dtime
 import pytz
 import pymysql
 import requests
+import base64
 from configparser import ConfigParser
 
 from push_from_db import (
-    rank, masks = build_rank_and_masks(rows)
+    build_rank_and_masks,
     daily_avg_oat,
-    push_to_arrigo,   # OBS: ska bli token-lös i nästa steg
+    push_to_arrigo,
 )
+
 
 # ==================================================
 # TIDSZONER – FACIT
@@ -56,7 +58,13 @@ PVL_RAW = os.getenv("ARRIGO_PVL_B64") or os.getenv("ARRIGO_PVL_PATH")
 if not PVL_RAW:
     raise SystemExit("Saknar ARRIGO_PVL_B64 / ARRIGO_PVL_PATH")
 
-PVL_B64 = PVL_RAW
+# säkerställ base64 (Arrigo kräver detta)
+try:
+    base64.b64decode(PVL_RAW)
+    PVL_B64 = PVL_RAW
+except Exception:
+    PVL_B64 = base64.b64encode(PVL_RAW.encode("utf-8")).decode("ascii")
+
 
 
 TA_REQ = "Huvudcentral_C1.PI_PUSH_REQ"
@@ -80,10 +88,13 @@ def log(msg):
 
 
 def to_int(x, default=0):
+    if isinstance(x, bool):
+        return 1 if x else 0
     try:
         return int(float(x))
     except Exception:
         return default
+
 
 
 def read_db_config():
@@ -175,6 +186,8 @@ def main():
     while True:
         try:
             vals, idx = read_vals_and_idx(token)
+            log(f"RAW PI_PUSH_REQ = {vals.get(TA_REQ)}")
+
         except requests.HTTPError as e:
             if e.response is not None and e.response.status_code == 401:
                 log("🔑 401 → relogin")
@@ -200,9 +213,9 @@ def main():
             rows = db_fetch_prices_for_day(target_day)
             log(f"📊 DB-perioder: {len(rows)}")
 
-            push_to_arrigo(gql, token, PVL_B64, rank, masks, target_day, oat_yday, oat_tmr)
+           
 
-
+            rank, masks = build_rank_and_masks(rows)
             oat_yday = daily_avg_oat(target_day - timedelta(days=1))
             oat_tmr  = daily_avg_oat(target_day + timedelta(days=1))
 
