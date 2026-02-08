@@ -169,6 +169,11 @@ def push_to_arrigo(
     )
 
     vars_list = (data.get("data") or {}).get("variables") or []
+        
+    print("=== VARS_LIST (first 30) ===")
+    for i, v in enumerate(vars_list[:30]):
+        print(f"{i:02d}  {v.get('technicalAddress')}")
+    print("=== END VARS_LIST ===")
 
     idx = {}
     for i, v in enumerate(vars_list):
