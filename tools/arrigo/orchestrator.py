@@ -182,11 +182,16 @@ def db_fetch_prices_for_day(day_local: date):
 def main():
     token = arrigo_login()
     log("🔌 Orchestrator startad")
+    log("🚨 ORCHESTRATOR VERSION 2026-02-08 20:45 🚨")
 
     while True:
         try:
             vals, idx = read_vals_and_idx(token)
             log(f"RAW PI_PUSH_REQ = {vals.get(TA_REQ)}")
+            if TA_REQ not in vals:
+                 log(f"❌ TA_REQ saknas! keys={list(vals.keys())[:10]} ...")
+            else:
+                 log(f"✅ TA_REQ hittad, raw={vals[TA_REQ]!r}, type={type(vals[TA_REQ])}")
 
         except requests.HTTPError as e:
             if e.response is not None and e.response.status_code == 401:
