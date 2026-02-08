@@ -185,6 +185,10 @@ def main():
     log("🔌 Orchestrator startad")
     log("🚨 ORCHESTRATOR VERSION 2026-02-08 20:45 🚨")
 
+    def gql_wrapper(query, variables):
+        # token kommer från omgivande scope
+        return gql(token, query, variables)
+
     while True:
         try:
             vals, idx = read_vals_and_idx(token)
@@ -227,15 +231,16 @@ def main():
 
             log("📤 Pushar till Arrigo")
             push_to_arrigo(
-                gql,      # GraphQL-funktionen
-                token,    # giltig Arrigo-token
-                PVL_B64,  # base64-kodad sökväg till PVL
-                rank,
-                masks,    # dictionary med både EC- och EX-masker
-                target_day,
-                oat_yday,
-                oat_tmr,
-)
+            gql_wrapper,  # wrapper med bundet token
+            token,
+            PVL_B64,
+            rank,
+            masks,
+            target_day,
+            oat_yday,
+            oat_tmr,
+        )
+
 
 
 
