@@ -140,6 +140,7 @@ def gql(token, query, variables):
     return j["data"]
 
 
+
 def read_vals_and_idx(token):
     data = gql(token, Q_READ, {"p": PVL_B64})
     vars_list = data["data"]["variables"]
