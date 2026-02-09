@@ -1,0 +1,10 @@
+[Unit]
+Description=Smartweb runtime verification
+After=network.target
+
+[Service]
+Type=oneshot
+User=runerova
+WorkingDirectory=/home/runerova/smartweb
+EnvironmentFile=-/home/runerova/.smartweb.env
+ExecStart=/home/runerova/smartweb/scripts/verify_runtime_notify.sh

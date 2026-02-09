@@ -25,6 +25,14 @@
 - Skriv ner beslut i en tabell (fil → status → motivering).
 - Flytta/arkivera i små steg och verifiera att `smartweb` fortfarande startar.
 
+### Verifiera att allt fortfarande fungerar (smoke test)
+
+- Kör: `smartweb/scripts/verify_runtime.sh`
+- Den testar:
+  - Python import av `app` (snabbt fel om något gick sönder i imports)
+  - HTTP GET mot `/`, `/styrning`, `/elprisvader` och `/exo` (200 eller 401 om Basic Auth är på)
+  - DB-sanity: `SELECT 1` via `smartweb_backend.db.connection` (använder `/home/runerova/.my.cnf`)
+
 ## Nästa steg
 
 - Ta en andra pass: gå route-för-route och markera tabeller/procedurer/externa beroenden.

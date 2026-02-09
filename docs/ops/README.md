@@ -30,3 +30,34 @@ sudo systemctl restart arrigo-orchestrator
 - `/home/runerova/.arrigo.env` (orchestrator/tools)
 
 Regel: env-filer innehåller inte stora dokumentationstexter; de refererar till docs istället.
+
+## Verifiering + varningar
+
+- Manuell smoke test: `smartweb/scripts/verify_runtime.sh`
+- Med varning: `smartweb/scripts/verify_runtime_notify.sh`
+  - Logg: `smartweb/logs/verify_runtime.log`
+  - Syslog: `logger` (syns i `journalctl`)
+  - Home Assistant (om konfig finns): notis vid FAIL
+
+### Home Assistant – så får du varningen
+
+1) I Home Assistant UI: Profil → Security → skapa en Long-Lived Access Token.
+2) Lägg i `/home/runerova/.smartweb.env`:
+   - `SMARTWEB_HA_URL=http://<din-ha>:8123`
+   - `SMARTWEB_HA_TOKEN=<din_token>`
+3) (Valfritt för push till mobil) sätt `SMARTWEB_HA_NOTIFY_SERVICE=<service>`.
+
+### Autokörning (systemd timer)
+
+Repo-mallar: `smartweb/systemd/verify-runtime.service` och `smartweb/systemd/verify-runtime.timer`.
+Install:
+```bash
+sudo cp /home/runerova/smartweb/systemd/verify-runtime.* /etc/systemd/system/
+sudo systemctl daemon-reload
+sudo systemctl enable --now verify-runtime.timer
+```
+
+## Node-RED (nästa steg)
+
+Node-RED är superbra för larm/automatik när du redan kör Home Assistant.
+Bra första flow: “Inject var 15:e minut → HTTP request till `http://127.0.0.1:8000/` → om fel → HA notify”.
