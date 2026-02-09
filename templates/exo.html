@@ -108,6 +108,15 @@
 		<strong>ARRIGO_PVL_PATH/ARRIGO_PVL_B64:</strong>
 		{% if arrigo_has_pvl %}<span style="color:#0a7;">konfigurerad</span>{% else %}<span style="color:#c40;">saknas</span>{% endif %}
 		<br>
+		<strong>ARRIGO_TOKEN_CACHE_FILE:</strong>
+		{% if arrigo_token_cache_exists %}
+			<span style="color:#0a7;">finns</span>
+		{% else %}
+			<span style="color:#c40;">saknas</span>
+		{% endif %}
+		<br>
+		<small style="color:#555;">{{ arrigo_token_cache_file }}</small>
+		<br>
 		<strong>PVL (decoded):</strong>
 		<code>{{ arrigo_pvl_decoded or '-' }}</code>
 	</p>

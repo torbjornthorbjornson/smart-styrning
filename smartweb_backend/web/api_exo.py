@@ -39,6 +39,8 @@ def exo_console():
 	arrigo_has_user = bool(arrigo_cfg.username)
 	arrigo_has_pass = bool(arrigo_cfg.password)
 	arrigo_has_pvl = bool(arrigo_cfg.pvl_b64)
+	arrigo_token_cache_file = arrigo_cfg.token_cache_file
+	arrigo_token_cache_exists = arrigo_cfg.token_cache_exists
 
 	arrigo_filter = (request.values.get("arrigo_filter") or "").strip()
 	arrigo_limit = int((request.values.get("arrigo_limit") or "200").strip() or 200)
@@ -105,6 +107,8 @@ def exo_console():
 					arrigo_has_user=arrigo_has_user,
 					arrigo_has_pass=arrigo_has_pass,
 					arrigo_has_pvl=arrigo_has_pvl,
+					arrigo_token_cache_file=arrigo_token_cache_file,
+					arrigo_token_cache_exists=arrigo_token_cache_exists,
 					arrigo_pvl_decoded=arrigo_cfg.pvl_decoded or "",
 					arrigo_filter=arrigo_filter,
 					arrigo_limit=arrigo_limit,
@@ -184,6 +188,8 @@ def exo_console():
 		arrigo_has_user=arrigo_has_user,
 		arrigo_has_pass=arrigo_has_pass,
 		arrigo_has_pvl=arrigo_has_pvl,
+		arrigo_token_cache_file=arrigo_token_cache_file,
+		arrigo_token_cache_exists=arrigo_token_cache_exists,
 		arrigo_pvl_decoded=arrigo_cfg.pvl_decoded or "",
 		arrigo_filter=arrigo_filter,
 		arrigo_limit=arrigo_limit,
