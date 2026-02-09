@@ -19,6 +19,23 @@
 		{% endif %}
 	</p>
 
+	<div style="margin: 10px 0; padding: 10px; border: 1px solid #eee; border-radius: 8px; background: #fafafa;">
+		<strong>Val:</strong>
+		site=<code>{{ selected_site or '-' }}</code>,
+		dag=<code>{{ day_str }}</code>,
+		build=<code>{{ '1' if build else '0' }}</code>,
+		N=<code>{{ n_arg or '-' }}</code>,
+		cheap_pct=<code>{{ cheap_arg or '-' }}</code>,
+		exp_pct=<code>{{ exp_arg or '-' }}</code>
+		<br>
+		<small>
+			Tips: börja med <strong>Preview</strong> eller <strong>Dry-run</strong>. <strong>Push</strong> kräver att du skriver <code>PUSH</code>.
+			{% if not exo_url %}
+				Push/Dry-run behöver att <code>EXO_URL</code> sätts i <code>/home/runerova/.smartweb.env</code> och att <code>smartweb</code> startas om.
+			{% endif %}
+		</small>
+	</div>
+
 	{% if status_msg %}
 		<p style="color:#0a7;"><strong>✅ {{ status_msg }}</strong></p>
 	{% endif %}

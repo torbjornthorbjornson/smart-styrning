@@ -47,6 +47,23 @@ def exo_console():
 	error_msg = ""
 
 	if request.method == "POST" and action:
+		if not selected_site:
+			error_msg = "Ingen site vald (och kunde inte läsa sites från DB)."
+			return render_template(
+				"exo.html",
+				site_codes=site_codes,
+				selected_site=selected_site,
+				day_str=day_str,
+				n_arg=n_arg or "",
+				cheap_arg=cheap_arg or "",
+				exp_arg=exp_arg or "",
+				build=build,
+				exo_url=exo_url,
+				has_token=has_token,
+				status_msg=status_msg,
+				error_msg=error_msg,
+				result_json=result_json,
+			)
 		try:
 			day_local = exo_service.resolve_day_local(day_str)
 			params = exo_service.build_params(selected_site, day_local, n_arg, cheap_arg, exp_arg)
