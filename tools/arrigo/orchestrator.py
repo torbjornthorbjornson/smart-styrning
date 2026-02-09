@@ -81,6 +81,8 @@ REF_PREFIX = (os.getenv("ARRIGO_REF_PREFIX") or "Huvudcentral_C1").strip()
 TA_REQ = f"{REF_PREFIX}.PI_PUSH_REQ"
 TA_ACK = f"{REF_PREFIX}.PI_PUSH_ACK"
 TA_DAY = f"{REF_PREFIX}.PI_PUSH_DAY"
+TA_TD_READY = f"{REF_PREFIX}.TD_READY"
+TA_TM_READY = f"{REF_PREFIX}.TM_READY"
 
 Q_READ  = "query($p:String!){ data(path:$p){ variables{ technicalAddress value } } }"
 M_WRITE = "mutation($v:[VariableKeyValue!]!){ writeData(variables:$v) }"
@@ -167,6 +169,14 @@ def read_vals_and_idx(token):
 def write_ack(token, idx, value):
     key = f"{PVL_B64}:{idx[TA_ACK]}"
     gql(token, M_WRITE, {"v": [{"key": key, "value": str(value)}]})
+
+
+def write_var(token, idx, technical_address: str, value: str):
+    if technical_address not in idx:
+        return False
+    key = f"{PVL_B64}:{idx[technical_address]}"
+    gql(token, M_WRITE, {"v": [{"key": key, "value": str(value)}]})
+    return True
 
 
 def diag_write_var(token, idx, technical_address: str, value: str):
@@ -349,6 +359,20 @@ def main():
                     slot_price,
                 )
                 write_ack(token, idx, 1)
+
+                # Valfritt men ofta nödvändigt: tala om för EXOL att data för dagen nu är redo.
+                # Detta driver request-controllern (PI_PUSH_REQ) via TD_READY/TM_READY.
+                if os.getenv("ARRIGO_SET_READY", "1") == "1":
+                    try:
+                        if day == 0:
+                            if write_var(token, idx, TA_TD_READY, "1"):
+                                log("✅ TD_READY satt")
+                        elif day == 1:
+                            if write_var(token, idx, TA_TM_READY, "1"):
+                                log("✅ TM_READY satt")
+                    except Exception as e:
+                        log(f"⚠️ Kunde inte sätta READY-flagga: {e.__class__.__name__}: {e}")
+
                 last_handled[request_key] = time.time()
                 log("✅ PI_PUSH_ACK satt")
             except requests.exceptions.RequestException as e:
