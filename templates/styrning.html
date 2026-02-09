@@ -2,6 +2,12 @@
 {% block content %}
 <h2>Styrning – Billigaste perioderna för drift</h2>
 
+<div style="border:1px solid #e5e7eb; background:#fff; padding:12px 14px; border-radius:10px; margin: 10px 0 16px;">
+  <strong>EXO:</strong> Vill du bygga/preview/pusha payload till EXO?
+  <a href="/exo" style="margin-left:8px;">Öppna EXO-kontrollpanelen</a>
+  <span style="color:#666; margin-left:10px;">(manuell, skickar bara vid “Push” + bekräftelse)</span>
+</div>
+
 <form method="get" action="/styrning" style="margin-bottom: 1em;">
   <label for="datum">Välj datum:</label>
   <input type="date" id="datum" name="datum" value="{{ selected_date }}">
