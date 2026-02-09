@@ -170,49 +170,70 @@ def push_to_arrigo(
 
     vars_list = (data.get("data") or {}).get("variables") or []
 
-    # Robust mappning: tillåt både full TA och sista segmentet (utan prefix).
-    idx = {}
+    # Robust mappning:
+    # - full TA -> index
+    # - short TA (sista segmentet) -> *alla* index (PVL kan innehålla dubletter)
+    idx_full = {}
+    idx_short = {}
     for i, v in enumerate(vars_list):
         ta_full = (v.get("technicalAddress") or "").strip()
         if not ta_full:
             continue
-        idx[ta_full] = i
+        idx_full[ta_full] = i
         ta_short = ta_full.split(".")[-1]
-        idx.setdefault(ta_short, i)
+        idx_short.setdefault(ta_short, []).append(i)
+
+    def add_write(ta: str, value: str):
+        """Lägg till write för både exakt TA och short TA.
+
+        Om PVL har dubletter för samma short TA, skriv till alla.
+        """
+        indices = set()
+        if ta in idx_full:
+            indices.add(idx_full[ta])
+        indices.update(idx_short.get(ta, []))
+        for i in sorted(indices):
+            writes.append({"key": f"{pvl_b64}:{i}", "value": value})
 
     writes = []
 
     for i in range(PERIODS):
-        ta = f"PRICE_RANK({i})"
-        if ta in idx:
-            writes.append({"key": f"{pvl_b64}:{idx[ta]}", "value": str(rank[i])})
+        add_write(f"PRICE_RANK({i})", str(rank[i]))
 
+    # Vissa PVL:er saknar PRICE_VAL helt (enbart rank + mask + ok/stamp används).
     for i, price in slot_price:
         ta = f"PRICE_VAL({i})"
-        if ta in idx:
-            writes.append({"key": f"{pvl_b64}:{idx[ta]}", "value": f"{price:.2f}"})
+        if ta in idx_short or ta in idx_full:
+            add_write(ta, f"{price:.2f}")
 
-    if "PRICE_STAMP" in idx:
-        writes.append({"key": f"{pvl_b64}:{idx['PRICE_STAMP']}", "value": day_local.strftime("%Y%m%d")})
+    if "PRICE_STAMP" in idx_short or "PRICE_STAMP" in idx_full:
+        add_write("PRICE_STAMP", day_local.strftime("%Y%m%d"))
 
-    if oat_yday is not None and "OAT_mean_yday" in idx:
-        writes.append({"key": f"{pvl_b64}:{idx['OAT_mean_yday']}", "value": str(oat_yday)})
+    # EXOL använder ofta PRICE_OK som kvittens på att datan är "giltig".
+    if "PRICE_OK" in idx_short or "PRICE_OK" in idx_full:
+        add_write("PRICE_OK", "1")
 
-    if oat_tmr is not None and "OAT_mean_tomorrow" in idx:
-        writes.append({"key": f"{pvl_b64}:{idx['OAT_mean_tomorrow']}", "value": str(oat_tmr)})
+    if oat_yday is not None and ("OAT_mean_yday" in idx_short or "OAT_mean_yday" in idx_full):
+        add_write("OAT_mean_yday", str(oat_yday))
+
+    if oat_tmr is not None and ("OAT_mean_tomorrow" in idx_short or "OAT_mean_tomorrow" in idx_full):
+        add_write("OAT_mean_tomorrow", str(oat_tmr))
 
     for i, val in enumerate(ec_masks, start=1):
         ta = f"EC_MASK32_{i}"
-        if ta in idx:
-            writes.append({"key": f"{pvl_b64}:{idx[ta]}", "value": str(val)})
+        if ta in idx_short or ta in idx_full:
+            add_write(ta, str(val))
 
     for i, val in enumerate(ex_masks, start=1):
         ta = f"EX_MASK32_{i}"
-        if ta in idx:
-            writes.append({"key": f"{pvl_b64}:{idx[ta]}", "value": str(val)})
+        if ta in idx_short or ta in idx_full:
+            add_write(ta, str(val))
 
     gql_fn(
         token,
         "mutation($v:[VariableKeyValue!]!){ writeData(variables:$v) }",
         {"v": writes},
     )
+
+    if os.getenv("ARRIGO_DEBUG_PUSH", "0") == "1":
+        print(f"push_to_arrigo: wrote {len(writes)} variables", flush=True)

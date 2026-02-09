@@ -66,10 +66,21 @@ except Exception:
     PVL_B64 = base64.b64encode(PVL_RAW.encode("utf-8")).decode("ascii")
 
 
+def debug_log_pvl():
+    """Loggar PVL (både raw och base64-decoded) för att säkerställa att vi läser rätt objekt i Arrigo."""
+    if os.getenv("ARRIGO_DEBUG_TAS", "0") != "1":
+        return
+    try:
+        decoded = base64.b64decode(PVL_B64).decode("utf-8", errors="replace")
+    except Exception:
+        decoded = "<kunde inte base64-dekoda PVL_B64>"
+    log(f"🧾 PVL_RAW={PVL_RAW!r}")
+    log(f"🧾 PVL_B64(decoded)={decoded!r}")
 
-TA_REQ = "Huvudcentral_C1.PI_PUSH_REQ"
-TA_ACK = "Huvudcentral_C1.PI_PUSH_ACK"
-TA_DAY = "Huvudcentral_C1.PI_PUSH_DAY"
+REF_PREFIX = (os.getenv("ARRIGO_REF_PREFIX") or "Huvudcentral_C1").strip()
+TA_REQ = f"{REF_PREFIX}.PI_PUSH_REQ"
+TA_ACK = f"{REF_PREFIX}.PI_PUSH_ACK"
+TA_DAY = f"{REF_PREFIX}.PI_PUSH_DAY"
 
 Q_READ  = "query($p:String!){ data(path:$p){ variables{ technicalAddress value } } }"
 M_WRITE = "mutation($v:[VariableKeyValue!]!){ writeData(variables:$v) }"
@@ -80,7 +91,8 @@ M_WRITE = "mutation($v:[VariableKeyValue!]!){ writeData(variables:$v) }"
 # ==================================================
 DB_NAME   = "smart_styrning"
 MYCNF     = "/home/runerova/.my.cnf"
-SLEEP_SEC = 4
+SLEEP_SEC = float(os.getenv("ARRIGO_SLEEP_SEC", "4"))
+REPUSH_COOLDOWN_SEC = float(os.getenv("ARRIGO_REPUSH_COOLDOWN_SEC", "120"))
 
 
 def log(msg):
@@ -157,6 +169,16 @@ def write_ack(token, idx, value):
     gql(token, M_WRITE, {"v": [{"key": key, "value": str(value)}]})
 
 
+def diag_write_var(token, idx, technical_address: str, value: str):
+    """Diagnostisk engångsskrivning för att verifiera att vi kan påverka en signal."""
+    if technical_address not in idx:
+        log(f"🧪 DIAG: TA saknas i idx: {technical_address}")
+        return
+    key = f"{PVL_B64}:{idx[technical_address]}"
+    gql(token, M_WRITE, {"v": [{"key": key, "value": value}]})
+    log(f"🧪 DIAG: wrote {technical_address} = {value!r}")
+
+
 # ==================================================
 # DB → PRISER
 # ==================================================
@@ -177,6 +199,26 @@ def db_fetch_prices_for_day(day_local: date):
         return cur.fetchall()
 
 
+def db_debug_prices_table():
+    """Returnerar enkel status för electricity_prices (min/max/count).
+
+    Körs endast vid behov (t.ex. när vi får 0 rader) och är tänkt som felsökningshjälp.
+    """
+    conn = pymysql.connect(**read_db_config())
+    with conn, conn.cursor() as cur:
+        cur.execute(
+            """
+            SELECT
+                COUNT(*) AS cnt,
+                MIN(datetime) AS min_dt,
+                MAX(datetime) AS max_dt
+            FROM electricity_prices
+            """
+        )
+        row = cur.fetchone() or {}
+    return row
+
+
 # ==================================================
 # MAIN – ORCHESTRATOR
 # ==================================================
@@ -184,15 +226,51 @@ def main():
     token = arrigo_login()
     log("🔌 Orchestrator startad")
     log("🚨 ORCHESTRATOR VERSION 2026-02-08 20:45 🚨")
+    debug_log_pvl()
+    if os.getenv("ARRIGO_DEBUG_TAS", "0") == "1":
+        log(f"🧷 REF_PREFIX={REF_PREFIX!r}")
+        log(f"🧷 TA_REQ={TA_REQ}")
+        log(f"🧷 TA_ACK={TA_ACK}")
+        log(f"🧷 TA_DAY={TA_DAY}")
+
+    last_req = last_ack = last_day = object()
+    last_req_raw = object()
+    did_diag_req_write = False
+    last_handled = {}  # request_key -> epoch seconds (endast efter lyckad push+ACK)
 
     while True:
         try:
             vals, idx = read_vals_and_idx(token)
-            log(f"RAW PI_PUSH_REQ = {vals.get(TA_REQ)}")
+            req_raw = vals.get(TA_REQ)
+            if req_raw != last_req_raw:
+                log(f"RAW PI_PUSH_REQ = {req_raw}")
+                last_req_raw = req_raw
             if TA_REQ not in vals:
                  log(f"❌ TA_REQ saknas! keys={list(vals.keys())[:10]} ...")
             else:
                  log(f"✅ TA_REQ hittad, raw={vals[TA_REQ]!r}, type={type(vals[TA_REQ])}")
+
+            if os.getenv("ARRIGO_DEBUG_TAS", "0") == "1":
+                cands = []
+                for k, v in vals.items():
+                    if "PI_PUSH_REQ" in k or k.endswith(".PI_PUSH_REQ"):
+                        cands.append((k, v))
+                if cands:
+                    log("🧭 PI_PUSH_REQ candidates:")
+                    for k, v in sorted(cands):
+                        log(f"    {k} = {v!r} ({type(v)})")
+
+                # EXOL statusflaggor som styr request-kontrollern
+                for suffix in ("TD_READY", "TM_READY", "DIAG_PUSH", "PI_PUSH_DAY"):
+                    for k, v in vals.items():
+                        if k.endswith(f".{suffix}"):
+                            log(f"🧭 {suffix}: {k} = {v!r} ({type(v)})")
+                            break
+
+            # Diagnostik: försök sätta REQ via API (engång) och se om den studsar tillbaka.
+            if os.getenv("ARRIGO_DIAG_SET_REQ", "0") == "1" and not did_diag_req_write:
+                diag_write_var(token, idx, TA_REQ, "1")
+                did_diag_req_write = True
 
         except requests.HTTPError as e:
             if e.response is not None and e.response.status_code == 401:
@@ -211,7 +289,9 @@ def main():
         ack = to_int(vals.get(TA_ACK))
         day = to_int(vals.get(TA_DAY))
 
-        log(f"REQ={req} ACK={ack} DAY={day}")
+        if (req, ack, day) != (last_req, last_ack, last_day):
+            log(f"REQ={req} ACK={ack} DAY={day}")
+            last_req, last_ack, last_day = req, ack, day
 
         # ==================================================
         # BESLUT: SKA NYA PRISER PUSHAS TILL ARRIGO?
@@ -221,32 +301,64 @@ def main():
             target_day = today_local_date() + timedelta(days=day)
             log(f"📥 EXOL begär priser för lokalt dygn: {target_day}")
 
+            request_key = f"{target_day.isoformat()}|DAY={day}"
+            now_ts = time.time()
+            last_ts = last_handled.get(request_key)
+            if last_ts is not None and (now_ts - last_ts) < REPUSH_COOLDOWN_SEC:
+                log(f"🕒 Request redan hanterad nyligen ({int(now_ts - last_ts)}s) → skip")
+                time.sleep(SLEEP_SEC)
+                continue
+
             rows = db_fetch_prices_for_day(target_day)
             log(f"📊 DB-perioder: {len(rows)}")
+
+            # Om DB saknar priser (oftast för imorgon innan importen är klar):
+            # pusha inte nollor och ACK:a inte, annars tror EXOL att den fått giltig data.
+            if not rows:
+                # Extra felsökning vid 0 rader: visa exakt UTC-fönster och tabellens täckning.
+                utc_start, utc_end = local_day_to_utc_window(target_day)
+                log(f"⏳ Inga priser i DB ännu → skippar push/ACK (UTC-fönster {utc_start} .. {utc_end})")
+                if os.getenv("ARRIGO_DB_DEBUG", "0") == "1":
+                    try:
+                        st = db_debug_prices_table()
+                        log(
+                            "🧾 electricity_prices: "
+                            f"cnt={st.get('cnt')} min_dt={st.get('min_dt')} max_dt={st.get('max_dt')}"
+                        )
+                    except Exception as e:
+                        log(f"🧾 DB-debug misslyckades: {e.__class__.__name__}: {e}")
+                time.sleep(SLEEP_SEC)
+                continue
 
             rank, ec_masks, ex_masks, slot_price = build_rank_and_masks(rows)
             oat_yday = daily_avg_oat(target_day - timedelta(days=1))
             oat_tmr  = daily_avg_oat(target_day + timedelta(days=1))
 
             log("📤 Pushar till Arrigo")
-            push_to_arrigo(
-                gql,
-                token,
-                PVL_B64,
-                rank,
-                ec_masks,
-                ex_masks,
-                target_day,
-                oat_yday,
-                oat_tmr,
-                slot_price,
-        )
-
-
-
-
-            write_ack(token, idx, 1)
-            log("✅ PI_PUSH_ACK satt")
+            try:
+                push_to_arrigo(
+                    gql,
+                    token,
+                    PVL_B64,
+                    rank,
+                    ec_masks,
+                    ex_masks,
+                    target_day,
+                    oat_yday,
+                    oat_tmr,
+                    slot_price,
+                )
+                write_ack(token, idx, 1)
+                last_handled[request_key] = time.time()
+                log("✅ PI_PUSH_ACK satt")
+            except requests.exceptions.RequestException as e:
+                log(f"🌐 Arrigo nätverksfel under push: {e.__class__.__name__}: {e}")
+                time.sleep(SLEEP_SEC)
+                continue
+            except Exception as e:
+                log(f"❌ Push misslyckades: {e.__class__.__name__}: {e}")
+                time.sleep(SLEEP_SEC)
+                continue
 
         time.sleep(SLEEP_SEC)
 
