@@ -1,18 +1,12 @@
 from __future__ import annotations
 
-import json
 import math
 import os
 import subprocess
-import urllib.error
-import urllib.request
 from datetime import datetime, timedelta
 
-from flask import Blueprint, Response, redirect, render_template, request, url_for
-
-from smartweb_backend.db.exo_repo import build_exo_payload, get_exo_payload_json
+from flask import Blueprint, redirect, render_template, request, url_for
 from smartweb_backend.db.plan_repo import db_read_plan
-from smartweb_backend.db.sites_repo import get_site
 from smartweb_backend.db.water_repo import fetch_latest_water_status
 from smartweb_backend.services.elprisvader_service import build_elpris_vader_view
 from smartweb_backend.services.prices_service import build_daily_price_view
@@ -255,139 +249,3 @@ def vattenstyrning():
         }
 
     return render_template("vattenstyrning.html", data=latest, cos=math.cos, sin=math.sin)
-
-
-@bp.route("/api/exo_payload/<site_code>")
-def api_exo_payload(site_code: str):
-    day_str = request.args.get("day")
-    if day_str:
-        try:
-            day_local = datetime.strptime(day_str, "%Y-%m-%d").date()
-        except ValueError:
-            return Response('{"error":"invalid day format, use YYYY-MM-DD"}', status=400, mimetype="application/json")
-    else:
-        day_local = today_local_date()
-
-    build = str(request.args.get("build", "0")).lower() in ("1", "true", "yes")
-    n_arg = request.args.get("n")
-    cheap_arg = request.args.get("cheap_pct")
-    exp_arg = request.args.get("exp_pct")
-
-    try:
-        site = get_site(site_code)
-        if not site:
-            return Response('{"error":"unknown site"}', status=404, mimetype="application/json")
-
-        top_n = int(n_arg) if n_arg is not None else int(site["default_topn"])
-        cheap_pct = float(cheap_arg) if cheap_arg is not None else -0.30
-        exp_pct = float(exp_arg) if exp_arg is not None else 0.50
-
-        if build:
-            build_exo_payload(site_code, day_local, top_n, cheap_pct, exp_pct)
-
-        payload_json = get_exo_payload_json(site_code, day_local)
-        if payload_json:
-            return Response(payload_json, mimetype="application/json")
-
-        return Response('{"error":"payload not found for day; try with build=1"}', status=404, mimetype="application/json")
-
-    except Exception as e:
-        msg = str(e).replace('"', "\\\"")
-        return Response(f'{{"error":"{msg}"}}', status=500, mimetype="application/json")
-
-
-def post_to_exo(payload_json: str, exo_url: str, token: str | None = None, timeout: int = 20):
-    data = payload_json.encode("utf-8")
-    req = urllib.request.Request(exo_url, data=data, method="POST", headers={"Content-Type": "application/json"})
-    if token:
-        req.add_header("Authorization", f"Bearer {token}")
-    with urllib.request.urlopen(req, timeout=timeout) as resp:
-        status = resp.status
-        body = resp.read().decode("utf-8", "ignore")[:2000]
-    return status, body
-
-
-@bp.route("/api/exo_push/<site_code>", methods=["GET", "POST"])
-def api_exo_push(site_code: str):
-    day_str = request.args.get("day")
-    if day_str:
-        try:
-            day_local = datetime.strptime(day_str, "%Y-%m-%d").date()
-        except ValueError:
-            return Response('{"error":"invalid day format, use YYYY-MM-DD"}', status=400, mimetype="application/json")
-    else:
-        day_local = today_local_date()
-
-    build = str(request.args.get("build", "0")).lower() in ("1", "true", "yes", "on")
-    dry_run = str(request.args.get("dry_run", "0")).lower() in ("1", "true", "yes", "on")
-    timeout_sec = int(request.args.get("timeout", "20"))
-
-    n_arg = request.args.get("n")
-    cheap_arg = request.args.get("cheap_pct")
-    exp_arg = request.args.get("exp_pct")
-
-    exo_url = request.args.get("exo_url") or os.environ.get("EXO_URL")
-    token = request.args.get("token") or os.environ.get("EXO_TOKEN")
-    if not exo_url:
-        return Response(
-            '{"error":"EXO_URL saknas (ange ?exo_url=... eller sätt env EXO_URL)"}',
-            status=400,
-            mimetype="application/json",
-        )
-
-    payload = None
-    try:
-        site = get_site(site_code)
-        if not site:
-            return Response('{"error":"unknown site"}', status=404, mimetype="application/json")
-
-        top_n = int(n_arg) if n_arg is not None else int(site["default_topn"])
-        cheap_pct = float(cheap_arg) if cheap_arg is not None else -0.30
-        exp_pct = float(exp_arg) if exp_arg is not None else 0.50
-
-        if build:
-            build_exo_payload(site_code, day_local, top_n, cheap_pct, exp_pct)
-
-        payload = get_exo_payload_json(site_code, day_local)
-    except Exception as e:
-        msg = str(e).replace('"', "\\\"")
-        return Response(f'{{"error":"{msg}"}}', status=500, mimetype="application/json")
-
-    if not payload:
-        return Response('{"error":"payload not found for day; try build=1"}', status=404, mimetype="application/json")
-
-    if dry_run:
-        return Response(
-            json.dumps(
-                {
-                    "dry_run": True,
-                    "target": {"exo_url": exo_url, "has_token": bool(token)},
-                    "payload": json.loads(payload),
-                },
-                ensure_ascii=False,
-            ),
-            mimetype="application/json",
-        )
-
-    try:
-        status, body = post_to_exo(payload, exo_url, token, timeout=timeout_sec)
-        return Response(
-            json.dumps(
-                {
-                    "sent": True,
-                    "http_status": status,
-                    "exo_response": body,
-                    "site_id": site_code,
-                    "day": day_local.strftime("%Y-%m-%d"),
-                },
-                ensure_ascii=False,
-            ),
-            mimetype="application/json",
-        )
-    except urllib.error.HTTPError as e:
-        body = e.read().decode("utf-8", "ignore") if hasattr(e, "read") else ""
-        msg = {"sent": False, "http_status": e.code, "error": str(e), "body": body[:2000]}
-        return Response(json.dumps(msg, ensure_ascii=False), status=502, mimetype="application/json")
-    except Exception as e:
-        msg = {"sent": False, "error": str(e)}
-        return Response(json.dumps(msg, ensure_ascii=False), status=502, mimetype="application/json")

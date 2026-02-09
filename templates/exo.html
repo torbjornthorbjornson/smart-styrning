@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+
+{% block content %}
+	<h2>EXO – kontrollpanel</h2>
+
+	<p>
+		<strong>EXO_URL:</strong>
+		{% if exo_url %}
+			<span style="color: #0a7;">konfigurerad</span>
+		{% else %}
+			<span style="color: #c40;">saknas</span>
+		{% endif %}
+		<br>
+		<strong>EXO_TOKEN:</strong>
+		{% if has_token %}
+			<span style="color: #0a7;">konfigurerad</span>
+		{% else %}
+			<span style="color: #c40;">saknas</span>
+		{% endif %}
+	</p>
+
+	{% if status_msg %}
+		<p style="color:#0a7;"><strong>✅ {{ status_msg }}</strong></p>
+	{% endif %}
+	{% if error_msg %}
+		<p style="color:#c40;"><strong>⚠️ {{ error_msg }}</strong></p>
+	{% endif %}
+
+	<form method="post" style="margin-bottom: 1em; padding: 10px; border: 1px solid #ddd; border-radius: 8px;">
+		<label for="site_code"><strong>Site:</strong></label>
+		<select id="site_code" name="site_code">
+			{% for s in site_codes %}
+				<option value="{{ s }}" {% if s == selected_site %}selected{% endif %}>{{ s }}</option>
+			{% endfor %}
+		</select>
+		{% if not site_codes %}
+			<span style="color:#c40; margin-left: 8px;">(kunde inte läsa sites från DB)</span>
+		{% endif %}
+
+		<label for="day" style="margin-left: 12px;"><strong>Dag:</strong></label>
+		<input type="date" id="day" name="day" value="{{ day_str }}">
+
+		<div style="margin-top: 10px;">
+			<label><strong>Parametrar (valfritt):</strong></label><br>
+			<label for="n">N:</label>
+			<input id="n" name="n" type="number" min="1" max="96" value="{{ n_arg }}" style="width: 80px;">
+			<label for="cheap_pct" style="margin-left: 12px;">cheap_pct:</label>
+			<input id="cheap_pct" name="cheap_pct" type="text" value="{{ cheap_arg }}" style="width: 90px;" placeholder="-0.30">
+			<label for="exp_pct" style="margin-left: 12px;">exp_pct:</label>
+			<input id="exp_pct" name="exp_pct" type="text" value="{{ exp_arg }}" style="width: 90px;" placeholder="0.50">
+			<label style="margin-left: 12px;">
+				<input type="checkbox" name="build" value="1" {% if build %}checked{% endif %}>
+				Build (skapa payload i DB)
+			</label>
+		</div>
+
+		<div style="margin-top: 10px;">
+			<button type="submit" name="action" value="preview">Preview payload</button>
+			<button type="submit" name="action" value="dry_run">Dry-run push</button>
+		</div>
+
+		<hr style="margin: 12px 0;">
+		<div>
+			<strong>Skicka (push)</strong> – kräver bekräftelse:<br>
+			<label for="confirm">Skriv PUSH:</label>
+			<input id="confirm" name="confirm" type="text" value="" style="width: 90px;">
+			<label for="timeout" style="margin-left: 12px;">timeout:</label>
+			<input id="timeout" name="timeout" type="number" min="1" max="120" value="20" style="width: 80px;"> sec
+			<button type="submit" name="action" value="push" style="margin-left: 12px;">Push till EXO</button>
+		</div>
+	</form>
+
+	{% if result_json %}
+		<h3>Resultat</h3>
+		<pre style="white-space: pre-wrap; background:#f7f7f7; padding: 10px; border-radius: 8px; border: 1px solid #eee;">{{ result_json }}</pre>
+	{% endif %}
+
+{% endblock %}
