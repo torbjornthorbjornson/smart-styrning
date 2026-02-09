@@ -201,6 +201,11 @@ def main():
                 time.sleep(2)
                 continue
             raise
+        except requests.exceptions.RequestException as e:
+            # Nätverksfel (timeout/DNS/connection reset). Orchestratorn ska fortsätta poll:a.
+            log(f"🌐 Arrigo nätverksfel: {e.__class__.__name__}: {e}")
+            time.sleep(SLEEP_SEC)
+            continue
 
         req = to_int(vals.get(TA_REQ))
         ack = to_int(vals.get(TA_ACK))
