@@ -10,11 +10,11 @@
 <body>
   <h1>Smart fastighetsstyrning</h1>
   <nav>
-    <a href="{{ url_for('home') }}">🏠 Start</a>
-    <a href="{{ url_for('elprisvader') }}">⚡ Elpris & Väder</a>
-    <a href="{{ url_for('dokumentation') }}">📘 Dokumentation</a>
-    <a href="{{ url_for('vision') }}">🌞 Vision</a>
-    <a href="{{ url_for('gitlog') }}">🔧 Git-logg</a>
+    <a href="{{ url_for('main.home') }}">🏠 Start</a>
+    <a href="{{ url_for('main.elprisvader') }}">⚡ Elpris & Väder</a>
+    <a href="{{ url_for('main.dokumentation') }}">📘 Dokumentation</a>
+    <a href="{{ url_for('main.vision') }}">🌞 Vision</a>
+    <a href="{{ url_for('main.gitlog') }}">🔧 Git-logg</a>
   </nav>
   <hr>
   {% block content %}{% endblock %}
