@@ -28,7 +28,7 @@ def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--limit", type=int, default=200)
     ap.add_argument("--filter", dest="filter_text", default="")
-    ap.add_argument("--values", action="store_true", help="visa value fe4ltet ockse5")
+    ap.add_argument("--values", action="store_true", help="visa value-fältet också")
     args = ap.parse_args()
 
     cfg = arrigo_client.load_config()

@@ -52,18 +52,28 @@ def _default_token_cache_file() -> str:
     return os.path.join(project_root, "tools", "arrigo", ".arrigo_token.json")
 
 
+def _load_token_cache_payload(path: str) -> dict[str, Any] | None:
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            j = json.load(f)
+        return j if isinstance(j, dict) else None
+    except Exception:
+        return None
+
+
 def load_config() -> ArrigoConfig:
-    login_url = os.getenv("ARRIGO_LOGIN_URL")
-    graphql_url = os.getenv("ARRIGO_GRAPHQL_URL")
+    token_cache_file = os.getenv("ARRIGO_TOKEN_CACHE_FILE") or _default_token_cache_file()
+    token_cache_exists = os.path.exists(token_cache_file)
+    cache_payload = _load_token_cache_payload(token_cache_file) if token_cache_exists else None
+
+    login_url = os.getenv("ARRIGO_LOGIN_URL") or (cache_payload or {}).get("login_url")
+    graphql_url = os.getenv("ARRIGO_GRAPHQL_URL") or (cache_payload or {}).get("graphql_url")
     username = os.getenv("ARRIGO_USER") or os.getenv("ARRIGO_USERNAME")
     password = os.getenv("ARRIGO_PASS") or os.getenv("ARRIGO_PASSWORD")
 
-    pvl_raw = os.getenv("ARRIGO_PVL_B64") or os.getenv("ARRIGO_PVL_PATH")
+    pvl_raw = os.getenv("ARRIGO_PVL_B64") or os.getenv("ARRIGO_PVL_PATH") or (cache_payload or {}).get("pvl_b64")
     pvl_b64 = _ensure_b64(pvl_raw) if pvl_raw else None
     pvl_decoded = _b64decode(pvl_b64) if pvl_b64 else None
-
-    token_cache_file = os.getenv("ARRIGO_TOKEN_CACHE_FILE") or _default_token_cache_file()
-    token_cache_exists = os.path.exists(token_cache_file)
 
     return ArrigoConfig(
         login_url=login_url,

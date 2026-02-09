@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+import hmac
 import json
 import os
+from functools import wraps
 
 from flask import Blueprint, Response, render_template, request
 
@@ -14,8 +16,45 @@ from smartweb_backend.time_utils import today_local_date
 bp = Blueprint("exo", __name__)
 
 
+def _admin_creds() -> tuple[str, str] | None:
+	user = (os.environ.get("SMARTWEB_ADMIN_USER") or "").strip()
+	password = os.environ.get("SMARTWEB_ADMIN_PASS") or ""
+	if not user or not password:
+		return None
+	return user, password
+
+
+def _unauthorized() -> Response:
+	return Response(
+		"Authentication required",
+		status=401,
+		headers={"WWW-Authenticate": 'Basic realm="Smartweb"'},
+	)
+
+
+def require_admin(view_func):
+	@wraps(view_func)
+	def wrapper(*args, **kwargs):
+		creds = _admin_creds()
+		if creds is None:
+			return view_func(*args, **kwargs)
+		user, password = creds
+		auth = request.authorization
+		if not auth or auth.type != "basic":
+			return _unauthorized()
+		if not hmac.compare_digest(auth.username or "", user):
+			return _unauthorized()
+		if not hmac.compare_digest(auth.password or "", password):
+			return _unauthorized()
+		return view_func(*args, **kwargs)
+
+	return wrapper
+
+
 @bp.route("/exo", methods=["GET", "POST"])
+@require_admin
 def exo_console():
+	admin_enabled = _admin_creds() is not None
 	site_codes: list[str] = []
 	try:
 		conn = get_connection()
@@ -34,10 +73,6 @@ def exo_console():
 
 	# Arrigo (Project Builder / api-sida -> PVL)
 	arrigo_cfg = arrigo_client.load_config()
-	arrigo_has_login_url = bool(arrigo_cfg.login_url)
-	arrigo_has_graphql_url = bool(arrigo_cfg.graphql_url)
-	arrigo_has_user = bool(arrigo_cfg.username)
-	arrigo_has_pass = bool(arrigo_cfg.password)
 	arrigo_has_pvl = bool(arrigo_cfg.pvl_b64)
 	arrigo_token_cache_file = arrigo_cfg.token_cache_file
 	arrigo_token_cache_exists = arrigo_cfg.token_cache_exists
@@ -102,10 +137,6 @@ def exo_console():
 					status_msg=status_msg,
 					error_msg=error_msg,
 					result_json=result_json,
-					arrigo_has_login_url=arrigo_has_login_url,
-					arrigo_has_graphql_url=arrigo_has_graphql_url,
-					arrigo_has_user=arrigo_has_user,
-					arrigo_has_pass=arrigo_has_pass,
 					arrigo_has_pvl=arrigo_has_pvl,
 					arrigo_token_cache_file=arrigo_token_cache_file,
 					arrigo_token_cache_exists=arrigo_token_cache_exists,
@@ -171,6 +202,7 @@ def exo_console():
 
 	return render_template(
 		"exo.html",
+		admin_enabled=admin_enabled,
 		site_codes=site_codes,
 		selected_site=selected_site,
 		day_str=day_str,
@@ -183,10 +215,6 @@ def exo_console():
 		status_msg=status_msg,
 		error_msg=error_msg,
 		result_json=result_json,
-		arrigo_has_login_url=arrigo_has_login_url,
-		arrigo_has_graphql_url=arrigo_has_graphql_url,
-		arrigo_has_user=arrigo_has_user,
-		arrigo_has_pass=arrigo_has_pass,
 		arrigo_has_pvl=arrigo_has_pvl,
 		arrigo_token_cache_file=arrigo_token_cache_file,
 		arrigo_token_cache_exists=arrigo_token_cache_exists,
@@ -201,6 +229,7 @@ def exo_console():
 
 
 @bp.route("/api/exo_payload/<site_code>")
+@require_admin
 def api_exo_payload(site_code: str):
 	day_str = request.args.get("day")
 	try:

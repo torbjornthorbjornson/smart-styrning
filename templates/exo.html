@@ -4,6 +4,17 @@
 	<h2>EXO – kontrollpanel</h2>
 
 	<p>
+		<strong>Admin-inloggning (för denna sida):</strong>
+		{% if admin_enabled %}
+			<span style="color:#0a7;">på</span>
+			<small style="color:#555;">(HTTP Basic Auth: SMARTWEB_ADMIN_USER / SMARTWEB_ADMIN_PASS)</small>
+		{% else %}
+			<span style="color:#c40;">av</span>
+			<small style="color:#555;">(sätt SMARTWEB_ADMIN_USER / SMARTWEB_ADMIN_PASS i .smartweb.env för att slå på)</small>
+		{% endif %}
+	</p>
+
+	<p>
 		<strong>EXO_URL:</strong>
 		{% if exo_url %}
 			<span style="color: #0a7;">konfigurerad</span>
@@ -95,19 +106,14 @@
 	<hr style="margin: 18px 0;">
 
 	<h3>Arrigo PVL (Project Builder “api”-sidan)</h3>
+	<p style="margin-top: -6px; color:#555;">
+		Webb-UI:t loggar <strong>inte</strong> in mot Arrigo (kontrakt: <strong>orchestrator</strong> sköter all login).
+		Den här sidan läser bara PVL via orchestratorns <strong>token-cache</strong>.
+		{% if not arrigo_token_cache_exists %}
+			<br><span style="color:#c40;"><strong>Token-cache saknas</strong> → starta orchestratorn så den skriver token-cache.</span>
+		{% endif %}
+	</p>
 	<p>
-		<strong>ARRIGO_LOGIN_URL:</strong>
-		{% if arrigo_has_login_url %}<span style="color:#0a7;">konfigurerad</span>{% else %}<span style="color:#c40;">saknas</span>{% endif %}
-		<br>
-		<strong>ARRIGO_GRAPHQL_URL:</strong>
-		{% if arrigo_has_graphql_url %}<span style="color:#0a7;">konfigurerad</span>{% else %}<span style="color:#c40;">saknas</span>{% endif %}
-		<br>
-		<strong>ARRIGO_USER/ARRIGO_PASS:</strong>
-		{% if arrigo_has_user and arrigo_has_pass %}<span style="color:#0a7;">konfigurerad</span>{% else %}<span style="color:#c40;">saknas</span>{% endif %}
-		<br>
-		<strong>ARRIGO_PVL_PATH/ARRIGO_PVL_B64:</strong>
-		{% if arrigo_has_pvl %}<span style="color:#0a7;">konfigurerad</span>{% else %}<span style="color:#c40;">saknas</span>{% endif %}
-		<br>
 		<strong>ARRIGO_TOKEN_CACHE_FILE:</strong>
 		{% if arrigo_token_cache_exists %}
 			<span style="color:#0a7;">finns</span>
@@ -116,6 +122,9 @@
 		{% endif %}
 		<br>
 		<small style="color:#555;">{{ arrigo_token_cache_file }}</small>
+		<br>
+		<strong>ARRIGO_PVL_PATH/ARRIGO_PVL_B64:</strong>
+		{% if arrigo_has_pvl %}<span style="color:#0a7;">konfigurerad</span>{% else %}<span style="color:#c40;">saknas</span>{% endif %}
 		<br>
 		<strong>PVL (decoded):</strong>
 		<code>{{ arrigo_pvl_decoded or '-' }}</code>

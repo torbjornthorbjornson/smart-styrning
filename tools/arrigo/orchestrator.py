@@ -236,8 +236,21 @@ def arrigo_login():
     r.raise_for_status()
     tok = r.json().get("authToken")
     if not tok:
-        raise SystemExit("Login utan token")
+        raise RuntimeError("Login utan token")
     return tok
+
+
+def ensure_token_cache_present(token: str) -> None:
+    """Säkerställ att token-cache finns på disk.
+
+    Om orchestratorn har en giltig token men cachefilen saknas (t.ex. om den blivit raderad),
+    skriv om den så webben kan läsa utan egen login.
+    """
+
+    path = os.getenv("ARRIGO_TOKEN_CACHE_FILE") or _default_token_cache_file()
+    if os.path.exists(path):
+        return
+    write_token_cache(token)
 
 
 def gql(token, query, variables):
@@ -349,6 +362,7 @@ def main():
 
     while True:
         try:
+            ensure_token_cache_present(token)
             vals, idx = read_vals_and_idx(token)
             net_backoff_sec = max(SLEEP_SEC, 1.0)  # reset on success
 
@@ -543,4 +557,13 @@ if __name__ == "__main__":
         write_token_cache(tok)
         run_readback_plans(tok, do_heat=args.readback_heatplan, do_vv=args.readback_vvplan)
     else:
-        main()
+        backoff_sec = max(SLEEP_SEC, 1.0)
+        while True:
+            try:
+                main()
+                backoff_sec = max(SLEEP_SEC, 1.0)
+            except KeyboardInterrupt:
+                raise
+            except Exception as e:
+                log(f"💥 Fatalt fel i main(): {e.__class__.__name__}: {e}")
+                backoff_sec = sleep_backoff(backoff_sec)
