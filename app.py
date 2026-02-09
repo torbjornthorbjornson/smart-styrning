@@ -1,5 +1,4 @@
-from flask import Flask, render_template, url_for, request, redirect
-import pymysql
+from flask import Flask, render_template, url_for, request, redirect, Response
 from datetime import datetime, timedelta, time
 import subprocess
 import os
@@ -8,32 +7,14 @@ import pytz  # tidszoner
 import json
 import urllib.request, urllib.error
 
+from smartweb_backend.db.plan_repo import db_read_plan
+from smartweb_backend.db.prices_repo import fetch_electricity_prices
+from smartweb_backend.db.weather_repo import fetch_weather
+from smartweb_backend.db.water_repo import fetch_latest_water_status
+from smartweb_backend.db.sites_repo import get_site
+from smartweb_backend.db.exo_repo import build_exo_payload, get_exo_payload_json
+
 app = Flask(__name__)
-
-def get_connection():
-    return pymysql.connect(
-        read_default_file="/home/runerova/.my.cnf",
-        database="smart_styrning",
-        cursorclass=pymysql.cursors.DictCursor
-    )
-
-def db_read_plan(site_code: str, plan_type: str, day_local):
-    conn = get_connection()
-    try:
-        with conn.cursor() as cur:
-            cur.execute("""
-                SELECT periods
-                FROM arrigo_plan_cache
-                WHERE site_code=%s AND plan_type=%s AND day_local=%s
-                ORDER BY fetched_at DESC
-                LIMIT 1
-            """, (site_code, plan_type, day_local))
-            row = cur.fetchone()
-            if not row:
-                return None
-            return json.loads(row["periods"])
-    finally:
-        conn.close()
 
 # === Tidszoner och hjälpare för "svensk dag" -> UTC-intervall ===
 STHLM = pytz.timezone("Europe/Stockholm")
@@ -91,14 +72,7 @@ def styrning():
     try:
         utc_start, utc_end = local_day_to_utc_window(selected_date)
 
-        conn = get_connection()
-        with conn.cursor() as cursor:
-            cursor.execute('''
-                SELECT datetime, price FROM electricity_prices
-                WHERE datetime >= %s AND datetime < %s
-                ORDER BY datetime
-            ''', (utc_start, utc_end))
-            priser = cursor.fetchall()
+        priser = fetch_electricity_prices(utc_start, utc_end)
 
         if not priser:
             no_price = True
@@ -188,14 +162,7 @@ def haltorp244_utfall():
     try:
         utc_start, utc_end = local_day_to_utc_window(selected_date)
 
-        conn = get_connection()
-        with conn.cursor() as cursor:
-            cursor.execute("""
-                SELECT datetime, price FROM electricity_prices
-                WHERE datetime >= %s AND datetime < %s
-                ORDER BY datetime
-            """, (utc_start, utc_end))
-            priser = cursor.fetchall()
+        priser = fetch_electricity_prices(utc_start, utc_end)
 
         if not priser:
             no_price = True
@@ -337,40 +304,28 @@ def elprisvader():
     try:
         utc_start, utc_end = local_day_to_utc_window(selected_date)
 
-        conn = get_connection()
-        with conn.cursor() as cursor:
-            # Väder – svensk dag som UTC-intervall
-            cursor.execute("""
-                SELECT * FROM weather
-                WHERE timestamp >= %s AND timestamp < %s
-                ORDER BY timestamp
-            """, (utc_start, utc_end))
-            weather_data = cursor.fetchall()
-            weather_date = selected_date
+        # Väder – svensk dag som UTC-intervall
+        weather_data = fetch_weather(utc_start, utc_end)
+        weather_date = selected_date
 
-            # Elpris – svensk dag som UTC-intervall
-            cursor.execute("""
-                SELECT * FROM electricity_prices
-                WHERE datetime >= %s AND datetime < %s
-                ORDER BY datetime
-            """, (utc_start, utc_end))
-            elpris_data = cursor.fetchall()
+        # Elpris – svensk dag som UTC-intervall
+        elpris_data = fetch_electricity_prices(utc_start, utc_end)
 
-            fallback_used = False
-            if not elpris_data:
-               elpris_data = []
+        fallback_used = False
+        if not elpris_data:
+            elpris_data = []
 
-            # Medelvärden
-            medel_temperature = round(sum(row["temperature"] for row in weather_data) / len(weather_data), 1) if weather_data else "-"
-            medel_vind        = round(sum(row["vind"]        for row in weather_data) / len(weather_data), 1) if weather_data else "-"
-            medel_elpris      = round(sum(row["price"]       for row in elpris_data)  / len(elpris_data),  1) if elpris_data else "-"
+        # Medelvärden
+        medel_temperature = round(sum(row["temperature"] for row in weather_data) / len(weather_data), 1) if weather_data else "-"
+        medel_vind        = round(sum(row["vind"]        for row in weather_data) / len(weather_data), 1) if weather_data else "-"
+        medel_elpris      = round(sum(row["price"]       for row in elpris_data)  / len(elpris_data),  1) if elpris_data else "-"
 
-            # Etiketter i svensk tid (för graferna)
-            labels         = [utc_naive_to_local_label(row["timestamp"]) for row in weather_data]
-            temperature    = [row["temperature"] for row in weather_data]
-            vind           = [row["vind"]        for row in weather_data]
-            elpris_labels  = [utc_naive_to_local_label(row["datetime"])  for row in elpris_data]
-            elpris_values  = [row["price"] for row in elpris_data]
+        # Etiketter i svensk tid (för graferna)
+        labels         = [utc_naive_to_local_label(row["timestamp"]) for row in weather_data]
+        temperature    = [row["temperature"] for row in weather_data]
+        vind           = [row["vind"]        for row in weather_data]
+        elpris_labels  = [utc_naive_to_local_label(row["datetime"])  for row in elpris_data]
+        elpris_values  = [row["price"] for row in elpris_data]
 
         return render_template("elpris_vader.html",
                                selected_date=selected_date,
@@ -426,31 +381,25 @@ def restore_result():
 MAX_VOLYM = 10000
 @app.route("/vattenstyrning")
 def vattenstyrning():
-    conn = get_connection()
     latest = {}
-    try:
-        with conn.cursor() as cursor:
-            cursor.execute("SELECT * FROM water_status ORDER BY timestamp DESC LIMIT 1")
-            row = cursor.fetchone()
-            if row:
-                latest = {
-                    "nivå": row["level_liters"],
-                    "nivå_procent": round(row["level_liters"] / MAX_VOLYM * 100),
-                    "tryck": row["system_pressure"],
-                    "p1": row["pump1_freq"],
-                    "p2": row["pump2_freq"],
-                    "p3": row["pump3_freq"],
-                    "booster": row.get("booster_freq", 0.0),
-                    "flow_p1": row.get("flow_p1", 0.0),
-                    "flow_p2": row.get("flow_p2", 0.0),
-                    "flow_p3": row.get("flow_p3", 0.0),
-                    "flow_booster": row.get("flow_booster", 0.0)
-                }
-    finally:
-        conn.close()
+
+    row = fetch_latest_water_status()
+    if row:
+        latest = {
+            "nivå": row["level_liters"],
+            "nivå_procent": round(row["level_liters"] / MAX_VOLYM * 100),
+            "tryck": row["system_pressure"],
+            "p1": row["pump1_freq"],
+            "p2": row["pump2_freq"],
+            "p3": row["pump3_freq"],
+            "booster": row.get("booster_freq", 0.0),
+            "flow_p1": row.get("flow_p1", 0.0),
+            "flow_p2": row.get("flow_p2", 0.0),
+            "flow_p3": row.get("flow_p3", 0.0),
+            "flow_booster": row.get("flow_booster", 0.0)
+        }
 
     return render_template("vattenstyrning.html", data=latest, cos=math.cos, sin=math.sin)
-from flask import Response  # högst upp bland imports om inte redan finns
 
 @app.route("/api/exo_payload/<site_code>")
 def api_exo_payload(site_code):
@@ -484,35 +433,22 @@ def api_exo_payload(site_code):
     exp_arg = request.args.get("exp_pct")
 
     try:
-        conn = get_connection()
-        with conn.cursor() as cur:
-            # Hämta site + default_topn
-            cur.execute("SELECT site_code, tz, default_topn FROM sites WHERE site_code=%s LIMIT 1", (site_code,))
-            site = cur.fetchone()
-            if not site:
-                return Response('{"error":"unknown site"}', status=404, mimetype="application/json")
+        site = get_site(site_code)
+        if not site:
+            return Response('{"error":"unknown site"}', status=404, mimetype="application/json")
 
-            top_n = int(n_arg) if n_arg is not None else int(site["default_topn"])
-            cheap_pct = float(cheap_arg) if cheap_arg is not None else -0.30
-            exp_pct   = float(exp_arg)   if exp_arg   is not None else  0.50
+        top_n = int(n_arg) if n_arg is not None else int(site["default_topn"])
+        cheap_pct = float(cheap_arg) if cheap_arg is not None else -0.30
+        exp_pct   = float(exp_arg)   if exp_arg   is not None else  0.50
 
-            if build:
-                # Bygg / uppdatera allt för dagen
-                cur.execute("CALL exo_build_payload(%s,%s,%s,%s,%s)", (site_code, day_local, top_n, cheap_pct, exp_pct))
-                conn.commit()
+        if build:
+            build_exo_payload(site_code, day_local, top_n, cheap_pct, exp_pct)
 
-            # Hämta lagrad payload
-            cur.execute(
-                "SELECT payload_json FROM exo_payloads WHERE site_code=%s AND day_local=%s",
-                (site_code, day_local)
-            )
-            row = cur.fetchone()
+        payload_json = get_exo_payload_json(site_code, day_local)
+        if payload_json:
+            return Response(payload_json, mimetype="application/json")
 
-        if row and row.get("payload_json"):
-            return Response(row["payload_json"], mimetype="application/json")
-        else:
-            # Tipsa om att testa build=1
-            return Response('{"error":"payload not found for day; try with build=1"}', status=404, mimetype="application/json")
+        return Response('{"error":"payload not found for day; try with build=1"}', status=404, mimetype="application/json")
 
     except Exception as e:
         msg = str(e).replace('"', '\\"')
@@ -571,37 +507,21 @@ def api_exo_push(site_code):
     # 2) Bygg payload i DB (om begärt) och hämta JSON
     payload = None
     try:
-        conn = get_connection()
-        with conn.cursor() as cur:
-            # Hämta defaults för site
-            cur.execute("SELECT site_code, tz, default_topn FROM sites WHERE site_code=%s LIMIT 1", (site_code,))
-            site = cur.fetchone()
-            if not site:
-                return Response('{"error":"unknown site"}', status=404, mimetype="application/json")
+        site = get_site(site_code)
+        if not site:
+            return Response('{"error":"unknown site"}', status=404, mimetype="application/json")
 
-            top_n = int(n_arg) if n_arg is not None else int(site["default_topn"])
-            cheap_pct = float(cheap_arg) if cheap_arg is not None else -0.30
-            exp_pct   = float(exp_arg)   if exp_arg   is not None else  0.50
+        top_n = int(n_arg) if n_arg is not None else int(site["default_topn"])
+        cheap_pct = float(cheap_arg) if cheap_arg is not None else -0.30
+        exp_pct   = float(exp_arg)   if exp_arg   is not None else  0.50
 
-            if build:
-                cur.execute("CALL exo_build_payload(%s,%s,%s,%s,%s)", (site_code, day_local, top_n, cheap_pct, exp_pct))
-                conn.commit()
+        if build:
+            build_exo_payload(site_code, day_local, top_n, cheap_pct, exp_pct)
 
-            cur.execute(
-                "SELECT payload_json FROM exo_payloads WHERE site_code=%s AND day_local=%s",
-                (site_code, day_local)
-            )
-            row = cur.fetchone()
-            if row and row.get("payload_json"):
-                payload = row["payload_json"]
+        payload = get_exo_payload_json(site_code, day_local)
     except Exception as e:
         msg = str(e).replace('"', '\\"')
         return Response(f'{{"error":"{msg}"}}', status=500, mimetype="application/json")
-    finally:
-        try:
-            conn.close()
-        except Exception:
-            pass
 
     if not payload:
         return Response('{"error":"payload not found for day; try build=1"}', status=404, mimetype="application/json")

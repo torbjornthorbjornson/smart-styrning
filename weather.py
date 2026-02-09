@@ -1,22 +1,9 @@
 
 import requests
-import pymysql
-import configparser
 from datetime import datetime, timedelta
 import pytz
 
-# Läser användare/lösenord från ~/.my.cnf
-def get_db_config():
-    config = configparser.ConfigParser()
-    config.read("/home/runerova/.my.cnf")
-    return {
-        "host": "localhost",
-        "user": config["client"]["user"],
-        "password": config["client"]["password"],
-        "database": "smart_styrning",
-        "charset": "utf8mb4",
-        "cursorclass": pymysql.cursors.DictCursor
-    }
+from smartweb_backend.db.weather_repo import upsert_weather_rows
 
 LATITUDE = 57.9
 LONGITUDE = 12.1
@@ -35,7 +22,12 @@ def fetch_weather_data():
 
     for entry in timeseries:
         time_str = entry["time"]
-        dt = datetime.strptime(time_str, "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=pytz.utc)
+        dt_utc_naive = (
+            datetime.strptime(time_str, "%Y-%m-%dT%H:%M:%SZ")
+            .replace(tzinfo=pytz.utc)
+            .astimezone(pytz.utc)
+            .replace(tzinfo=None)
+        )
         instant = entry["data"]["instant"]["details"]
         temp = instant.get("air_temperature")
         wind = instant.get("wind_speed")
@@ -48,7 +40,7 @@ def fetch_weather_data():
 
 
         weather_data.append({
-            "timestamp": dt,
+            "timestamp": dt_utc_naive,
             "temperature": temp,
             "vind": wind,
             "symbol_code": symbol,
@@ -57,33 +49,9 @@ def fetch_weather_data():
     return weather_data
 
 def save_to_database(weather_data):
-    db_config = get_db_config()
-    conn = pymysql.connect(**db_config)
-    cursor = conn.cursor()
-
+    upsert_weather_rows(weather_data, city="Alafors")
     for row in weather_data:
-        cursor.execute("""
-            INSERT INTO weather (city, temperature, vind, timestamp, observation_time, symbol_code)
-            VALUES (%s, %s, %s, %s, %s, %s)
-            ON DUPLICATE KEY UPDATE
-                city = VALUES(city),
-                temperature = VALUES(temperature),
-                vind = VALUES(vind),
-                observation_time = VALUES(observation_time),
-                symbol_code = VALUES(symbol_code)
-        """, (
-            "Alafors",
-            row["temperature"],
-            row["vind"],
-            row["timestamp"],
-            row["timestamp"],
-            row["symbol_code"]
-        ))
-
         print(f"💾 Sparad eller uppdaterad: {row['timestamp'].isoformat()} ({row['symbol_code']})")
-
-    conn.commit()
-    conn.close()
 
 if __name__ == "__main__":
     weather_data = fetch_weather_data()
