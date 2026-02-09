@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+import argparse
 import os
 import time
 from datetime import datetime, date, timedelta, time as dtime
@@ -95,6 +96,7 @@ DB_NAME   = "smart_styrning"
 MYCNF     = "/home/runerova/.my.cnf"
 SLEEP_SEC = float(os.getenv("ARRIGO_SLEEP_SEC", "4"))
 REPUSH_COOLDOWN_SEC = float(os.getenv("ARRIGO_REPUSH_COOLDOWN_SEC", "120"))
+EMPTY_DB_SLEEP_SEC = float(os.getenv("ARRIGO_EMPTY_DB_SLEEP_SEC", "60"))
 
 
 def log(msg):
@@ -337,7 +339,8 @@ def main():
                         )
                     except Exception as e:
                         log(f"🧾 DB-debug misslyckades: {e.__class__.__name__}: {e}")
-                time.sleep(SLEEP_SEC)
+                # För imorgon (eller om importen dröjer) vill vi inte spamma Arrigo/DB.
+                time.sleep(max(SLEEP_SEC, EMPTY_DB_SLEEP_SEC))
                 continue
 
             rank, ec_masks, ex_masks, slot_price = build_rank_and_masks(rows)
@@ -387,8 +390,39 @@ def main():
         time.sleep(SLEEP_SEC)
 
 
+def run_readback_plans(token: str, do_heat: bool, do_vv: bool):
+    site_code = os.getenv("SITE_CODE", "HALTORP244")
+    ref_prefix = (os.getenv("ARRIGO_REF_PREFIX") or "Huvudcentral_C1").strip()
+
+    if do_heat:
+        from readback_heatplan_to_db import read_heat_plan_96, upsert_plan
+
+        prefix = os.getenv("ARRIGO_HEAT_PLAN_PREFIX") or f"{ref_prefix}.HEAT_PLAN"
+        heat = read_heat_plan_96(gql, token, PVL_B64, prefix=prefix)
+        day_local = today_local_date()
+        upsert_plan(site_code, "HEAT_PLAN", day_local, heat)
+
+    if do_vv:
+        from readback_vvplan_to_db import read_vv_plan_96, upsert_plan
+
+        prefix = os.getenv("ARRIGO_VV_PLAN_PREFIX") or f"{ref_prefix}.VV_PLAN"
+        vv = read_vv_plan_96(gql, token, PVL_B64, prefix=prefix)
+        day_local = today_local_date()
+        upsert_plan(site_code, "VV_PLAN", day_local, vv)
+    return
+
+
 # ==================================================
 # ENTRYPOINT
 # ==================================================
 if __name__ == "__main__":
-    main()
+    ap = argparse.ArgumentParser(add_help=True)
+    ap.add_argument("--readback-heatplan", action="store_true", help="Läs HEAT_PLAN(0..95) och spara i DB, kör en gång och avsluta")
+    ap.add_argument("--readback-vvplan", action="store_true", help="Läs VV_PLAN(0..95) och spara i DB, kör en gång och avsluta")
+    args = ap.parse_args()
+
+    if args.readback_heatplan or args.readback_vvplan:
+        tok = arrigo_login()
+        run_readback_plans(tok, do_heat=args.readback_heatplan, do_vv=args.readback_vvplan)
+    else:
+        main()

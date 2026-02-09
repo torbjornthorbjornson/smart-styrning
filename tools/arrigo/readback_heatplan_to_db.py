@@ -1,10 +1,24 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import os, re, json
+"""readback_heatplan_to_db.py  (WORKER / LIBRARY)
+
+ANSVAR:
+- Läser HEAT_PLAN(0..95) från Arrigo via redan inloggad token (injectad från orchestrator)
+- Sparar plan i MariaDB table arrigo_plan_cache
+
+VIKTIGT:
+- Loggar ALDRIG in mot Arrigo när modulen används som worker
+- Kan köras standalone för felsökning (då används orchestratorns login)
+"""
+
+import json
+import os
+import re
 from datetime import datetime
 from zoneinfo import ZoneInfo
-import pymysql, requests
+
+import pymysql
 from configparser import ConfigParser
 
 TZ  = ZoneInfo("Europe/Stockholm")
@@ -22,60 +36,20 @@ def read_db_config():
         "cursorclass": pymysql.cursors.DictCursor,
     }
 
-def build_verify():
-    if os.getenv("ARRIGO_INSECURE", "0") == "1":
-        return False
-    return os.getenv("REQUESTS_CA_BUNDLE") or True
+Q_READ_VARS = "query($p:String!){ data(path:$p){ variables{ technicalAddress value } } }"
 
-def arrigo_login():
-    login_url = os.getenv("ARRIGO_LOGIN_URL")
-    user      = os.getenv("ARRIGO_USER") or os.getenv("ARRIGO_USERNAME")
-    password  = os.getenv("ARRIGO_PASS") or os.getenv("ARRIGO_PASSWORD")
-    verify    = build_verify()
 
-    if not login_url or not user or not password:
-        raise SystemExit("Saknar ARRIGO_LOGIN_URL / ARRIGO_USER / ARRIGO_PASS")
-
-    r = requests.post(login_url, json={"username": user, "password": password},
-                      timeout=15, verify=verify)
-    r.raise_for_status()
-    tok = r.json().get("authToken")
-    if not tok:
-        raise SystemExit("Inget authToken i login-svar")
-    return tok
-
-def gql(token, query, variables):
-    url    = os.getenv("ARRIGO_GRAPHQL_URL")
-    verify = build_verify()
-    if not url:
-        raise SystemExit("Saknar ARRIGO_GRAPHQL_URL")
-
-    r = requests.post(
-        url,
-        headers={"Authorization": f"Bearer {token}"},
-        json={"query": query, "variables": variables},
-        timeout=30,
-        verify=verify
-    )
-    r.raise_for_status()
-    j = r.json()
-    if "errors" in j:
-        raise SystemExit("GraphQL-fel: " + str(j["errors"]))
-    return j["data"]
-
-def read_vars_from_pvl(token, pvl_path):
-    q = """
-    query($path:String!){
-      data(path:$path){
-        variables { technicalAddress value }
-      }
-    }
-    """
-    data = gql(token, q, {"path": pvl_path})
+def read_vars_from_pvl(gql_fn, token: str, pvl_b64: str):
+    """Returnerar dict TA->value för alla variabler i PVL."""
+    data = gql_fn(token, Q_READ_VARS, {"p": pvl_b64})
     vars_list = (data.get("data") or {}).get("variables") or []
-    return {v["technicalAddress"]: v.get("value") for v in vars_list if v.get("technicalAddress")}
+    return {
+        v["technicalAddress"]: v.get("value")
+        for v in vars_list
+        if v.get("technicalAddress")
+    }
 
-def extract_heat_plan_96(vals, prefix="Huvudcentral_C1.HEAT_PLAN"):
+def extract_heat_plan_96(vals, prefix: str):
     out = [0] * 96
     for k, v in vals.items():
         if not k.startswith(prefix):
@@ -104,6 +78,12 @@ def extract_heat_plan_96(vals, prefix="Huvudcentral_C1.HEAT_PLAN"):
             out[idx] = 0
 
     return out
+
+
+def read_heat_plan_96(gql_fn, token: str, pvl_b64: str, prefix: str) -> list[int]:
+    """Läser HEAT-planen (96 perioder) från Arrigo och returnerar list[int]."""
+    vals = read_vars_from_pvl(gql_fn, token, pvl_b64)
+    return extract_heat_plan_96(vals, prefix=prefix)
 
 
 def upsert_plan(site_code, plan_type, day_local, periods):
@@ -136,14 +116,15 @@ def main():
     # Svensk dag (idag)
     day_local = datetime.now(TZ).date()
 
-    pvl_path = os.getenv("ARRIGO_PVL_B64") or os.getenv("ARRIGO_PVL_PATH")
-    if not pvl_path:
-        raise SystemExit("Saknar ARRIGO_PVL_B64 / ARRIGO_PVL_PATH")
+    # Standalone-läge: använd orchestratorns token + gql
+    import orchestrator as orch
 
-    token = arrigo_login()
-    vals  = read_vars_from_pvl(token, pvl_path)
+    pvl_b64 = os.getenv("ARRIGO_PVL_B64") or os.getenv("ARRIGO_PVL_PATH") or orch.PVL_B64
+    ref_prefix = (os.getenv("ARRIGO_REF_PREFIX") or "Huvudcentral_C1").strip()
+    prefix = os.getenv("ARRIGO_HEAT_PLAN_PREFIX") or f"{ref_prefix}.HEAT_PLAN"
 
-    heat = extract_heat_plan_96(vals, prefix="Huvudcentral_C1.HEAT_PLAN")
+    token = orch.arrigo_login()
+    heat = read_heat_plan_96(orch.gql, token, pvl_b64, prefix=prefix)
 
     upsert_plan(site_code, plan_type, day_local, heat)
 
