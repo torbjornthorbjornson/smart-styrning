@@ -185,10 +185,6 @@ def main():
     log("🔌 Orchestrator startad")
     log("🚨 ORCHESTRATOR VERSION 2026-02-08 20:45 🚨")
 
-    def gql_wrapper(query, variables):
-        # token kommer från omgivande scope
-        return gql(token, query, variables)
-
     while True:
         try:
             vals, idx = read_vals_and_idx(token)
@@ -223,22 +219,22 @@ def main():
             rows = db_fetch_prices_for_day(target_day)
             log(f"📊 DB-perioder: {len(rows)}")
 
-           
-
-            rank, masks = build_rank_and_masks(rows)
+            rank, ec_masks, ex_masks, slot_price = build_rank_and_masks(rows)
             oat_yday = daily_avg_oat(target_day - timedelta(days=1))
             oat_tmr  = daily_avg_oat(target_day + timedelta(days=1))
 
             log("📤 Pushar till Arrigo")
             push_to_arrigo(
-            gql_wrapper,  # wrapper med bundet token
-            token,
-            PVL_B64,
-            rank,
-            masks,
-            target_day,
-            oat_yday,
-            oat_tmr,
+                gql,
+                token,
+                PVL_B64,
+                rank,
+                ec_masks,
+                ex_masks,
+                target_day,
+                oat_yday,
+                oat_tmr,
+                slot_price,
         )
 
 

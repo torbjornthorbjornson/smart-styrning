@@ -1,41 +1,40 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-push_from_db.py (allt i ett)
-- Hämtar elpriser från DB (UTC) och bygger rank 0..23
-- Räknar median, trösklar och maskar (extreme cheap/expensive)
-- Loggar in mot Arrigo
-- Läser PVL-variabellistan, bygger TA→index
-- Skriver PRICE_RANK(h), PRICE_STAMP, EC/EX-maskar
-- Skriver även OAT_mean_yday och OAT_mean_tomorrow
-- Togglar PRICE_OK
+"""push_from_db.py  (WORKER / LIBRARY)
 
-Thresholds för maskar styrs via miljövariabler:
-  ARRIGO_CHEAP_PCT   (default -0.30)  → t.ex. -0.30 betyder "cheap ≤ 70 % av median"
-  ARRIGO_EXP_PCT     (default +0.50)  → t.ex. +0.50 betyder "exp ≥ 150 % av median"
+ANSVAR:
+- Läser elpriser från MariaDB (UTC)
+- Normaliserar till 96 perioder (15-min)
+- Bygger rankning och EC/EX-masker
+- Pushar data till Arrigo VIA BEFINTLIG TOKEN (från orchestrator)
+
+VIKTIGT:
+- Loggar ALDRIG in mot Arrigo
+- Äger ALDRIG token
+- Körs ENDAST via orchestrator
 """
 
-import os, re, base64
+import os
 from datetime import datetime, date, time, timedelta
 from zoneinfo import ZoneInfo
-import pymysql, requests
+import pymysql
 from configparser import ConfigParser
 
+# =========================
+# TID
+# =========================
 TZ = ZoneInfo("Europe/Stockholm")
 UTC = ZoneInfo("UTC")
-LOG_PATH = "/home/runerova/smartweb/tools/arrigo/logs/arrigo_push.log"
-PERIODS = 96  # HEAT kräver exakt 96 perioder
 
-# ---- Hjälp ----
-def log(msg):
-    now = datetime.now(TZ).strftime("%Y-%m-%d %H:%M:%S")
-    try:
-        with open(LOG_PATH, "a", encoding="utf-8") as f:
-            f.write(f"{now} {msg}\n")
-    except Exception:
-        pass
-    print(msg, flush=True)
+# === PERIODER: HEAT KRÄVER 96, PUNKT ===
+PERIODS = int(os.getenv("ARRIGO_PERIODS", "96"))
+if PERIODS != 96:
+    raise SystemExit(f"FATAL: ARRIGO_PERIODS={PERIODS} – HEAT kräver 96 perioder")
 
+
+# =========================
+# DB
+# =========================
 def read_db_config():
     cfg = ConfigParser()
     cfg.read("/home/runerova/.my.cnf")
@@ -48,60 +47,32 @@ def read_db_config():
         "cursorclass": pymysql.cursors.DictCursor,
     }
 
-def getenv_any(names, required=False, default=None):
-    for n in names:
-        v = os.environ.get(n)
-        if v: return v
-    if required:
-        raise KeyError(f"Saknar någon av: {', '.join(names)}")
-    return default
 
-def ensure_b64(s: str) -> str:
-    s = s.strip()
-    if re.fullmatch(r"[A-Za-z0-9+/=]+", s) and len(s) % 4 == 0:
-        try:
-            base64.b64decode(s)
-            return s
-        except Exception:
-            pass
-    return base64.b64encode(s.encode("utf-8")).decode("ascii")
+# =========================
+# PRISER FRÅN DB
+# =========================
+def fetch_prices_for_local_day(day_local: date):
+    """Hämtar exakt ett lokalt svenskt dygn (00–24) trots att DB lagrar UTC."""
+    start_local = datetime.combine(day_local, time(0, 0), tzinfo=TZ)
+    end_local = start_local + timedelta(days=1)
 
-def build_verify():
-    if os.getenv("ARRIGO_INSECURE", "0") == "1": return False
-    return os.getenv("REQUESTS_CA_BUNDLE") or True
-
-def arrigo_login(login_url, user, password, verify):
-    r = requests.post(login_url, json={"username": user, "password": password}, timeout=15, verify=verify)
-    r.raise_for_status()
-    tok = r.json().get("authToken")
-    if not tok: raise SystemExit("Inget authToken i login-svar")
-    return tok
-
-def gql(url, token, query, variables):
-    r = requests.post(url, headers={"Authorization": f"Bearer {token}"},
-        json={"query": query, "variables": variables}, timeout=30,)
-    r.raise_for_status()
-    j = r.json()
-    if "errors" in j:
-        raise SystemExit("GraphQL-fel: " + str(j["errors"]))
-    return j["data"]
-
-# ---- Pris från DB ----
-def fetch_prices(which: str):
-    today_local = date.today()
-    day_local = today_local + timedelta(days=1) if which=="tomorrow" else today_local
-    start_local = datetime.combine(day_local, time(0,0), tzinfo=TZ)
-    end_local   = start_local + timedelta(days=1)
-    start_utc   = start_local.astimezone(UTC).replace(tzinfo=None)
-    end_utc     = end_local.astimezone(UTC).replace(tzinfo=None)
-
-    log(f"📅 Hämtar priser för {which} ({day_local}) → UTC[{start_utc}→{end_utc}]")
+    start_utc = start_local.astimezone(UTC).replace(tzinfo=None)
+    end_utc = end_local.astimezone(UTC).replace(tzinfo=None)
 
     conn = pymysql.connect(**read_db_config())
     with conn, conn.cursor() as cur:
-        cur.execute("SELECT datetime, price FROM electricity_prices WHERE datetime >= %s AND datetime < %s ORDER BY datetime", (start_utc, end_utc))
+        cur.execute(
+            """
+            SELECT datetime, price
+            FROM electricity_prices
+            WHERE datetime >= %s AND datetime < %s
+            ORDER BY datetime
+            """,
+            (start_utc, end_utc),
+        )
         rows = cur.fetchall()
-    return rows, day_local
+
+    return rows
 
 # =========================
 # PERIOD-NORMALISERING
@@ -125,8 +96,8 @@ def normalize_periods(rows):
 # =========================
 # MASKER & RANK
 # =========================
-def pack_masks(slots):
-    nwords = (PERIODS + 31) // 32
+def pack_masks(slots, periods=PERIODS):
+    nwords = (periods + 31) // 32
     words = [0] * nwords
     for s in slots:
         words[s // 32] |= (1 << (s % 32))
@@ -140,8 +111,13 @@ def build_rank_and_masks(rows):
     mid = PERIODS // 2
     median = (sorted_prices[mid - 1] + sorted_prices[mid]) / 2.0
 
-    cheap_thr = median * 0.5
-    exp_thr   = median * 1.5
+    # cheap/exp anges som procent av median via env.
+    # Ex: -0.50 => cheap <= 50% av median, +1.50 => exp >= 250% av median
+    cheap_pct = float(os.getenv("ARRIGO_CHEAP_PCT", "-0.50"))
+    exp_pct = float(os.getenv("ARRIGO_EXP_PCT", "+1.50"))
+
+    cheap_thr = median * (1.0 + cheap_pct)
+    exp_thr = median * (1.0 + exp_pct)
 
     cheap_slots = [i for i, p in slot_price if p <= cheap_thr]
     exp_slots   = [i for i, p in slot_price if p >= exp_thr]
@@ -157,84 +133,86 @@ def build_rank_and_masks(rows):
 
 # ---- OAT ----
 def daily_avg_oat(day_local: date):
-    start_local = datetime.combine(day_local,time(0,0),tzinfo=TZ)
-    end_local   = start_local+timedelta(days=1)
-    start_utc   = start_local.astimezone(UTC).replace(tzinfo=None)
-    end_utc     = end_local.astimezone(UTC).replace(tzinfo=None)
+    start_local = datetime.combine(day_local, time(0, 0), tzinfo=TZ)
+    end_local = start_local + timedelta(days=1)
+
+    start_utc = start_local.astimezone(UTC).replace(tzinfo=None)
+    end_utc = end_local.astimezone(UTC).replace(tzinfo=None)
     conn = pymysql.connect(**read_db_config())
     with conn, conn.cursor() as cur:
-        cur.execute("SELECT AVG(temperature) AS avgtemp FROM weather WHERE timestamp >= %s AND timestamp < %s",(start_utc,end_utc))
-        row=cur.fetchone()
-    return round(float(row["avgtemp"]),1) if row and row["avgtemp"] else None
+        cur.execute(
+            "SELECT AVG(temperature) AS avgtemp FROM weather WHERE timestamp >= %s AND timestamp < %s",
+            (start_utc, end_utc),
+        )
+        row = cur.fetchone()
 
-# ---- Push ----
-def push_to_arrigo(gql, token, pvl_b64, rank, masks, day_local, oat_yday, oat_tmr):
+    return round(float(row["avgtemp"]), 1) if row and row["avgtemp"] is not None else None
 
-    
-    data = gql(
-    "query($path:String!){ data(path:$path){ variables{ technicalAddress } } }",
-    {"path": pvl_b64},
-)
+def push_to_arrigo(
+    gql_fn,
+    token,
+    pvl_b64,
+    rank,
+    ec_masks,
+    ex_masks,
+    day_local,
+    oat_yday,
+    oat_tmr,
+    slot_price,
+):
+    """Pushar 96-perioders data till Arrigo via orchestratorns token."""
+
+    data = gql_fn(
+        token,
+        'query($p:String!){ data(path:$p){ variables{ technicalAddress } } }',
+        {"p": pvl_b64},
+    )
 
     vars_list = (data.get("data") or {}).get("variables") or []
 
-    idx_rank, idx_stamp = {}, None
-    idx_price_ok=None
-    idx_oat_yday=idx_oat_tmr=None
-    idx_masks={}
+    # Robust mappning: tillåt både full TA och sista segmentet (utan prefix).
+    idx = {}
+    for i, v in enumerate(vars_list):
+        ta_full = (v.get("technicalAddress") or "").strip()
+        if not ta_full:
+            continue
+        idx[ta_full] = i
+        ta_short = ta_full.split(".")[-1]
+        idx.setdefault(ta_short, i)
 
-    for i,v in enumerate(vars_list):
-        ta=(v.get("technicalAddress") or "").strip()
-        m=re.search(r"\.PRICE_RANK\((\d+)\)$",ta)
-        if m: idx_rank[int(m.group(1))]=i; continue
-        if ta.endswith(".PRICE_OK"): idx_price_ok=i; continue
-        if ta.endswith(".PRICE_STAMP"): idx_stamp=i; continue
-        if ta.endswith(".OAT_mean_yday"): idx_oat_yday=i; continue
-        if ta.endswith(".OAT_mean_tomorrow"): idx_oat_tmr=i; continue
-        if ta.endswith(".EC_MASK_L"): idx_masks["EC_MASK_L"]=i; continue
-        if ta.endswith(".EC_MASK_H"): idx_masks["EC_MASK_H"]=i; continue
-        if ta.endswith(".EX_MASK_L"): idx_masks["EX_MASK_L"]=i; continue
-        if ta.endswith(".EX_MASK_H"): idx_masks["EX_MASK_H"]=i; continue
+    writes = []
 
-    if idx_price_ok is not None:
-        gql(
-            "mutation($v:[VariableKeyValue!]!){writeData(variables:$v)}",
-            {"v":[{"key":f"{pvl_b64}:{idx_price_ok}","value":"0"}]}
-  )
+    for i in range(PERIODS):
+        ta = f"PRICE_RANK({i})"
+        if ta in idx:
+            writes.append({"key": f"{pvl_b64}:{idx[ta]}", "value": str(rank[i])})
 
-        log("🔒 PRICE_OK=0")
+    for i, price in slot_price:
+        ta = f"PRICE_VAL({i})"
+        if ta in idx:
+            writes.append({"key": f"{pvl_b64}:{idx[ta]}", "value": f"{price:.2f}"})
 
-    writes=[]
-    for h in range(24):
-        if h in idx_rank:
-            writes.append({"key":f"{pvl_b64}:{idx_rank[h]}","value":str(rank[h])})
-    if idx_stamp is not None:
-        writes.append({"key":f"{pvl_b64}:{idx_stamp}","value":day_local.strftime("%Y%m%d")})
-    if idx_oat_yday is not None and oat_yday is not None:
-        writes.append({"key":f"{pvl_b64}:{idx_oat_yday}","value":str(oat_yday)})
-    if idx_oat_tmr is not None and oat_tmr is not None:
-        writes.append({"key":f"{pvl_b64}:{idx_oat_tmr}","value":str(oat_tmr)})
-    for k,v in masks.items():
-        if k in idx_masks:
-            writes.append({"key":f"{pvl_b64}:{idx_masks[k]}","value":str(v)})
-    log(f"🧩 Masks: {masks}")
+    if "PRICE_STAMP" in idx:
+        writes.append({"key": f"{pvl_b64}:{idx['PRICE_STAMP']}", "value": day_local.strftime("%Y%m%d")})
 
-    gql(
-        "mutation($v:[VariableKeyValue!]!){writeData(variables:$v)}",
-        {"v":writes}
-   )
+    if oat_yday is not None and "OAT_mean_yday" in idx:
+        writes.append({"key": f"{pvl_b64}:{idx['OAT_mean_yday']}", "value": str(oat_yday)})
 
-    log(f"✅ Skrev {len(writes)} variabler")
+    if oat_tmr is not None and "OAT_mean_tomorrow" in idx:
+        writes.append({"key": f"{pvl_b64}:{idx['OAT_mean_tomorrow']}", "value": str(oat_tmr)})
 
-    if idx_price_ok is not None:
-        gql(
-        "mutation($v:[VariableKeyValue!]!){writeData(variables:$v)}",
-        {"v":[{"key":f"{pvl_b64}:{idx_price_ok}","value":"1"}]}
-        )
+    for i, val in enumerate(ec_masks, start=1):
+        ta = f"EC_MASK32_{i}"
+        if ta in idx:
+            writes.append({"key": f"{pvl_b64}:{idx[ta]}", "value": str(val)})
 
-        log("🔓 PRICE_OK=1")
+    for i, val in enumerate(ex_masks, start=1):
+        ta = f"EX_MASK32_{i}"
+        if ta in idx:
+            writes.append({"key": f"{pvl_b64}:{idx[ta]}", "value": str(val)})
 
-
-
-# OBS: denna modul körs inte fristående längre
-# push_to_arrigo() anropas av orchestrator
+    gql_fn(
+        token,
+        "mutation($v:[VariableKeyValue!]!){ writeData(variables:$v) }",
+        {"v": writes},
+    )
