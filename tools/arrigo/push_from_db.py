@@ -205,11 +205,9 @@ def push_to_arrigo(gql, token, pvl_b64, rank, masks, day_local, oat_yday, oat_tm
         log("🔒 PRICE_OK=0")
 
     writes=[]
-    # Skriv PRICE_RANK(n) för de n som finns i PVL (stöd för både 24 och 96 perioder).
-    # Vi skriver i numerisk ordning för determinism.
-    for n in sorted(idx_rank.keys()):
-        if 0 <= n < len(rank):
-            writes.append({"key":f"{pvl_b64}:{idx_rank[n]}","value":str(rank[n])})
+    for h in range(24):
+        if h in idx_rank:
+            writes.append({"key":f"{pvl_b64}:{idx_rank[h]}","value":str(rank[h])})
     if idx_stamp is not None:
         writes.append({"key":f"{pvl_b64}:{idx_stamp}","value":day_local.strftime("%Y%m%d")})
     if idx_oat_yday is not None and oat_yday is not None:
