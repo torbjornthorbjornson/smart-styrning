@@ -7,6 +7,8 @@ import argparse
 import os
 import time
 from datetime import datetime, date, timedelta, time as dtime
+import json
+import tempfile
 import requests
 import base64
 import re
@@ -105,6 +107,46 @@ PLAN_CACHE_INTERVAL_SEC = float(os.getenv("ARRIGO_PLAN_CACHE_INTERVAL_SEC", "300
 
 def log(msg):
     print(time.strftime("%H:%M:%S"), msg, flush=True)
+
+
+def _default_token_cache_file() -> str:
+    here = os.path.dirname(os.path.abspath(__file__))
+    return os.path.join(here, ".arrigo_token.json")
+
+
+def write_token_cache(token: str) -> None:
+    """Skriv bearer-token till cache-fil för att andra processer (t.ex. web UI) kan återanvända den.
+
+    Viktigt för kontraktet: orchestratorn sköter login så att flera logins inte invaliderar varandras tokens.
+    """
+
+    path = os.getenv("ARRIGO_TOKEN_CACHE_FILE") or _default_token_cache_file()
+    payload = {
+        "token": token,
+        "ts": time.time(),
+        "login_url": LOGIN_URL,
+        "graphql_url": GRAPHQL_URL,
+        "pvl_b64": PVL_B64,
+    }
+    try:
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        fd, tmp = tempfile.mkstemp(prefix=".arrigo_token.", suffix=".tmp", dir=os.path.dirname(path) or None)
+        try:
+            with os.fdopen(fd, "w", encoding="utf-8") as f:
+                json.dump(payload, f, ensure_ascii=False)
+            os.replace(tmp, path)
+            try:
+                os.chmod(path, 0o600)
+            except Exception:
+                pass
+        finally:
+            try:
+                if os.path.exists(tmp):
+                    os.remove(tmp)
+            except Exception:
+                pass
+    except Exception as e:
+        log(f"⚠️ Kunde inte skriva token-cache: {e.__class__.__name__}: {e}")
 
 
 def to_int(x, default=0):
@@ -224,6 +266,7 @@ def relogin_with_backoff(start_backoff_sec: float) -> str:
         try:
             tok = arrigo_login()
             log("🔐 Inloggad mot Arrigo")
+            write_token_cache(tok)
             return tok
         except requests.exceptions.RequestException as e:
             log(f"🌐 Login nätverksfel: {e.__class__.__name__}: {e}")
@@ -289,6 +332,7 @@ def main():
     token = relogin_with_backoff(SLEEP_SEC)
     log("🔌 Orchestrator startad")
     log("🚨 ORCHESTRATOR VERSION 2026-02-08 20:45 🚨")
+    write_token_cache(token)
     debug_log_pvl()
     if os.getenv("ARRIGO_DEBUG_TAS", "0") == "1":
         log(f"🧷 REF_PREFIX={REF_PREFIX!r}")
@@ -353,6 +397,7 @@ def main():
             if e.response is not None and e.response.status_code == 401:
                 log("🔑 401 → relogin")
                 token = relogin_with_backoff(net_backoff_sec)
+                write_token_cache(token)
                 net_backoff_sec = max(SLEEP_SEC, 1.0)
                 continue
             raise
@@ -495,6 +540,7 @@ if __name__ == "__main__":
 
     if args.readback_heatplan or args.readback_vvplan:
         tok = arrigo_login()
+        write_token_cache(tok)
         run_readback_plans(tok, do_heat=args.readback_heatplan, do_vv=args.readback_vvplan)
     else:
         main()

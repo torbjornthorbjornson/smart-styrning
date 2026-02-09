@@ -66,7 +66,8 @@ def exo_console():
 		# Arrigo: lista PVL-variabler (kräver ingen site / EXO).
 		if action == "arrigo_list":
 			try:
-				vars_list = arrigo_client.read_pvl_variables(arrigo_cfg)
+				# Kontrakt: orchestratorn sköter login. Webben ska inte göra egen login (kan invalidera token).
+				vars_list = arrigo_client.read_pvl_variables(arrigo_cfg, allow_login=False, prefer_token_cache=True)
 				arrigo_total = len(vars_list)
 				flt = arrigo_filter.lower()
 				filtered = []

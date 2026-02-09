@@ -121,6 +121,15 @@ Orchestratorn använder dessutom prefix för handshake-signaler (TA_REQ/ACK etc)
   - Kolla `ARRIGO_HTTP_CONNECT_TIMEOUT_SEC` / `ARRIGO_HTTP_READ_TIMEOUT_SEC`.
   - Se också om PVL-path pekar på rätt objekt (då får du annars ofta ett tomt/konstigt svar).
 
+## 8) Kontrakt: orchestrator gör login (token-cache)
+
+För att undvika att flera logins invaliderar varandras tokens (konflikt) skriver orchestratorn en token-cache:
+
+- Default: `smartweb/tools/arrigo/.arrigo_token.json`
+- Kan styras med env: `ARRIGO_TOKEN_CACHE_FILE`
+
+Webbens `/exo`-sida använder token-cachen och gör **inte** egen login mot Arrigo.
+
 
 ---
 
