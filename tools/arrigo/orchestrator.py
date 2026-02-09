@@ -33,6 +33,64 @@ UTC   = pytz.UTC
 STHLM = pytz.timezone("Europe/Stockholm")
 
 
+def _avg_price_per_local_hour(rows):
+    """Returnerar dict {0..23: avg_price} baserat på DB-rader (UTC-naiv datetime)."""
+    sums = {}
+    counts = {}
+    for r in rows or []:
+        try:
+            dt_utc = r["datetime"].replace(tzinfo=UTC)
+            dt_local = dt_utc.astimezone(STHLM)
+            hour = int(dt_local.hour)
+            price = float(r["price"])
+        except Exception:
+            continue
+        sums[hour] = sums.get(hour, 0.0) + price
+        counts[hour] = counts.get(hour, 0) + 1
+    return {h: (sums[h] / counts[h]) for h in sums if counts.get(h)}
+
+
+def _build_hourly_rank(rows):
+    """Bygger rank[0..23] där 0=billigast timme, 23=dyrast."""
+    hour_avg = _avg_price_per_local_hour(rows)
+    if len(hour_avg) < 20:
+        return None
+
+    hours = list(range(24))
+    # Om någon timme saknas: avbryt hellre än att skriva skräp.
+    if any(h not in hour_avg for h in hours):
+        return None
+
+    sorted_hours = sorted(hours, key=lambda h: (hour_avg[h], h))
+    rank_by_hour = {h: i for i, h in enumerate(sorted_hours)}
+    return [rank_by_hour[h] for h in hours]
+
+
+def _words32_to_masks_64(ec_words, ex_words):
+    """Konverterar 32-bitarsord (list) till Arrigo-masker L/H (2x64-bit).
+
+    För 96 perioder fås normalt 3 ord. Vi packar ord[0..1] till L och ord[2] till H.
+    """
+
+    def pack_2x64(words):
+        words = list(words or [])
+        # säkerställ minst 3 ord
+        while len(words) < 3:
+            words.append(0)
+        lo64 = int(words[0]) | (int(words[1]) << 32)
+        hi64 = int(words[2])
+        return lo64, hi64
+
+    ec_l, ec_h = pack_2x64(ec_words)
+    ex_l, ex_h = pack_2x64(ex_words)
+    return {
+        "EC_MASK_L": ec_l,
+        "EC_MASK_H": ec_h,
+        "EX_MASK_L": ex_l,
+        "EX_MASK_H": ex_h,
+    }
+
+
 def today_local_date() -> date:
     """Returnerar dagens datum i svensk lokal tid."""
     return datetime.now(UTC).astimezone(STHLM).date()
@@ -223,9 +281,42 @@ def main():
             rows = db_fetch_prices_for_day(target_day)
             log(f"📊 DB-perioder: {len(rows)}")
 
-           
+            # Om DB saknar data (vanligt för "imorgon" tidigt), vänta utan att ACK:a.
+            # För 96 perioder vill vi i praktiken ha nära full dygnstäckning.
+            if not rows or len(rows) < 90:
+                log("⚠️ För få prisrader i DB för 96 perioder – väntar med push (ACK lämnas 0).")
+                time.sleep(SLEEP_SEC)
+                continue
 
-            rank, masks = build_rank_and_masks(rows)
+            # Primärt: 96-perioders rank + masker från push_from_db.
+            brm = build_rank_and_masks(rows)
+            rank = None
+            masks = None
+
+            if isinstance(brm, tuple) and len(brm) >= 4:
+                rank, ec_words, ex_words, _slot_price = brm[:4]
+                masks = _words32_to_masks_64(ec_words, ex_words)
+            elif isinstance(brm, tuple) and len(brm) == 2:
+                rank, masks = brm
+            else:
+                log(f"⚠️ Oväntat returformat från build_rank_and_masks: {type(brm)}")
+                time.sleep(SLEEP_SEC)
+                continue
+
+            if not isinstance(rank, (list, tuple)) or len(rank) < 24:
+                log(f"⚠️ Oväntad rank: type={type(rank)} len={getattr(rank, '__len__', lambda: 'n/a')()}")
+                time.sleep(SLEEP_SEC)
+                continue
+
+            # Fallback om vi av någon anledning får 24-timmarsrank.
+            if len(rank) != 96:
+                log(f"ℹ️ Rank-längd={len(rank)} (förväntat 96). Kör bakåtkompatibelt.")
+
+            if not isinstance(masks, dict):
+                log(f"⚠️ Oväntat mask-format ({type(masks)}) – väntar med push.")
+                time.sleep(SLEEP_SEC)
+                continue
+
             oat_yday = daily_avg_oat(target_day - timedelta(days=1))
             oat_tmr  = daily_avg_oat(target_day + timedelta(days=1))
 

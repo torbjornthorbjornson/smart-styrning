@@ -24,6 +24,7 @@ from configparser import ConfigParser
 TZ = ZoneInfo("Europe/Stockholm")
 UTC = ZoneInfo("UTC")
 LOG_PATH = "/home/runerova/smartweb/tools/arrigo/logs/arrigo_push.log"
+PERIODS = 96  # HEAT kräver exakt 96 perioder
 
 # ---- Hjälp ----
 def log(msg):
@@ -102,60 +103,57 @@ def fetch_prices(which: str):
         rows = cur.fetchall()
     return rows, day_local
 
-def normalize_to_24(rows):
-    per_hour = {h: [] for h in range(24)}
+# =========================
+# PERIOD-NORMALISERING
+# =========================
+def normalize_periods(rows):
+    per_slot = {i: [] for i in range(PERIODS)}
+
     for r in rows:
-        h = r["datetime"].replace(tzinfo=UTC).astimezone(TZ).hour
-        per_hour[h].append(float(r["price"]))
+        dt = r["datetime"].replace(tzinfo=UTC).astimezone(TZ)
+        idx = dt.hour * 4 + (dt.minute // 15)
+        if 0 <= idx < PERIODS:
+            per_slot[idx].append(float(r["price"]))
+
     out = []
-    for h in range(24):
-        if per_hour[h]:
-            price = sum(per_hour[h])/len(per_hour[h])
-        else:
-            # fyll med närmaste kända
-            left = h-1
-            while left>=0 and not per_hour[left]: left-=1
-            right = h+1
-            while right<=23 and not per_hour[right]: right+=1
-            if left>=0 and per_hour[left]:
-                price = sum(per_hour[left])/len(per_hour[left])
-            elif right<=23 and per_hour[right]:
-                price = sum(per_hour[right])/len(per_hour[right])
-            else:
-                price = 0
-        out.append((h, price))
+    for i in range(PERIODS):
+        price = sum(per_slot[i]) / len(per_slot[i]) if per_slot[i] else 0.0
+        out.append((i, price))
+
     return out
 
+# =========================
+# MASKER & RANK
+# =========================
+def pack_masks(slots):
+    nwords = (PERIODS + 31) // 32
+    words = [0] * nwords
+    for s in slots:
+        words[s // 32] |= (1 << (s % 32))
+    return words
+
 def build_rank_and_masks(rows):
-    hour_price = normalize_to_24(rows)
-    sorted_prices = sorted([p for _,p in hour_price])
-    median = (sorted_prices[11] + sorted_prices[12])/2.0
+    slot_price = normalize_periods(rows)
+    prices = [p for _, p in slot_price]
 
-    # --- thresholds från miljövariabler ---
-    cheap_pct = float(getenv_any(["ARRIGO_CHEAP_PCT"], default="-0.30"))  # default -0.30
-    exp_pct   = float(getenv_any(["ARRIGO_EXP_PCT"],   default="+0.50"))  # default +0.50
-    cheap_thr = median * (1.0 + cheap_pct)
-    exp_thr   = median * (1.0 + exp_pct)
+    sorted_prices = sorted(prices)
+    mid = PERIODS // 2
+    median = (sorted_prices[mid - 1] + sorted_prices[mid]) / 2.0
 
-    cheap_hours = [h for h,p in hour_price if p <= cheap_thr]
-    exp_hours   = [h for h,p in hour_price if p >= exp_thr]
+    cheap_thr = median * 0.5
+    exp_thr   = median * 1.5
 
-    def pack_mask(hours):
-        bits=0
-        for h in hours:
-            bits |= (1<<h)
-        return bits & 0xFFFF, (bits>>16)&0xFFFF
+    cheap_slots = [i for i, p in slot_price if p <= cheap_thr]
+    exp_slots   = [i for i, p in slot_price if p >= exp_thr]
 
-    ecL, ecH = pack_mask(cheap_hours)
-    exL, exH = pack_mask(exp_hours)
+    ec_masks = pack_masks(cheap_slots)
+    ex_masks = pack_masks(exp_slots)
 
-    # rank
-    sorted_hours = sorted(range(24), key=lambda h: hour_price[h][1])
-    hour_to_rank = {h:i for i,h in enumerate(sorted_hours)}
-    rank = [hour_to_rank[h] for h,_ in hour_price]
+    sorted_idx = sorted(range(PERIODS), key=lambda i: slot_price[i][1])
+    idx_to_rank = {i: r for r, i in enumerate(sorted_idx)}
+    rank = [idx_to_rank[i] for i, _ in slot_price]
 
-    log(f"📊 Median={median:.3f}, cheap_thr={cheap_thr:.3f}, exp_thr={exp_thr:.3f}")
-    return rank, {"EC_MASK_L":ecL,"EC_MASK_H":ecH,"EX_MASK_L":exL,"EX_MASK_H":exH}
+    return rank, ec_masks, ex_masks, slot_price
 
 # ---- OAT ----
 def daily_avg_oat(day_local: date):
@@ -207,9 +205,11 @@ def push_to_arrigo(gql, token, pvl_b64, rank, masks, day_local, oat_yday, oat_tm
         log("🔒 PRICE_OK=0")
 
     writes=[]
-    for h in range(24):
-        if h in idx_rank:
-            writes.append({"key":f"{pvl_b64}:{idx_rank[h]}","value":str(rank[h])})
+    # Skriv PRICE_RANK(n) för de n som finns i PVL (stöd för både 24 och 96 perioder).
+    # Vi skriver i numerisk ordning för determinism.
+    for n in sorted(idx_rank.keys()):
+        if 0 <= n < len(rank):
+            writes.append({"key":f"{pvl_b64}:{idx_rank[n]}","value":str(rank[n])})
     if idx_stamp is not None:
         writes.append({"key":f"{pvl_b64}:{idx_stamp}","value":day_local.strftime("%Y%m%d")})
     if idx_oat_yday is not None and oat_yday is not None:
