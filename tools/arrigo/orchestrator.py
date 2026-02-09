@@ -414,7 +414,15 @@ def main():
                 write_token_cache(token)
                 net_backoff_sec = max(SLEEP_SEC, 1.0)
                 continue
-            raise
+            # Andra HTTP-fel (t.ex. 5xx) ska inte döda orchestratorn.
+            status = None
+            try:
+                status = e.response.status_code if e.response is not None else None
+            except Exception:
+                status = None
+            log(f"🌐 HTTP-fel från Arrigo: status={status} {e.__class__.__name__}: {e}")
+            net_backoff_sec = sleep_backoff(net_backoff_sec)
+            continue
         except requests.exceptions.RequestException as e:
             # Nätverksfel (timeout/DNS/connection reset). Orchestratorn ska fortsätta poll:a.
             log(f"🌐 Arrigo nätverksfel: {e.__class__.__name__}: {e}")
