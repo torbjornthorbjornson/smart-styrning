@@ -92,4 +92,72 @@
 		<pre style="white-space: pre-wrap; background:#f7f7f7; padding: 10px; border-radius: 8px; border: 1px solid #eee;">{{ result_json }}</pre>
 	{% endif %}
 
+	<hr style="margin: 18px 0;">
+
+	<h3>Arrigo PVL (Project Builder “api”-sidan)</h3>
+	<p>
+		<strong>ARRIGO_LOGIN_URL:</strong>
+		{% if arrigo_has_login_url %}<span style="color:#0a7;">konfigurerad</span>{% else %}<span style="color:#c40;">saknas</span>{% endif %}
+		<br>
+		<strong>ARRIGO_GRAPHQL_URL:</strong>
+		{% if arrigo_has_graphql_url %}<span style="color:#0a7;">konfigurerad</span>{% else %}<span style="color:#c40;">saknas</span>{% endif %}
+		<br>
+		<strong>ARRIGO_USER/ARRIGO_PASS:</strong>
+		{% if arrigo_has_user and arrigo_has_pass %}<span style="color:#0a7;">konfigurerad</span>{% else %}<span style="color:#c40;">saknas</span>{% endif %}
+		<br>
+		<strong>ARRIGO_PVL_PATH/ARRIGO_PVL_B64:</strong>
+		{% if arrigo_has_pvl %}<span style="color:#0a7;">konfigurerad</span>{% else %}<span style="color:#c40;">saknas</span>{% endif %}
+		<br>
+		<strong>PVL (decoded):</strong>
+		<code>{{ arrigo_pvl_decoded or '-' }}</code>
+	</p>
+
+	{% if arrigo_error %}
+		<p style="color:#c40;"><strong>⚠️ {{ arrigo_error }}</strong></p>
+	{% endif %}
+
+	<form method="post" style="margin-bottom: 1em; padding: 10px; border: 1px solid #ddd; border-radius: 8px;">
+		<div>
+			<label for="arrigo_filter"><strong>Filter (valfritt):</strong></label>
+			<input id="arrigo_filter" name="arrigo_filter" type="text" value="{{ arrigo_filter or '' }}" placeholder="t.ex. PRICE_ eller Huvudcentral" style="width: 280px;">
+			<label for="arrigo_limit" style="margin-left: 12px;"><strong>Limit:</strong></label>
+			<input id="arrigo_limit" name="arrigo_limit" type="number" min="1" max="5000" value="{{ arrigo_limit or 200 }}" style="width: 90px;">
+			<label style="margin-left: 12px;">
+				<input type="checkbox" name="arrigo_show_values" value="1" {% if arrigo_show_values %}checked{% endif %}>
+				Visa värden
+			</label>
+		</div>
+		<div style="margin-top: 10px;">
+			<button type="submit" name="action" value="arrigo_list">Lista variabler från api-sidan</button>
+			{% if arrigo_total %}
+				<span style="margin-left: 12px; color:#555;">Totalt i PVL: <code>{{ arrigo_total }}</code> (visar max <code>{{ arrigo_vars|length }}</code>)</span>
+			{% endif %}
+		</div>
+	</form>
+
+	{% if arrigo_vars and arrigo_vars|length > 0 %}
+		<div style="max-height: 420px; overflow: auto; border: 1px solid #eee; border-radius: 8px;">
+			<table style="width: 100%; border-collapse: collapse;">
+				<thead>
+					<tr style="background: #fafafa;">
+						<th style="text-align:left; padding: 8px; border-bottom: 1px solid #eee;">technicalAddress</th>
+						{% if arrigo_show_values %}
+							<th style="text-align:left; padding: 8px; border-bottom: 1px solid #eee;">value</th>
+						{% endif %}
+					</tr>
+				</thead>
+				<tbody>
+					{% for v in arrigo_vars %}
+						<tr>
+							<td style="padding: 6px 8px; border-bottom: 1px solid #f0f0f0;"><code>{{ v.technicalAddress }}</code></td>
+							{% if arrigo_show_values %}
+								<td style="padding: 6px 8px; border-bottom: 1px solid #f0f0f0;"><code>{{ v.value }}</code></td>
+							{% endif %}
+						</tr>
+					{% endfor %}
+				</tbody>
+			</table>
+		</div>
+	{% endif %}
+
 {% endblock %}

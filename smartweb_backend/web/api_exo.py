@@ -5,6 +5,7 @@ import os
 
 from flask import Blueprint, Response, render_template, request
 
+from smartweb_backend.clients import arrigo_client
 from smartweb_backend.services import exo_service
 from smartweb_backend.db.connection import get_connection
 from smartweb_backend.time_utils import today_local_date
@@ -31,6 +32,21 @@ def exo_console():
 	exo_url = os.environ.get("EXO_URL")
 	has_token = bool(os.environ.get("EXO_TOKEN"))
 
+	# Arrigo (Project Builder / api-sida -> PVL)
+	arrigo_cfg = arrigo_client.load_config()
+	arrigo_has_login_url = bool(arrigo_cfg.login_url)
+	arrigo_has_graphql_url = bool(arrigo_cfg.graphql_url)
+	arrigo_has_user = bool(arrigo_cfg.username)
+	arrigo_has_pass = bool(arrigo_cfg.password)
+	arrigo_has_pvl = bool(arrigo_cfg.pvl_b64)
+
+	arrigo_filter = (request.values.get("arrigo_filter") or "").strip()
+	arrigo_limit = int((request.values.get("arrigo_limit") or "200").strip() or 200)
+	arrigo_show_values = str(request.values.get("arrigo_show_values") or "").lower() in ("1", "true", "yes", "on")
+	arrigo_total = 0
+	arrigo_vars: list[dict[str, str]] = []
+	arrigo_error = ""
+
 	selected_site = (request.values.get("site_code") or "").strip() or (site_codes[0] if site_codes else "")
 	day_str = (request.values.get("day") or "").strip() or today_local_date().strftime("%Y-%m-%d")
 	build = str(request.values.get("build", "0")).lower() in ("1", "true", "yes", "on")
@@ -47,71 +63,103 @@ def exo_console():
 	error_msg = ""
 
 	if request.method == "POST" and action:
-		if not selected_site:
-			error_msg = "Ingen site vald (och kunde inte läsa sites från DB)."
-			return render_template(
-				"exo.html",
-				site_codes=site_codes,
-				selected_site=selected_site,
-				day_str=day_str,
-				n_arg=n_arg or "",
-				cheap_arg=cheap_arg or "",
-				exp_arg=exp_arg or "",
-				build=build,
-				exo_url=exo_url,
-				has_token=has_token,
-				status_msg=status_msg,
-				error_msg=error_msg,
-				result_json=result_json,
-			)
-		try:
-			day_local = exo_service.resolve_day_local(day_str)
-			params = exo_service.build_params(selected_site, day_local, n_arg, cheap_arg, exp_arg)
-			exo_service.maybe_build_payload(params, build=build)
-			payload_json = exo_service.fetch_payload_json(params)
+		# Arrigo: lista PVL-variabler (kräver ingen site / EXO).
+		if action == "arrigo_list":
+			try:
+				vars_list = arrigo_client.read_pvl_variables(arrigo_cfg)
+				arrigo_total = len(vars_list)
+				flt = arrigo_filter.lower()
+				filtered = []
+				for v in vars_list:
+					ta = str(v.get("technicalAddress") or "")
+					if flt and flt not in ta.lower():
+						continue
+					row = {"technicalAddress": ta}
+					if arrigo_show_values:
+						row["value"] = "" if v.get("value") is None else str(v.get("value"))
+					filtered.append(row)
+				arrigo_vars = filtered[: max(0, arrigo_limit)]
+				status_msg = f"Arrigo: läste {arrigo_total} variabler." if not status_msg else status_msg
+			except Exception as e:
+				arrigo_error = f"Arrigo-fel: {e}"
+		else:
+			if not selected_site:
+				error_msg = "Ingen site vald (och kunde inte läsa sites från DB)."
+				return render_template(
+					"exo.html",
+					site_codes=site_codes,
+					selected_site=selected_site,
+					day_str=day_str,
+					n_arg=n_arg or "",
+					cheap_arg=cheap_arg or "",
+					exp_arg=exp_arg or "",
+					build=build,
+					exo_url=exo_url,
+					has_token=has_token,
+					status_msg=status_msg,
+					error_msg=error_msg,
+					result_json=result_json,
+					arrigo_has_login_url=arrigo_has_login_url,
+					arrigo_has_graphql_url=arrigo_has_graphql_url,
+					arrigo_has_user=arrigo_has_user,
+					arrigo_has_pass=arrigo_has_pass,
+					arrigo_has_pvl=arrigo_has_pvl,
+					arrigo_pvl_decoded=arrigo_cfg.pvl_decoded or "",
+					arrigo_filter=arrigo_filter,
+					arrigo_limit=arrigo_limit,
+					arrigo_show_values=arrigo_show_values,
+					arrigo_total=arrigo_total,
+					arrigo_vars=arrigo_vars,
+					arrigo_error=arrigo_error,
+				)
+			try:
+				day_local = exo_service.resolve_day_local(day_str)
+				params = exo_service.build_params(selected_site, day_local, n_arg, cheap_arg, exp_arg)
+				exo_service.maybe_build_payload(params, build=build)
+				payload_json = exo_service.fetch_payload_json(params)
 
-			if action == "preview":
-				result_obj = json.loads(payload_json)
-				status_msg = "Payload hämtad."
-			elif action == "dry_run":
-				result_obj = {
-					"dry_run": True,
-					"target": {"exo_url": exo_url, "has_token": has_token},
-					"payload": json.loads(payload_json),
-				}
-				status_msg = "Dry-run: inget skickades."
-			elif action == "push":
-				confirm = (request.form.get("confirm") or "").strip().upper()
-				if confirm != "PUSH":
-					error_msg = "Skriv PUSH i bekräftelserutan för att skicka."
-				else:
-					timeout_sec = int((request.values.get("timeout") or "20").strip())
-					push_result = exo_service.push_payload(payload_json, exo_url=exo_url, token=os.environ.get("EXO_TOKEN"), timeout_sec=timeout_sec)
-					if isinstance(push_result, exo_service.ExoPushHttpError):
-						result_obj = {
-							"sent": False,
-							"http_status": push_result.http_status,
-							"error": push_result.error,
-							"body": push_result.body,
-						}
-						error_msg = "EXO svarade med HTTP-fel (proxy 502)."
+				if action == "preview":
+					result_obj = json.loads(payload_json)
+					status_msg = "Payload hämtad."
+				elif action == "dry_run":
+					result_obj = {
+						"dry_run": True,
+						"target": {"exo_url": exo_url, "has_token": has_token},
+						"payload": json.loads(payload_json),
+					}
+					status_msg = "Dry-run: inget skickades."
+				elif action == "push":
+					confirm = (request.form.get("confirm") or "").strip().upper()
+					if confirm != "PUSH":
+						error_msg = "Skriv PUSH i bekräftelserutan för att skicka."
 					else:
-						http_status, body = push_result
-						result_obj = {"sent": True, "http_status": http_status, "exo_response": body}
-						status_msg = "Skickat till EXO."
-			else:
-				error_msg = f"Okänd action: {action}"
+						timeout_sec = int((request.values.get("timeout") or "20").strip())
+						push_result = exo_service.push_payload(payload_json, exo_url=exo_url, token=os.environ.get("EXO_TOKEN"), timeout_sec=timeout_sec)
+						if isinstance(push_result, exo_service.ExoPushHttpError):
+							result_obj = {
+								"sent": False,
+								"http_status": push_result.http_status,
+								"error": push_result.error,
+								"body": push_result.body,
+							}
+							error_msg = "EXO svarade med HTTP-fel (proxy 502)."
+						else:
+							http_status, body = push_result
+							result_obj = {"sent": True, "http_status": http_status, "exo_response": body}
+							status_msg = "Skickat till EXO."
+				else:
+					error_msg = f"Okänd action: {action}"
 
-		except exo_service.InvalidDayFormatError as e:
-			error_msg = str(e)
-		except exo_service.MissingExoUrlError as e:
-			error_msg = str(e)
-		except exo_service.UnknownSiteError as e:
-			error_msg = str(e)
-		except exo_service.PayloadNotFoundError:
-			error_msg = "Payload saknas för dag (testa Build först)."
-		except Exception as e:
-			error_msg = f"Fel: {e}"
+			except exo_service.InvalidDayFormatError as e:
+				error_msg = str(e)
+			except exo_service.MissingExoUrlError as e:
+				error_msg = str(e)
+			except exo_service.UnknownSiteError as e:
+				error_msg = str(e)
+			except exo_service.PayloadNotFoundError:
+				error_msg = "Payload saknas för dag (testa Build först)."
+			except Exception as e:
+				error_msg = f"Fel: {e}"
 
 	if result_obj is not None:
 		result_json = json.dumps(result_obj, ensure_ascii=False, indent=2)
@@ -130,6 +178,18 @@ def exo_console():
 		status_msg=status_msg,
 		error_msg=error_msg,
 		result_json=result_json,
+		arrigo_has_login_url=arrigo_has_login_url,
+		arrigo_has_graphql_url=arrigo_has_graphql_url,
+		arrigo_has_user=arrigo_has_user,
+		arrigo_has_pass=arrigo_has_pass,
+		arrigo_has_pvl=arrigo_has_pvl,
+		arrigo_pvl_decoded=arrigo_cfg.pvl_decoded or "",
+		arrigo_filter=arrigo_filter,
+		arrigo_limit=arrigo_limit,
+		arrigo_show_values=arrigo_show_values,
+		arrigo_total=arrigo_total,
+		arrigo_vars=arrigo_vars,
+		arrigo_error=arrigo_error,
 	)
 
 
