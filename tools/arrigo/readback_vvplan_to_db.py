@@ -50,17 +50,31 @@ def read_vars_from_pvl(gql_fn, token: str, pvl_b64: str):
 
 def extract_plan_96(vals, prefix: str) -> list[int]:
     """
-    Klarar parentesformat:
-      Huvudcentral_C1.VV_PLAN(0..95)
+    Klarar två vanliga format:
+      A) Huvudcentral_C1.VV_PLAN(0..95)
+      B) Huvudcentral_C1.VV_PLAN_05_00:00  (om det finns)
     """
     out = [0] * 96
     for k, v in vals.items():
         if not k.startswith(prefix):
             continue
+
+        idx = None
+
+        # Format A: VV_PLAN(5)
         m = re.search(r"\((\d{1,2})\)\s*$", k)
-        if not m:
+        if m:
+            idx = int(m.group(1))
+
+        # Format B: VV_PLAN_05_00:00
+        if idx is None:
+            tail = k[len(prefix):]
+            m = re.search(r"_(\d{2})_", tail)
+            if m:
+                idx = int(m.group(1))
+
+        if idx is None:
             continue
-        idx = int(m.group(1))
         if 0 <= idx < 96:
             try:
                 out[idx] = int(float(v)) if v is not None else 0

@@ -98,6 +98,10 @@ SLEEP_SEC = float(os.getenv("ARRIGO_SLEEP_SEC", "4"))
 REPUSH_COOLDOWN_SEC = float(os.getenv("ARRIGO_REPUSH_COOLDOWN_SEC", "120"))
 EMPTY_DB_SLEEP_SEC = float(os.getenv("ARRIGO_EMPTY_DB_SLEEP_SEC", "60"))
 
+# Plan-cache (Arrigo -> MariaDB) via samma poll-loop (ingen cron).
+PLAN_CACHE_ENABLE = os.getenv("ARRIGO_PLAN_CACHE_ENABLE", "1") == "1"
+PLAN_CACHE_INTERVAL_SEC = float(os.getenv("ARRIGO_PLAN_CACHE_INTERVAL_SEC", "300"))
+
 
 def log(msg):
     print(time.strftime("%H:%M:%S"), msg, flush=True)
@@ -110,6 +114,71 @@ def to_int(x, default=0):
         return int(float(x))
     except Exception:
         return default
+
+
+def maybe_cache_plans_to_db(vals) -> None:
+    """Cache:a HEAT_PLAN/VV_PLAN i MariaDB baserat på redan lästa PVL-variabler.
+
+    Viktigt: inga skrivningar tillbaka till Arrigo här (endast DB).
+    """
+
+    if not PLAN_CACHE_ENABLE:
+        return
+
+    # Lazy imports så orchestratorn kan gå även om workers saknas.
+    try:
+        from readback_heatplan_to_db import extract_heat_plan_96, upsert_plan as upsert_heat
+        from readback_vvplan_to_db import extract_plan_96 as extract_vv_plan_96, upsert_plan as upsert_vv
+    except Exception as e:
+        log(f"⚠️ Plan-cache: kunde inte importera readback-workers: {e.__class__.__name__}: {e}")
+        return
+
+    site_code = os.getenv("SITE_CODE", "HALTORP244")
+    ref_prefix = (os.getenv("ARRIGO_REF_PREFIX") or "Huvudcentral_C1").strip()
+
+    # Triggers (om de finns) – om EXOL pulserar dessa vill vi cache:a snabbt.
+    ta_heat_changed = f"{ref_prefix}.HEAT_PLAN_CHANGED"
+    ta_vv_changed = f"{ref_prefix}.VV_PLAN_CHANGED"
+
+    heat_changed = to_int(vals.get(ta_heat_changed), default=0) == 1
+    vv_changed = to_int(vals.get(ta_vv_changed), default=0) == 1
+
+    # Prefixar för plan-variablerna
+    heat_prefix = os.getenv("ARRIGO_HEAT_PLAN_PREFIX") or f"{ref_prefix}.HEAT_PLAN"
+    vv_prefix = os.getenv("ARRIGO_VV_PLAN_PREFIX") or f"{ref_prefix}.VV_PLAN"
+
+    day_local = today_local_date()
+
+    def is_plan_value_ta(prefix: str, ta: str) -> bool:
+        if not ta.startswith(prefix):
+            return False
+        # undvik "...HEAT_PLAN_CHANGED" etc
+        if ta.endswith("_CHANGED") or ta.endswith("_ACK"):
+            return False
+        # Format A: PREFIX(5)
+        if re.search(r"\((\d{1,2})\)\s*$", ta):
+            return True
+        # Format B: PREFIX_05_00:00
+        tail = ta[len(prefix):]
+        return re.search(r"_(\d{2})_", tail) is not None
+
+    # Bara om vi ser att plan-variablerna faktiskt finns i PVL.
+    # (Undvik att skriva 96x0 när det inte finns någon plan i Arrigo-objektet.)
+    has_heat_any = any(is_plan_value_ta(heat_prefix, k) for k in vals.keys())
+    has_vv_any = any(is_plan_value_ta(vv_prefix, k) for k in vals.keys())
+
+    if heat_changed and not has_heat_any:
+        log("⚠️ Plan-cache: HEAT_PLAN_CHANGED=1 men inga HEAT_PLAN-perioder hittades i PVL")
+    if vv_changed and not has_vv_any:
+        log("⚠️ Plan-cache: VV_PLAN_CHANGED=1 men inga VV_PLAN-perioder hittades i PVL")
+
+    if has_heat_any:
+        heat = extract_heat_plan_96(vals, prefix=heat_prefix)
+        upsert_heat(site_code, "HEAT_PLAN", day_local, heat)
+
+    if has_vv_any:
+        vv = extract_vv_plan_96(vals, prefix=vv_prefix)
+        upsert_vv(site_code, "VV_PLAN", day_local, vv)
 
 
 
@@ -249,10 +318,22 @@ def main():
     last_req_raw = object()
     did_diag_req_write = False
     last_handled = {}  # request_key -> epoch seconds (endast efter lyckad push+ACK)
+    last_plan_cache_ts = 0.0
 
     while True:
         try:
             vals, idx = read_vals_and_idx(token)
+
+            # Arrigo-planer -> DB (utan cron). Kör på intervall och även på CHANGED-puls.
+            now_ts = time.time()
+            should_cache = (now_ts - last_plan_cache_ts) >= PLAN_CACHE_INTERVAL_SEC
+            ref_prefix = (os.getenv("ARRIGO_REF_PREFIX") or "Huvudcentral_C1").strip()
+            heat_changed_ta = f"{ref_prefix}.HEAT_PLAN_CHANGED"
+            vv_changed_ta = f"{ref_prefix}.VV_PLAN_CHANGED"
+            if should_cache or to_int(vals.get(heat_changed_ta)) == 1 or to_int(vals.get(vv_changed_ta)) == 1:
+                maybe_cache_plans_to_db(vals)
+                last_plan_cache_ts = now_ts
+
             req_raw = vals.get(TA_REQ)
             if req_raw != last_req_raw:
                 log(f"RAW PI_PUSH_REQ = {req_raw}")
