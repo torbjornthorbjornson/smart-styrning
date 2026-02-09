@@ -16,25 +16,11 @@ import json
 import os
 import re
 from datetime import datetime
-from zoneinfo import ZoneInfo
 
-import pymysql
-from configparser import ConfigParser
+import _bootstrap  # noqa: F401
 
-TZ  = ZoneInfo("Europe/Stockholm")
-UTC = ZoneInfo("UTC")
-
-def read_db_config():
-    cfg = ConfigParser()
-    cfg.read("/home/runerova/.my.cnf")
-    return {
-        "host": "localhost",
-        "user": cfg["client"]["user"],
-        "password": cfg["client"]["password"],
-        "database": "smart_styrning",
-        "charset": "utf8mb4",
-        "cursorclass": pymysql.cursors.DictCursor,
-    }
+from smartweb_backend.db.connection import get_connection
+from smartweb_backend.time_utils import today_local_date, utc_now_naive
 
 Q_READ_VARS = "query($p:String!){ data(path:$p){ variables{ technicalAddress value } } }"
 
@@ -88,8 +74,8 @@ def read_vv_plan_96(gql_fn, token: str, pvl_b64: str, prefix: str) -> list[int]:
     return extract_plan_96(vals, prefix=prefix)
 
 def upsert_plan(site_code, plan_type, day_local, periods):
-    fetched_at = datetime.now(UTC).replace(tzinfo=None)  # UTC-naiv
-    conn = pymysql.connect(**read_db_config())
+    fetched_at = utc_now_naive()  # UTC-naiv
+    conn = get_connection()
     try:
         with conn.cursor() as cur:
             cur.execute("""
@@ -110,7 +96,7 @@ def main():
     plan_type = "VV_PLAN"
 
     # Svensk dag (idag)
-    day_local = datetime.now(TZ).date()
+    day_local = today_local_date()
 
     import orchestrator as orch
 

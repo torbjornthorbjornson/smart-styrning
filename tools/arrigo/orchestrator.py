@@ -1,15 +1,25 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+import _bootstrap  # noqa: F401
+
 import argparse
 import os
 import time
 from datetime import datetime, date, timedelta, time as dtime
-import pytz
-import pymysql
 import requests
 import base64
-from configparser import ConfigParser
+import re
+
+from smartweb_backend.db.prices_repo import (
+    fetch_electricity_prices,
+    debug_electricity_prices_table,
+)
+
+from smartweb_backend.time_utils import (
+    today_local_date,
+    local_day_to_utc_window,
+)
 
 from push_from_db import (
     build_rank_and_masks,
@@ -30,21 +40,7 @@ from push_from_db import (
 # Detta är ENDA platsen där lokal ↔ UTC-konvertering sker.
 # Se: TODO/016_TIME_CONTRACT/README.md
 
-UTC   = pytz.UTC
-STHLM = pytz.timezone("Europe/Stockholm")
-
-
-def today_local_date() -> date:
-    """Returnerar dagens datum i svensk lokal tid."""
-    return datetime.now(UTC).astimezone(STHLM).date()
-
-
-def local_day_to_utc_window(local_date: date):
-    """Bygger UTC-fönster för ett helt svenskt lokalt dygn."""
-    local_midnight = STHLM.localize(datetime.combine(local_date, dtime(0, 0)))
-    utc_start = local_midnight.astimezone(UTC).replace(tzinfo=None)
-    utc_end   = (local_midnight + timedelta(days=1)).astimezone(UTC).replace(tzinfo=None)
-    return utc_start, utc_end
+# Konverteringen implementeras i smartweb_backend.time_utils för att delas mellan web/agent.
 
 
 # ==================================================
@@ -90,13 +86,17 @@ M_WRITE = "mutation($v:[VariableKeyValue!]!){ writeData(variables:$v) }"
 
 
 # ==================================================
-# DB / INFRA
+# INFRA
 # ==================================================
-DB_NAME   = "smart_styrning"
-MYCNF     = "/home/runerova/.my.cnf"
 SLEEP_SEC = float(os.getenv("ARRIGO_SLEEP_SEC", "4"))
 REPUSH_COOLDOWN_SEC = float(os.getenv("ARRIGO_REPUSH_COOLDOWN_SEC", "120"))
 EMPTY_DB_SLEEP_SEC = float(os.getenv("ARRIGO_EMPTY_DB_SLEEP_SEC", "60"))
+
+# HTTP / nät
+HTTP_CONNECT_TIMEOUT_SEC = float(os.getenv("ARRIGO_HTTP_CONNECT_TIMEOUT_SEC", "10"))
+HTTP_READ_TIMEOUT_SEC = float(os.getenv("ARRIGO_HTTP_READ_TIMEOUT_SEC", "30"))
+HTTP_LOGIN_TIMEOUT_SEC = float(os.getenv("ARRIGO_HTTP_LOGIN_TIMEOUT_SEC", "20"))
+NET_BACKOFF_MAX_SEC = float(os.getenv("ARRIGO_NET_BACKOFF_MAX_SEC", "120"))
 
 # Plan-cache (Arrigo -> MariaDB) via samma poll-loop (ingen cron).
 PLAN_CACHE_ENABLE = os.getenv("ARRIGO_PLAN_CACHE_ENABLE", "1") == "1"
@@ -182,19 +182,6 @@ def maybe_cache_plans_to_db(vals) -> None:
 
 
 
-def read_db_config():
-    cfg = ConfigParser()
-    cfg.read(MYCNF)
-    return dict(
-        host="localhost",
-        user=cfg["client"]["user"],
-        password=cfg["client"]["password"],
-        database=DB_NAME,
-        charset="utf8mb4",
-        cursorclass=pymysql.cursors.DictCursor,
-    )
-
-
 # ==================================================
 # ARRIGO API – HJÄLPARE
 # ==================================================
@@ -202,7 +189,7 @@ def arrigo_login():
     r = requests.post(
         LOGIN_URL,
         json={"username": USER, "password": PASS},
-        timeout=20,
+        timeout=(HTTP_CONNECT_TIMEOUT_SEC, HTTP_LOGIN_TIMEOUT_SEC),
     )
     r.raise_for_status()
     tok = r.json().get("authToken")
@@ -216,13 +203,31 @@ def gql(token, query, variables):
         GRAPHQL_URL,
         headers={"Authorization": f"Bearer {token}"},
         json={"query": query, "variables": variables},
-        timeout=30,
+        timeout=(HTTP_CONNECT_TIMEOUT_SEC, HTTP_READ_TIMEOUT_SEC),
     )
     r.raise_for_status()
     j = r.json()
     if "errors" in j:
         raise RuntimeError(j["errors"])
     return j["data"]
+
+
+def sleep_backoff(current_sec: float) -> float:
+    """Sleep for current backoff seconds and return next backoff (capped)."""
+    time.sleep(current_sec)
+    return min(max(SLEEP_SEC, current_sec) * 2.0, NET_BACKOFF_MAX_SEC)
+
+
+def relogin_with_backoff(start_backoff_sec: float) -> str:
+    backoff = max(SLEEP_SEC, start_backoff_sec)
+    while True:
+        try:
+            tok = arrigo_login()
+            log("🔐 Inloggad mot Arrigo")
+            return tok
+        except requests.exceptions.RequestException as e:
+            log(f"🌐 Login nätverksfel: {e.__class__.__name__}: {e}")
+            backoff = sleep_backoff(backoff)
 
 
 
@@ -266,18 +271,7 @@ def diag_write_var(token, idx, technical_address: str, value: str):
 def db_fetch_prices_for_day(day_local: date):
     utc_start, utc_end = local_day_to_utc_window(day_local)
 
-    conn = pymysql.connect(**read_db_config())
-    with conn, conn.cursor() as cur:
-        cur.execute(
-            """
-            SELECT datetime, price
-            FROM electricity_prices
-            WHERE datetime >= %s AND datetime < %s
-            ORDER BY datetime
-            """,
-            (utc_start, utc_end),
-        )
-        return cur.fetchall()
+    return fetch_electricity_prices(utc_start, utc_end)
 
 
 def db_debug_prices_table():
@@ -285,26 +279,14 @@ def db_debug_prices_table():
 
     Körs endast vid behov (t.ex. när vi får 0 rader) och är tänkt som felsökningshjälp.
     """
-    conn = pymysql.connect(**read_db_config())
-    with conn, conn.cursor() as cur:
-        cur.execute(
-            """
-            SELECT
-                COUNT(*) AS cnt,
-                MIN(datetime) AS min_dt,
-                MAX(datetime) AS max_dt
-            FROM electricity_prices
-            """
-        )
-        row = cur.fetchone() or {}
-    return row
+    return debug_electricity_prices_table()
 
 
 # ==================================================
 # MAIN – ORCHESTRATOR
 # ==================================================
 def main():
-    token = arrigo_login()
+    token = relogin_with_backoff(SLEEP_SEC)
     log("🔌 Orchestrator startad")
     log("🚨 ORCHESTRATOR VERSION 2026-02-08 20:45 🚨")
     debug_log_pvl()
@@ -319,10 +301,12 @@ def main():
     did_diag_req_write = False
     last_handled = {}  # request_key -> epoch seconds (endast efter lyckad push+ACK)
     last_plan_cache_ts = 0.0
+    net_backoff_sec = max(SLEEP_SEC, 1.0)
 
     while True:
         try:
             vals, idx = read_vals_and_idx(token)
+            net_backoff_sec = max(SLEEP_SEC, 1.0)  # reset on success
 
             # Arrigo-planer -> DB (utan cron). Kör på intervall och även på CHANGED-puls.
             now_ts = time.time()
@@ -368,13 +352,20 @@ def main():
         except requests.HTTPError as e:
             if e.response is not None and e.response.status_code == 401:
                 log("🔑 401 → relogin")
-                token = arrigo_login()
-                time.sleep(2)
+                token = relogin_with_backoff(net_backoff_sec)
+                net_backoff_sec = max(SLEEP_SEC, 1.0)
                 continue
             raise
         except requests.exceptions.RequestException as e:
             # Nätverksfel (timeout/DNS/connection reset). Orchestratorn ska fortsätta poll:a.
             log(f"🌐 Arrigo nätverksfel: {e.__class__.__name__}: {e}")
+            net_backoff_sec = sleep_backoff(net_backoff_sec)
+            continue
+        except KeyboardInterrupt:
+            raise
+        except Exception as e:
+            # Sista skyddsnät: logga och fortsätt. (Undvik att daemon dör pga transient eller oväntad data.)
+            log(f"💥 Oväntat fel i poll-loop: {e.__class__.__name__}: {e}")
             time.sleep(SLEEP_SEC)
             continue
 
@@ -461,7 +452,7 @@ def main():
                 log("✅ PI_PUSH_ACK satt")
             except requests.exceptions.RequestException as e:
                 log(f"🌐 Arrigo nätverksfel under push: {e.__class__.__name__}: {e}")
-                time.sleep(SLEEP_SEC)
+                net_backoff_sec = sleep_backoff(net_backoff_sec)
                 continue
             except Exception as e:
                 log(f"❌ Push misslyckades: {e.__class__.__name__}: {e}")

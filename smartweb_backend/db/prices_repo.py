@@ -45,3 +45,23 @@ def insert_ignore_electricity_prices(entries: list[tuple[datetime, float]]) -> i
         return int(conn.affected_rows())
     finally:
         conn.close()
+
+
+def debug_electricity_prices_table() -> dict:
+    """Return min/max/count for electricity_prices (diagnostics)."""
+
+    conn = get_connection()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                SELECT
+                    COUNT(*) AS cnt,
+                    MIN(datetime) AS min_dt,
+                    MAX(datetime) AS max_dt
+                FROM electricity_prices
+                """
+            )
+            return cur.fetchone() or {}
+    finally:
+        conn.close()

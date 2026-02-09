@@ -16,15 +16,15 @@ VIKTIGT:
 
 import os
 from datetime import datetime, date, time, timedelta
-from zoneinfo import ZoneInfo
-import pymysql
-from configparser import ConfigParser
 
-# =========================
-# TID
-# =========================
-TZ = ZoneInfo("Europe/Stockholm")
-UTC = ZoneInfo("UTC")
+import _bootstrap  # noqa: F401
+
+from smartweb_backend.db.prices_repo import fetch_electricity_prices
+from smartweb_backend.db.weather_repo import fetch_avg_temperature
+from smartweb_backend.time_utils import (
+    local_day_to_utc_window,
+    utc_naive_to_local,
+)
 
 # === PERIODER: HEAT KRÄVER 96, PUNKT ===
 PERIODS = int(os.getenv("ARRIGO_PERIODS", "96"))
@@ -33,46 +33,12 @@ if PERIODS != 96:
 
 
 # =========================
-# DB
-# =========================
-def read_db_config():
-    cfg = ConfigParser()
-    cfg.read("/home/runerova/.my.cnf")
-    return {
-        "host": "localhost",
-        "user": cfg["client"]["user"],
-        "password": cfg["client"]["password"],
-        "database": "smart_styrning",
-        "charset": "utf8mb4",
-        "cursorclass": pymysql.cursors.DictCursor,
-    }
-
-
-# =========================
 # PRISER FRÅN DB
 # =========================
 def fetch_prices_for_local_day(day_local: date):
     """Hämtar exakt ett lokalt svenskt dygn (00–24) trots att DB lagrar UTC."""
-    start_local = datetime.combine(day_local, time(0, 0), tzinfo=TZ)
-    end_local = start_local + timedelta(days=1)
-
-    start_utc = start_local.astimezone(UTC).replace(tzinfo=None)
-    end_utc = end_local.astimezone(UTC).replace(tzinfo=None)
-
-    conn = pymysql.connect(**read_db_config())
-    with conn, conn.cursor() as cur:
-        cur.execute(
-            """
-            SELECT datetime, price
-            FROM electricity_prices
-            WHERE datetime >= %s AND datetime < %s
-            ORDER BY datetime
-            """,
-            (start_utc, end_utc),
-        )
-        rows = cur.fetchall()
-
-    return rows
+    start_utc, end_utc = local_day_to_utc_window(day_local)
+    return fetch_electricity_prices(start_utc, end_utc)
 
 # =========================
 # PERIOD-NORMALISERING
@@ -81,7 +47,7 @@ def normalize_periods(rows):
     per_slot = {i: [] for i in range(PERIODS)}
 
     for r in rows:
-        dt = r["datetime"].replace(tzinfo=UTC).astimezone(TZ)
+        dt = utc_naive_to_local(r["datetime"])
         idx = dt.hour * 4 + (dt.minute // 15)
         if 0 <= idx < PERIODS:
             per_slot[idx].append(float(r["price"]))
@@ -133,20 +99,9 @@ def build_rank_and_masks(rows):
 
 # ---- OAT ----
 def daily_avg_oat(day_local: date):
-    start_local = datetime.combine(day_local, time(0, 0), tzinfo=TZ)
-    end_local = start_local + timedelta(days=1)
-
-    start_utc = start_local.astimezone(UTC).replace(tzinfo=None)
-    end_utc = end_local.astimezone(UTC).replace(tzinfo=None)
-    conn = pymysql.connect(**read_db_config())
-    with conn, conn.cursor() as cur:
-        cur.execute(
-            "SELECT AVG(temperature) AS avgtemp FROM weather WHERE timestamp >= %s AND timestamp < %s",
-            (start_utc, end_utc),
-        )
-        row = cur.fetchone()
-
-    return round(float(row["avgtemp"]), 1) if row and row["avgtemp"] is not None else None
+    start_utc, end_utc = local_day_to_utc_window(day_local)
+    avgtemp = fetch_avg_temperature(start_utc, end_utc)
+    return round(float(avgtemp), 1) if avgtemp is not None else None
 
 def push_to_arrigo(
     gql_fn,

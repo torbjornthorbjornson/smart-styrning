@@ -137,26 +137,18 @@ entydig
 
 framtidssäker
 
-Lokal dygnslogik hör hemma i applikationen, inte i databasen
+# 016 – Time contract
 
-9. Historik och framtid
+Det bindande tidskontraktet för elpriser ligger nu som “riktig” docs-fil:
 
-Befintlig historik är korrekt
+- [docs/TIME_CONTRACT__ELECTRICITY_PRICES.md](docs/TIME_CONTRACT__ELECTRICITY_PRICES.md)
 
-Databasen ska inte migreras retroaktivt
+## Kod-facit (ska användas överallt)
 
-Om alternativ tidsmodell behövs i framtiden:
+All kod som gör “svenskt dygn ↔ DB-fönster” ska använda:
 
-sker det via nya kolumner eller vyer
+- `smartweb_backend.time_utils.local_day_to_utc_window(local_day)`
+- `smartweb_backend.time_utils.utc_naive_to_local(dt_utc_naive)`
+- `smartweb_backend.time_utils.utc_naive_to_local_label(dt_utc_naive)`
 
-aldrig genom att ändra detta kontrakt
-
-10. Sammanfattning
-
-datetime = UTC-tidpunkt (naiv lagring)
-
-lokalt dygn = 96 perioder, kan spänna över två UTC-datum
-
-kod ansvarar för sammanslagning
-
-detta är avsiktligt och korrekt
+Detta är nu inkopplat i både webben och Arrigo-agenten.

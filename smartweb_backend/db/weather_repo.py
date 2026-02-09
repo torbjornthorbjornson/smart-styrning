@@ -68,3 +68,23 @@ def upsert_weather_rows(rows: list[dict], *, city: str = "Alafors") -> int:
         return int(conn.affected_rows())
     finally:
         conn.close()
+
+
+def fetch_avg_temperature(utc_start: datetime, utc_end: datetime):
+    """Return average temperature for a UTC-naive window or None."""
+
+    conn = get_connection()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                SELECT AVG(temperature) AS avgtemp
+                FROM weather
+                WHERE timestamp >= %s AND timestamp < %s
+                """,
+                (utc_start, utc_end),
+            )
+            row = cur.fetchone() or {}
+            return row.get("avgtemp")
+    finally:
+        conn.close()

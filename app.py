@@ -3,7 +3,6 @@ from datetime import datetime, timedelta, time
 import subprocess
 import os
 import math
-import pytz  # tidszoner
 import json
 import urllib.request, urllib.error
 
@@ -13,27 +12,15 @@ from smartweb_backend.db.weather_repo import fetch_weather
 from smartweb_backend.db.water_repo import fetch_latest_water_status
 from smartweb_backend.db.sites_repo import get_site
 from smartweb_backend.db.exo_repo import build_exo_payload, get_exo_payload_json
+from smartweb_backend.time_utils import (
+    today_local_date,
+    local_day_to_utc_window,
+    utc_naive_to_local_label,
+)
 
 app = Flask(__name__)
 
-# === Tidszoner och hjälpare för "svensk dag" -> UTC-intervall ===
-STHLM = pytz.timezone("Europe/Stockholm")
-UTC = pytz.UTC
-
-def today_local_date():
-    """Idag som svensk kalenderdag (inte UTC)."""
-    return datetime.now(UTC).astimezone(STHLM).date()
-
-def local_day_to_utc_window(local_date):
-    """Tar ett date-objekt i svensk tid och returnerar (utc_start, utc_end) som naiva UTC-datetimes."""
-    local_midnight = STHLM.localize(datetime.combine(local_date, time(0, 0)))
-    utc_start = local_midnight.astimezone(UTC).replace(tzinfo=None)
-    utc_end = (local_midnight + timedelta(days=1)).astimezone(UTC).replace(tzinfo=None)
-    return utc_start, utc_end
-
-def utc_naive_to_local_label(dt_utc_naive):
-    """Gör en HH:MM-etikett i svensk tid från en naiv UTC-datetime lagrad i DB."""
-    return dt_utc_naive.replace(tzinfo=UTC).astimezone(STHLM).strftime("%H:%M")
+# === Tids-helpers finns i smartweb_backend.time_utils ===
 
 # --- Jinja-filter: skriv ut tider i svensk HH:MM ---
 @app.template_filter("svtid")
