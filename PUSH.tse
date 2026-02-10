@@ -1,0 +1,237 @@
+; =========================================================
+; PUSH_EXTENDED — today / tomorrow
+; EXOL = MASTER | Pi = SLAV | Arrigo = transport
+; =========================================================
+
+; Signaler:
+;   PI_PUSH_REQ, PI_PUSH_ACK, PI_PUSH_DAY
+;   PRICE_STAMP
+;
+; In:
+;   Price_Val[96], Price_Rank[96]
+;   EC_MASK32_[1..3], EX_MASK32_[1..3]
+;   OAT_mean_yday, OAT_mean_tomorrow
+;
+; Out:
+;   PRICE_TD/TM[], RANK_TD/TM[]
+;   *_USE, RANK_W[], PRICE_W[]
+; =========================================================
+
+
+; =========================================================
+; A) ACK  TA EMOT DATA (ENDA STEGET SOM TITTAR PÅ ACK)
+; =========================================================
+IF PI_PUSH_ACK = 1
+
+  ; -------- TODAY --------
+  IF PI_PUSH_DAY = 0
+    IF PRICE_STAMP <> PRICE_STAMP_TD
+
+      UpLoop pk From 0 To 95
+        PRICE_TD[pk] = Price_Val[pk]
+        RANK_TD[pk]  = Price_Rank[pk]
+      EndLoop
+
+      EC_MASK32_1_TD = EC_MASK32_1
+      EC_MASK32_2_TD = EC_MASK32_2
+      EC_MASK32_3_TD = EC_MASK32_3
+      EX_MASK32_1_TD = EX_MASK32_1
+      EX_MASK32_2_TD = EX_MASK32_2
+      EX_MASK32_3_TD = EX_MASK32_3
+
+      OAT_yday_TD      = OAT_mean_yday
+      OAT_tomorrow_TD  = OAT_mean_tomorrow
+      PRICE_STAMP_TD   = PRICE_STAMP
+      MASK_STAMP_TD    = PRICE_STAMP
+      OAT_SRC_STAMP_TD = PRICE_STAMP
+
+      TD_READY = 1
+    ENDIF
+  ENDIF
+
+
+  ; -------- TOMORROW --------
+  IF PI_PUSH_DAY = 1
+    IF PRICE_STAMP <> PRICE_STAMP_TD
+      IF PRICE_STAMP <> PRICE_STAMP_TM
+
+        UpLoop pk From 0 To 95
+          PRICE_TM[pk] = Price_Val[pk]
+          RANK_TM[pk]  = Price_Rank[pk]
+        EndLoop
+
+        EC_MASK32_1_TM = EC_MASK32_1
+        EC_MASK32_2_TM = EC_MASK32_2
+        EC_MASK32_3_TM = EC_MASK32_3
+        EX_MASK32_1_TM = EX_MASK32_1
+        EX_MASK32_2_TM = EX_MASK32_2
+        EX_MASK32_3_TM = EX_MASK32_3
+
+        OAT_yday_TM      = OAT_mean_yday
+        OAT_tomorrow_TM  = OAT_mean_tomorrow
+        PRICE_STAMP_TM   = PRICE_STAMP
+        MASK_STAMP_TM    = PRICE_STAMP
+        OAT_SRC_STAMP_TM = PRICE_STAMP
+
+        TM_READY = 1
+      ELSE
+        DIAG_PUSH = "Ignorerar_dup_tomorrow_stamp"
+      ENDIF
+    ELSE
+      DIAG_PUSH = "Ignorerar_today_stamp_som_tomorrow"
+    ENDIF
+  ENDIF
+
+  ; -------- ACK NOLLAS HÄR. ENDA STÄLLET. --------
+  PI_PUSH_ACK = 0
+
+ENDIF
+
+
+
+; =========================================================
+; B) REQUEST CONTROLLER (ENDA STEGET SOM SÄTTER REQ/DAY)
+; =========================================================
+IF TD_READY = 0
+  PI_PUSH_DAY = 0
+  PI_PUSH_REQ = 1
+
+ELSEIF TD_READY = 1 AND TM_READY = 0
+  PI_PUSH_DAY = 1
+  PI_PUSH_REQ = 1
+
+ELSE
+  PI_PUSH_REQ = 0
+ENDIF
+
+
+
+; =========================================================
+; C) VÄLJ ARBETSSTRÖM (ALLTID TODAY)
+; =========================================================
+UpLoop pk From 0 To 95
+  PRICE_W[pk] = PRICE_TD[pk]
+  RANK_W[pk]  = RANK_TD[pk]
+EndLoop
+
+EC_MASK32_1_USE = EC_MASK32_1_TD
+EC_MASK32_2_USE = EC_MASK32_2_TD
+EC_MASK32_3_USE = EC_MASK32_3_TD
+EX_MASK32_1_USE = EX_MASK32_1_TD
+EX_MASK32_2_USE = EX_MASK32_2_TD
+EX_MASK32_3_USE = EX_MASK32_3_TD
+
+
+
+; =========================================================
+; D) MIDNATT — ROLL TM TD + BEGÄR NY TM
+; =========================================================
+; Reset av midnattsvakt: annars fastnar ROLL_LAST_MIN=0 efter första midnatten
+; och rotationen körs aldrig igen kommande dygn.
+IF Hour <> 0
+  ROLL_LAST_MIN = 99
+ELSE
+  IF Minute <> 0
+    ROLL_LAST_MIN = 99
+  ENDIF
+ENDIF
+
+IF Hour = 0
+  IF Minute = 0
+    IF ROLL_LAST_MIN <> Minute
+      ROLL_LAST_MIN = Minute
+
+      IF TM_READY = 1
+        UpLoop pk From 0 To 95
+          PRICE_TD[pk] = PRICE_TM[pk]
+          RANK_TD[pk]  = RANK_TM[pk]
+        EndLoop
+
+        EC_MASK32_1_TD = EC_MASK32_1_TM
+        EC_MASK32_2_TD = EC_MASK32_2_TM
+        EC_MASK32_3_TD = EC_MASK32_3_TM
+        EX_MASK32_1_TD = EX_MASK32_1_TM
+        EX_MASK32_2_TD = EX_MASK32_2_TM
+        EX_MASK32_3_TD = EX_MASK32_3_TM
+
+        OAT_yday_TD      = OAT_yday_TM
+        OAT_tomorrow_TD  = OAT_tomorrow_TM
+        PRICE_STAMP_TD   = PRICE_STAMP_TM
+        MASK_STAMP_TD    = MASK_STAMP_TM
+        OAT_SRC_STAMP_TD = OAT_SRC_STAMP_TM
+
+        TD_READY = 1
+        TM_READY = 0
+
+        ; Efter lyckad rotation: begär nya "tomorrow" för kommande dygn.
+        PI_PUSH_DAY = 1
+        PI_PUSH_REQ = 1
+
+      ELSE
+        ; Om morgondagens data saknas vid 00:00 kan vi inte rotera.
+        ; Då måste vi invalidiera dagens data och begära dagens priser för nya dygnet.
+        TD_READY = 0
+        PI_PUSH_DAY = 0
+        PI_PUSH_REQ = 1
+      ENDIF
+    ENDIF
+  ENDIF
+ENDIF
+
+
+
+; =========================================================
+; E) NU-INDEX (0..95)
+; =========================================================
+P_NOW_Q = Minute / 15
+P_NOW_I = Hour * 4 + P_NOW_Q
+P_NOW   = P_NOW_I
+
+
+
+; =========================================================
+; F) DIAG_PUSH – KLARTEXT
+; =========================================================
+IF PI_PUSH_REQ = 1
+  IF PI_PUSH_DAY = 0
+    DIAG_PUSH = "Begär_dagens_priser"
+  ELSE
+    IF TM_READY = 0
+      DIAG_PUSH = "Väntar_morgondagens_priser"
+    ELSE
+      DIAG_PUSH = "Begär_morgondagens_priser"
+    ENDIF
+  ENDIF
+ELSE
+  IF TD_READY = 1 AND TM_READY = 1
+    DIAG_PUSH = "Alla_priser_mottagna"
+  ELSEIF TD_READY = 1
+    DIAG_PUSH = "Idag_aktiv_väntar_imorgon"
+  ELSE
+    DIAG_PUSH = "Inget_prisdata_tillgängligt"
+  ENDIF
+ENDIF
+
+
+
+; =========================================================
+; G) PRICE-STAMP TRIGGERS — HEAT + VV
+; =========================================================
+HEAT_PLAN_TRIG = 0
+VVP_PRICE_TRIG = 0
+
+IF TD_READY = 1
+  IF PRICE_STAMP_TD <> HEAT_LAST_STAMP_TD
+    HEAT_PLAN_TRIG = 1
+    VVP_PRICE_TRIG = 1
+    HEAT_LAST_STAMP_TD = PRICE_STAMP_TD
+  ENDIF
+ENDIF
+
+IF TM_READY = 1
+  IF PRICE_STAMP_TM <> HEAT_LAST_STAMP_TM
+    HEAT_PLAN_TRIG = 1
+    VVP_PRICE_TRIG = 1
+    HEAT_LAST_STAMP_TM = PRICE_STAMP_TM
+  ENDIF
+ENDIF
