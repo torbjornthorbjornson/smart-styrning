@@ -1,0 +1,944 @@
+
+
+  
+
+ 
+
+; ================================================================
+; PLANNER / APPLYPLAN VARIABLES  (EXOL compatible, HMI in decimals)
+; ================================================================
+
+
+; --- Time / Scheduler ---
+X VVP_last_minute
+I allow_heat
+I allow_vv
+X H_MIDNIGHT
+X M_ZERO
+I I_ZERO
+X X_ZERO
+L L_ZERO
+
+; --- Temperature / Curve ---
+R OAT
+R T_fw_meas
+R T_fw_set
+R Bias
+R e
+
+; --- GM / Derivative ---
+R GM_true
+R GM_sched
+R GM_true_prev
+R dGMdt
+
+; --- Mask input from Pi / Arrigo (24-bit) ---
+I HEAT_MASK_L
+I HEAT_MASK_H
+I VV_MASK_L
+I VV_MASK_H
+R LAST_UPDATE
+
+; --- Staging / Outputs ---
+I HEAT_DEMAND
+L DO_VP[8]
+I on_timer[8]
+I off_timer[8]
+I min_on[8]
+I min_off[8]
+R P_step[8]
+R P_running
+L DO_ELP
+
+; --- Hot Water Sensors / DO ---
+R T_top
+L DO_VV
+L VV_LEGIO_ACTIVE
+
+; --- GM-band / Emergency ---
+R GM_START
+R GM_STOP
+R GM_EMERG
+R GM_BUF_MAX
+I EMERG
+
+; --- Staging Thresholds ---
+R STAGE_T1
+R STAGE_T2
+R STAGE_T3
+R STAGE_T4
+R STAGE_T5
+R STAGE_T6
+R STAGE_T7
+R STAGE_T8
+R STAGE_TEL
+R STAGE_HYST
+
+; --- Bias ---
+R B_PREHEAT
+R B_RELIEF
+
+; --- Power Limits ---
+R P_PEAK_TARGET
+R P_HEADROOM
+
+; --- Electric Boiler Safety ---
+R EL_HYST
+
+; --- Hot Water Settings ---
+R VV_TARGET_M
+R VV_TARGET_E
+R VV_MIN
+R VV_HYST
+X MORNING_H
+X EVENING_H
+X LEGIO_DAY
+X LEGIO_H
+L LEGIO_ENABLE
+
+; --- Hot Water Flags ---
+L VV_ALLOWED
+L VV_EMERG_MINSAFE_ACTIVE
+L EXTREME_EXP
+
+; --- Hot Water Operation ---
+I VV_MAX_CYCLES
+I VV_CYCLES_TODAY
+I VV_MAX_RUN_MIN
+I VV_RUN_MIN_TODAY
+I VV_GAP_MAX_MIN
+I VV_GAP_MIN
+L VV_DAILY_RESET
+
+; --- Price / Debug ---
+L ENABLE_HOUR_OVERRIDE
+X HOUR_OVERRIDE
+
+; --- Operational Masks ---
+I EC_MASK_L
+I EC_MASK_H
+I EX_MASK_L
+I EX_MASK_H
+I EC_MASK32_1
+I EC_MASK32_2
+I EC_MASK32_3
+I EX_MASK32_1
+I EX_MASK32_2
+I EX_MASK32_3
+
+; --- Flags ---
+L HEAT_ALLOWED
+L EXTREME_CHEAP
+
+; --- Price Ranking ---
+I PRICE_RANK_NOW
+I PRICE_RANK[96]
+I PRICE_RANK_YD[96]
+
+; --- Configuration (Display / HMI) ---
+L CFG_ALLOW_OVERLAP
+I CFG_PUMPS_TOTAL
+
+; --- Debug Values ---
+X DBG_HOUR
+I DBG_DENOM
+I bitval
+I denom
+X DBG_last
+R DBG_e
+R DBG_gm
+X counter_last_minute_Up
+L inivarden
+X DBG_MINUTE
+I DBG_RANK_NOW
+L DBG_TOP4
+L DBG_TOP8
+L DBG_EXTREME_EXP
+L DBG_EXTREME_CHEAP
+L DBG_ALLOW_HEAT
+
+; --- HMI Selections ---
+L HEAT_SEL_HH[96]
+L VV_SEL_HH[96]
+
+; --- HMI EC/EX Lamps ---
+I EC_HH[96]
+I EX_HH[96]
+
+; --- Temporary Integers ---
+I EC_L
+I EC_H
+I EX_L
+I EX_H
+L VV_DO_PREV
+
+; --- Pi Push Sync ---
+L PI_PUSH_REQ
+L PI_PUSH_ACK
+L VV_PLAN_CHANGED
+L VV_PLAN_ACK
+L HEAT_PLAN_CHANGED
+L HEAT_PLAN_ACK
+I BOOT_SEQ
+X BOOT_HOUR
+X BOOT_MIN
+L PI_PUSH_FORCE
+I PUSH_STAMP
+X PUSH_last_minute
+
+; --- Mask Control ---
+L USE_PI_MASKS
+L USE_EXTREME_BONUS
+L FREEZE_OUTSIDE_PLAN
+
+; --- Planning Blocks ---
+I VV_PLAN[96]
+I HEAT_PLAN[96]
+I PLAN_COMPUTED_DATE
+I PLAN_SOURCE
+
+; --- ADM Section ---
+I PLAN_HEAT_HRS
+I PLAN_VV_HRS
+I CFG_HEAT_HOURS
+I CFG_VV_HOURS
+I PLAN_CNT_HEAT
+I ADM_HEAT_HOURS
+I ADM_VV_HOURS
+L CFG_USE_PI_MASKS
+L CFG_EXTREME_BONUS
+L CFG_FREEZE_OUTSIDE_PLAN
+I ADM_INIT_LOOP
+I ADM_MIN_LEARN_DAYS
+I ADM_LEARN_COUNT
+L ADM_READY
+R ADM_DT_MIN
+R ADM_DT_MAX
+I ADM_IDX_MIN
+I ADM_IDX_MAX
+I ADM_IDX
+I ADM_IDX_NOW
+R ADM_H_USED
+R ADM_C0[36]
+R ADM_C1[36]
+R ADM_HOURS_CURVE[36]
+R ADM_dT_NOW
+R ADM_dT_PLAN
+R ADM_dT_USED
+R ADM_H_PRED_D
+R ADM_H_REQ_R
+R ADM_H_REQ
+L ADM_FIRST_PLAN_DONE
+L ADM_SAVE_PROFILE
+I ADM_CURVE_MODE
+R ADM_C0_COLD_H
+R ADM_C0_WARM_H
+R ADM_PROF1_COLD_H
+R ADM_PROF1_WARM_H
+R ADM_PROF2_COLD_H
+R ADM_PROF2_WARM_H
+R ADM_PROF3_COLD_H
+R ADM_PROF3_WARM_H
+R ADM_SEG_PT0_H
+R ADM_SEG_PT1_H
+R ADM_SEG_PT2_H
+R ADM_SEG_PT3_H
+R ADM_SEG_PT4_H
+R ADM_SEG_PT5_H
+R ADM_SEG_PT6_H
+R ADM_C0_SLOPE
+R ADM_GM_SUM_TODAY
+R ADM_GM_COUNT_TODAY
+R ADM_GM_MIN_TODAY
+R ADM_GM_MAX_TODAY
+R ADM_GM_AVG
+R ADM_H_REQ_PREV
+R ADM_ERR_H
+R ADM_ERR_GM
+R ADM_ERR_COMB
+R ADM_C1_DELTA
+L ADM_LEARN_FREEZE
+R ADM_ALPHA
+R ADM_DB_HOURS
+R ADM_DB_GM
+R ADM_W_HOURS
+R ADM_W_GM
+R ADM_C1_STEP_MAX
+R ADM_C1_SMOOTH
+R ADM_C1_TOTAL_MIN
+R ADM_C1_TOTAL_MAX
+L HMI_SHOW_LINEAR
+L HMI_SHOW_SEGMENT
+I ADM_PROFILE
+X ADM_PLAN_H
+X ADM_PLAN_M
+X ADM_TRAIN_H
+X ADM_TRAIN_M
+I adm_idx_fill
+I ADM_CURVE_MODE_LAST
+X ADM_last_minute
+I ADM_PROFILE_LAST
+
+; --- VVP Core (decimal hours in HMI) ---
+R Price_Val[96]
+
+
+R VVP_H_MIN
+R VVP_H_MAX
+I VVP_USE_PLAN
+I VVP_AVOID_RANK_MIN
+
+; --- Profiles (Real: decimal hours) ---
+R VVP_P0_H_BASE
+R VVP_P1_H_BASE
+R VVP_P2_H_BASE
+R VVP_P3_H_BASE
+R VVP_P0_WEEKEND_F
+R VVP_P1_WEEKEND_F
+R VVP_P2_WEEKEND_F
+R VVP_P3_WEEKEND_F
+R VVP_P0_SHARE_M_PCT
+R VVP_P1_SHARE_M_PCT
+R VVP_P2_SHARE_M_PCT
+R VVP_P3_SHARE_M_PCT
+
+; --- Anchors (Index: hours, 0-23) ---
+X VVP_P0_ANCHOR_M_H
+X VVP_P0_ANCHOR_M_LEN
+X VVP_P0_ANCHOR_E_H
+X VVP_P0_ANCHOR_E_LEN
+X VVP_P1_ANCHOR_M_H
+X VVP_P1_ANCHOR_M_LEN
+X VVP_P1_ANCHOR_E_H
+X VVP_P1_ANCHOR_E_LEN
+X VVP_P2_ANCHOR_M_H
+X VVP_P2_ANCHOR_M_LEN
+X VVP_P2_ANCHOR_E_H
+X VVP_P2_ANCHOR_E_LEN
+X VVP_P3_ANCHOR_M_H
+X VVP_P3_ANCHOR_M_LEN
+X VVP_P3_ANCHOR_E_H
+X VVP_P3_ANCHOR_E_LEN
+
+; --- Max in row / gap / slack (Real for HMI) ---
+R VVP_P0_MAX_INROW
+R VVP_P1_MAX_INROW
+R VVP_P2_MAX_INROW
+R VVP_P3_MAX_INROW
+R VVP_P0_MAX_GAP_H
+R VVP_P1_MAX_GAP_H
+R VVP_P2_MAX_GAP_H
+R VVP_P3_MAX_GAP_H
+R VVP_P0_CAP_SLACK_H
+R VVP_P1_CAP_SLACK_H
+R VVP_P2_CAP_SLACK_H
+R VVP_P3_CAP_SLACK_H
+
+
+; --- Planner Temporaries ---
+I MAX_INROW_P
+I MAX_GAP_P
+I CAP_SLACK_P
+I needP
+I pickedP
+R plan_min_total
+R budgetM_min
+R budgetE_min
+I budgetM_P
+I budgetE_P
+I haveM_P
+I haveE_P
+X m_start
+X m_len
+X e_start
+X e_len
+I inM
+I inE
+I inRow
+I slackTargetP
+I lastP
+L found
+
+; --- Loop / Index Helpers ---
+X kp
+X rI
+X rP
+X riI
+X kpI
+X gP
+X gStart
+X gEnd
+X pk
+; --- VV / HMI Flags and Counters ---
+X VV_VVP_PLAN_LAST_MIN
+L VVP_PLAN_TRIG
+L VVP_PLAN_NOW
+L VVP_PRICE_TRIG
+I PLAN_CNT_VV
+L DO_NEXT
+L VVP_DO_PLAN
+
+; --- VV Control / Setpoints ---
+R VV_MIN_CLAMP
+R VV_TARGET_M_CL
+R VV_TARGET_E_CL
+R VV_T_ADJ[96]
+
+I VVP_PLAN_MIN_PREV
+
+; --- Learning (Self-adjustment) ---
+X VVP_LEARN_LAST_MIN
+
+; --- String Debug (optional display lines) ---
+$ DBG_CHEAP_HOURS_TEXT
+$ CHEAP_HOURS_TEXT
+$ DIAG_HEAT_PLAN
+$ DIAG_VV_PLAN
+
+; --- Heat plan numeric diag ---
+H DIAG_HEAT_S
+I DIAG_HEAT_N
+
+; --- GM / learning helpers ---
+X GM_last_minute
+R BETA_GM
+R GM_diff
+R GM_diff_clip
+R STEP_UP_GM
+R STEP_DN_GM
+R k
+R a
+
+; --- Fallback / stamps / price check ---
+X LAST_PRICE_CHECK_MIN
+H PRICE_STAMP
+H LAST_PRICE_STAMP
+I PRICE_MISS_MIN
+I PRICE_OK
+
+; --- Heating state counters ---
+I NUM_RUNNING
+L allow_heat_latch
+L allow_vv_latch
+I raw_heat
+I raw_vv
+I MASK_STAMP
+
+; --- Profile base / cold start defaults ---
+R VVP_PROF1_H_BASE
+R VVP_PROF2_H_BASE
+R VVP_PROF3_H_BASE
+R VVP_WEEKEND_F
+R VVP_SHARE_M
+R VVP_SHARE_E
+X VVP_ANCHOR_M_START
+X VVP_ANCHOR_M_LEN
+X VVP_ANCHOR_E_START
+X VVP_ANCHOR_E_LEN
+
+; --- EC/EX clamp parameters per profile ---
+R VVP_P0_EC_START_MAX
+R VVP_P0_EC_STOP_MAX
+R VVP_P0_EX_START_MAX
+R VVP_P0_EX_STOP_MAX
+
+; --- Adaptive operating model (ADM) ---
+R OAT_mean
+R OAT_mean_yday
+R OAT_mean_tomorrow
+R ADM_OAT_MEAN_SUM
+R ADM_OAT_MEAN_COUNT
+R ADM_OAT_MEAN_FALLB
+I ADM_PLAN_SRC
+
+; --- ADM cold/warm last values ---
+R ADM_C0_COLD_LAST
+R ADM_C0_WARM_LAST
+R ADM_SEG_PT0_LAST
+R ADM_SEG_PT1_LAST
+R ADM_SEG_PT2_LAST
+R ADM_SEG_PT3_LAST
+R ADM_SEG_PT4_LAST
+R ADM_SEG_PT5_LAST
+R ADM_SEG_PT6_LAST
+
+; --- ADM boot / profile ready flags ---
+L ADM_BOOT_PLAN_DONE
+
+; --- PM / push minute trackers ---
+X PM_last_minute
+X VVP_PLAN_LAST_MIN
+
+; --- Debug / temporary counters ---
+X DBG_MINUTE_ECEX
+X DBG_MINUTE_RANK
+I EC_COUNT
+I EX_COUNT
+I TMP
+X QX
+X KX
+X T
+I denom_dec
+I q_dec
+I q2_dec
+I bit_dec
+X i_dec
+
+; --- Planner core ---
+R VVP_H_BASE
+
+I VVP_haveM
+I VVP_haveE
+I VVP_budgetM
+I VVP_budgetE
+
+; --- Time indexing ---
+X P_NOW_Q
+X P_NOW_I
+X P_NOW
+
+; --- ADM profiles (new from log) ---
+R ADM_PROF1_PT0_H
+R ADM_PROF1_PT1_H
+R ADM_PROF1_PT2_H
+R ADM_PROF1_PT3_H
+R ADM_PROF1_PT4_H
+R ADM_PROF1_PT5_H
+R ADM_PROF1_PT6_H
+
+R ADM_PROF2_PT0_H
+R ADM_PROF2_PT1_H
+R ADM_PROF2_PT2_H
+R ADM_PROF2_PT3_H
+R ADM_PROF2_PT4_H
+R ADM_PROF2_PT5_H
+R ADM_PROF2_PT6_H
+
+R ADM_PROF3_PT0_H
+R ADM_PROF3_PT1_H
+R ADM_PROF3_PT2_H
+R ADM_PROF3_PT3_H
+R ADM_PROF3_PT4_H
+R ADM_PROF3_PT5_H
+R ADM_PROF3_PT6_H
+
+; --- UI sync and runtime refresh ---
+
+L VVP_UI_REFRESH_TRIG
+; === UI current values (HMI real-time) ===
+I VVP_PROFILE_UI
+R VVP_H_BASE_UI
+R VVP_WEEKEND_F_UI
+R VVP_SHARE_M_PCT_UI
+X VVP_ANCHOR_M_H_UI
+X VVP_ANCHOR_M_LEN_UI
+X VVP_ANCHOR_E_H_UI
+X VVP_ANCHOR_E_LEN_UI
+R VVP_MAX_INROW_UI
+R VVP_MAX_GAP_H_UI
+R VVP_CAP_SLACK_H_UI
+R VVP_BUDGET_M_MIN_UI
+R VVP_BUDGET_E_MIN_UI
+R VVP_TOPO_UI
+R VVP_DEG_EC_START_UI
+R VVP_DEG_EC_STOP_UI
+R VVP_DEG_EX_START_UI
+R VVP_DEG_EX_STOP_UI
+; === UI previous values (shadow copies for diff-detection) ===
+I VVP_PROFILE_PREV
+R VVP_H_BASE_UI_PREV
+R VVP_WEEKEND_F_UI_PREV
+R VVP_SHARE_M_PCT_UI_PREV
+X VVP_ANCHOR_M_H_UI_PREV
+X VVP_ANCHOR_M_LEN_UI_PREV
+X VVP_ANCHOR_E_H_UI_PREV
+X VVP_ANCHOR_E_LEN_UI_PREV
+R VVP_MAX_INROW_UI_PREV
+R VVP_MAX_GAP_H_UI_PREV
+R VVP_CAP_SLACK_H_UI_PREV
+R VVP_BUDGET_M_MIN_UI_PREV
+R VVP_BUDGET_E_MIN_UI_PREV
+R VVP_TOPO_UI_PREV
+R VVP_DEG_EC_START_UI_PREV
+R VVP_DEG_EC_STOP_UI_PREV
+R VVP_DEG_EX_START_UI_PREV
+R VVP_DEG_EX_STOP_UI_PREV
+; === Last snapshot (dirty-check reference) ===
+I VVP_LAST_PROFILE
+R VVP_LAST_H_BASE
+R VVP_LAST_WEEKEND_F
+R VVP_LAST_SHARE_M_PCT
+X VVP_LAST_ANCHOR_M_H
+X VVP_LAST_ANCHOR_M_LEN
+X VVP_LAST_ANCHOR_E_H
+X VVP_LAST_ANCHOR_E_LEN
+R VVP_LAST_MAX_INROW
+R VVP_LAST_MAX_GAP_H
+R VVP_LAST_CAP_SLACK_H
+R VVP_LAST_BUDGET_M_MIN
+R VVP_LAST_BUDGET_E_MIN
+R VVP_LAST_TOPO
+R VVP_LAST_DEG_EC_START
+R VVP_LAST_DEG_EC_STOP
+R VVP_LAST_DEG_EX_START
+R VVP_LAST_DEG_EX_STOP
+
+; === Active working profile (runtime) ===
+I  VVP_PROFILE              ; aktiv profilindex (0-3), används i all logik
+
+R  VVP_H_BASE_R             ; grundbehov (h)
+R  VVP_WEEKEND_F_R          ; helgfaktor
+R  VVP_SHARE_M_PCT_R        ; andel morgon (%)
+X  VVP_ANCHOR_M_H_R         ; morgonankare starttimme
+X  VVP_ANCHOR_M_LEN_R       ; morgonankare längd
+X  VVP_ANCHOR_E_H_R         ; kvällsankare starttimme
+X  VVP_ANCHOR_E_LEN_R       ; kvällsankare längd
+R  VVP_MAX_INROW_R          ; max timmar i följd
+R  VVP_MAX_GAP_H_R          ; max gap (h)
+R  VVP_CAP_SLACK_H_R        ; tillåten slack (h)
+R  VVP_BUDGET_M_MIN_R       ; morgonbudget (min)
+R  VVP_BUDGET_E_MIN_R       ; kvällsbudget (min)
+R  VVP_TOPO_R               ; topologifaktor
+R  VVP_DEG_EC_START_R       ; degC-justering start EC
+R  VVP_DEG_EC_STOP_R        ; degC-justering stopp EC
+R  VVP_DEG_EX_START_R       ; degC-justering start EX
+R  VVP_DEG_EX_STOP_R        ; degC-justering stopp EX
+
+; --- Planner Runtime Copies ---
+
+
+R VVP_SHARE_M_PCTI
+
+
+
+
+
+
+; --- Misc helpers ---
+R VVP_BUDGET_M_MIN
+R VVP_BUDGET_E_MIN
+R VVP_PLAN_MIN_PREV_R
+I RL
+
+
+; ===== Appended (deduped additions) =====
+L L_VV_MASK_NEUTRAL
+X m_startI
+X m_lenI
+X e_startI
+X e_lenI
+I lastP_I
+
+; ===== Added for VV_Control & Learning (EXOL-safe) =====
+R min_sp
+R tgtM_sp
+R tgtE_sp
+R stop_sp
+L inM_now
+L inE_now
+R err_h
+R alpha_h
+
+; Profilminne (per profil)
+R VVP_P0_BUDGET_M_MIN
+R VVP_P1_BUDGET_M_MIN
+R VVP_P2_BUDGET_M_MIN
+R VVP_P3_BUDGET_M_MIN
+R VVP_P0_BUDGET_E_MIN
+R VVP_P1_BUDGET_E_MIN
+R VVP_P2_BUDGET_E_MIN
+R VVP_P3_BUDGET_E_MIN
+R VVP_P0_TOPO
+R VVP_P1_TOPO
+R VVP_P2_TOPO
+R VVP_P3_TOPO
+R VVP_P0_DEG_EC_START
+R VVP_P1_DEG_EC_START
+R VVP_P2_DEG_EC_START
+R VVP_P3_DEG_EC_START
+R VVP_P0_DEG_EC_STOP
+R VVP_P1_DEG_EC_STOP
+R VVP_P2_DEG_EC_STOP
+R VVP_P3_DEG_EC_STOP
+R VVP_P0_DEG_EX_START
+R VVP_P1_DEG_EX_START
+R VVP_P2_DEG_EX_START
+R VVP_P3_DEG_EX_START
+R VVP_P0_DEG_EX_STOP
+R VVP_P1_DEG_EX_STOP
+R VVP_P2_DEG_EX_STOP
+R VVP_P3_DEG_EX_STOP
+
+
+
+
+; --- Pi push day selector ---
+I PI_PUSH_DAY          ; 0=today, 1=tomorrow
+
+; --- Stamps for copied datasets ---
+H PRICE_STAMP_TD
+H PRICE_STAMP_TM
+H MASK_STAMP_TD
+H MASK_STAMP_TM
+H OAT_SRC_STAMP_TD     ; den dag som OAT_yday/ OAT_tomorrow relaterar till
+H OAT_SRC_STAMP_TM
+
+; --- Ready flags / rotation helper ---
+L TD_READY
+L TM_READY
+X ROLL_LAST_MIN
+
+; --- Working copies (prices & ranks) ---
+R PRICE_TD[96]
+R PRICE_TM[96]
+I RANK_TD[96]
+I RANK_TM[96]
+I RANK_W[96]           ; valström till Planner/GM
+R PRICE_W[96]          ; valström för diag/visning
+
+; --- Working copies (masks EC/EX 32-bit) ---
+I EC_MASK32_1_TD
+I EC_MASK32_2_TD
+I EC_MASK32_3_TD
+I EX_MASK32_1_TD
+I EX_MASK32_2_TD
+I EX_MASK32_3_TD
+
+I EC_MASK32_1_TM
+I EC_MASK32_2_TM
+I EC_MASK32_3_TM
+I EX_MASK32_1_TM
+I EX_MASK32_2_TM
+I EX_MASK32_3_TM
+
+; valda maskord för decode (today/tomorrow)
+I EC_MASK32_1_USE
+I EC_MASK32_2_USE
+I EC_MASK32_3_USE
+I EX_MASK32_1_USE
+I EX_MASK32_2_USE
+I EX_MASK32_3_USE
+
+; --- Working copies (OAT means) ---
+R OAT_yday_TD
+R OAT_tomorrow_TD
+R OAT_yday_TM
+R OAT_tomorrow_TM
+
+$ DIAG_PUSH
+I VV_OVR_MIN_TODAY
+; --- Slack-parametrar ---
+
+I bestP
+I bestRank
+L addedGap
+
+; --- Planner priority ---
+L VVP_GAP_OVER_INROW
+
+; --- Wrap-around helpers ---
+I firstSel
+I lastSel
+I distWrap
+I aStartP
+I aEndP
+I bestP2
+I bestRank2
+
+; --- In-row kontroll (lokal svitlängd) ---
+I runL
+I runR
+I tScan
+L okIR
+I gapLen
+
+I selCnt
+X onlyOne
+I okWrap
+I TMP2
+
+I VVP_EN_INROW      ; 0/1
+I VVP_EN_GAP        ; 0/1
+I VVP_EN_WRAP       ; 0/1
+I VVP_EN_TRIM       ; 0/1
+I VVP_EN_ANCHOR_M   ; 0/1
+I VVP_EN_ANCHOR_E   ; 0/1
+
+R VV_MIN_SAFE
+R VV_MINSAFE_DIFF_CL
+
+; ===== LOOPVARIABLER FÖR VVP PLANNER 96p unika, globala =====
+; Typ: X = index  loopräknare
+; Kommentar: används ENDAST i VVP Planner, ej i andra moduler!
+
+; --- 4.3 Nollställ plan ---
+X LCLR_KP          ; loop för att nollställa VV_PLAN
+
+; --- 4.5 Global seed billigast först ---
+X LPLN_SEED_I      ; yttre rank-loop 0..95
+X LPLN_SEED_K      ; inre period-loop 0..95
+
+; --- 4.6 Räkna seedade inom M/E-fönster ---
+X LCHK_CNT_K       ; loop för att räkna befintliga M/E-perioder
+
+; --- 4.7 Top-up M ---
+X LME_M_I          ; yttre rank-loop för M-fönster
+X LME_M_K          ; inre period-loop för M-fönster
+
+; --- 4.8 Top-up E ---
+X LME_E_I          ; yttre rank-loop för E-fönster
+X LME_E_K          ; inre period-loop för E-fönster
+
+; --- 4.9 In-row pass ---
+X LPLN_ROW_K       ; loop för in-row kontroll
+
+; --- 4.10a GAP-fill max_gap=0 ---
+X LGAP_FILL_K      ; loop för att fylla alla tillåtna perioder
+
+; --- 4.10b Rank-aware gap-fill ---
+X LGAP_RANK_I      ; yttre rank-loop prisordning
+X LGAP_RANK_K      ; loop över aktiva VV_PLAN
+X LGAP_RANK_G      ; loop över gapfönster gStart gEnd
+
+; --- 4.10c Wrap-gap över midnatt ---
+X LWRP_I           ; yttre rank-loop
+X LWRP_K           ; inre loop för wrap-zon
+
+; --- 4.11 Trim överspill ---
+X LTRM_I           ; yttre rank-loop för trim
+X LTRM_K           ; inre loop för periodval vid trim
+
+; --- 4.12 Diagnostik & snapshot ---
+X LCHK_DIAG_K      ; loop för att skriva VV_SEL_HH
+
+I slackAddP
+I T_I            ; temporär integer (ersätter X T)
+
+L  VVP_PLAN_BUSY 
+
+I targetP    ; intern variabel för slack/trim-stopptak (perioder)
+
+X VVP_PLAN_NOW_FLAG
+X VVP_PROFILE_CHANGE_FLAG
+X VVP_UI_CHANGE_FLAG
+
+; --- Lokala index för InRow-pass ---
+I runStart
+I worstRank
+I worstP
+I rr
+
+; ============================================================
+;  HEAT PLANNER (ADM -> TD/TM) - NYA VARIABLER (EXOL-typer)
+;  En variabel per rad, ingen tilldelning här (INIT görs separat)
+; ============================================================
+
+; --- Konfig / triggar ---
+L   ADM_HEAT_PLAN_TRIG        ; 1 = kör om värmeplan (t.ex. när ADM_H_REQ uppdateras)
+
+; --- Mål och räkning (15-min perioder) ---
+I   ADM_SEL_LIMIT             ; målantal perioder = CvI(ADM_H_REQ * 4.0)
+I   ADM_SEL_COUNT             ; faktiskt antal valda perioder
+
+I HP_pickedP
+L HP_found
+X HP_rI
+X HP_kp
+X HP_rP
+
+I HEAT_TD_CNT        ; antal perioder satta i HEAT_PLAN_TD
+I HEAT_DIFF_CNT      ; antal skillnader TD vs HEAT_PLAN
+I MIN_HEAT_P         ; min antal perioder för giltig TD-plan
+I HEAT_PLAN_OK       ; 0=behåll, 1=uppdaterad, 2=ingen ändring
+I HP_K               ; loopindex 0..95 för heat planner
+I HP_MIN_P           ; min antal perioder för giltig TD-plan
+
+
+
+; ============================================================
+;  HEAT PLANNER - TILLÄGGSVARIABLER (komplettering)
+; ============================================================
+
+; --- Logiska flaggor ---
+L   ADM_HEAT_READY         ; 1 = plan beräknad och färdig för push
+L   ADM_HEAT_NEED_UPDATE   ; 1 = flagga för omplanering (t.ex. ändrad ADM_H_REQ)
+
+
+
+
+
+; ============================================================
+; HEAT PLANNER - VARIABLER (TILLÄGG FÖR TD/TM + 4-LÄGSTÄLLD MODE)
+; En variabel per rad, ingen tilldelning här
+; ============================================================
+
+; --- Behov (separata dygn, real = timmar) ---
+R   ADM_H_REQ_TD
+R   ADM_H_REQ_TM
+
+; --- Planer per dygn (0/1) ---
+I   HEAT_PLAN_TD[96]
+I   HEAT_PLAN_TM[96]
+L HEAT_RUN_TRIG
+L HEAT_PLAN_TRIG
+H HEAT_LAST_STAMP_TD
+H HEAT_LAST_STAMP_TM
+H HEAT_PLAN_STAMP
+L HEAT_PLAN_BUSY
+L Heat_plan_now
+I DIAG_PLAN_STEP
+L CFG_ALLOW_OVERLAP_LAST
+
+I HEAT_USE_PLAN
+X HEAT_PLAN_LAST_MIN
+
+
+; --- Visualisering per dygn (0=inget, 1=VV, 2=Värme, 3=VV+Värme) ---
+I   PLAN_MODE_TD[96]
+I   PLAN_MODE_TM[96]
+
+; --- Arbetskopia som PI/UI läser (idag) ---
+I   PLAN_MODE[96]
+
+; --- Loopindex (unika för detta block) ---
+X   LHEAT_CLR_K
+X   LHEAT_PICK_I
+X   LHEAT_PICK_K
+X   LHEAT_MODE_K
+X   LHEAT_SUM_K
+
+; --- Temporära räknare (unika) ---
+
+I   HP_needP_TD
+I   HP_needP_TM
+
+
+; --- Diagnosräknare ---
+I   ADM_HEAT_COUNT_OFF
+I   ADM_HEAT_COUNT_ONLY
+I   ADM_HEAT_COUNT_BOTH
+
+R DIAG_PLAN_STEP2
+
+I OUT_I
+I IR_LongStart
+I IR_LongLen
+I IR_RunStart
+I IR_RunLen
+I IR_FirstLen
+I IR_LastLen
+I IR_LastStart
+I IR_FirstExists
+I IR_kp
+I IR_idx
+I IR_Mid
+I IR_Offset
+I IR_Wkp
+I IR_BestRank
+I IR_BestDist
+I IR_BestP
+I IR_Dist
+I IR_AnyFix
+I IR_Tmp
+I inM_ok
+I inE_ok

@@ -1,0 +1,4030 @@
+EXOL
+Reference
+© Copyright AB Regin, Sweden, 2005
+DISCLAIMER
+The information in this manual has been carefully checked and is believed to be correct. Regin however, makes no
+warranties as regards the contents of this manual and users are requested to report errors, discrepancies or ambiguities to
+Regin, so that corrections may be made in future editions. The information in this document is subject to change
+without prior notification.
+The software described in this document is supplied under licence by Regin and may be used or copied only in
+accordance with the terms of the licence. No part of this document may be reproduced or transmitted in any form, in
+any fashion, electronically or mechanically, without the express, written permission of Regin.
+COPYRIGHT
+© AB Regin. All rights reserved.
+TRADEMARKS
+EXOapt, EXOreal, EXO4, and EXOline are registered trademarks of AB Regin.
+MS-DOS, Windows, Windows 2000, Windows XP, and Windows Server 2003 are registered trademarks of Microsoft
+Corporation.
+Some product names mentioned in this document are used for identification purposes only and may be the registered
+trademarks of their respective companies.
+November 2005
+Document number: M2175
+Document Revision: 2005-1-00
+Table of Contents
+Chapter 1 EXOL Programs 8
+Data Types 8
+Literals and Names 8
+Literals 9
+Names 9
+Operators 10
+Logic Operators 10
+Index Operators 10
+Integer Operators 11
+Real Value Operators 11
+String Operators 11
+Procedures 11
+Chapter 2 EXOL Reference 12
+Methodology 12
+Typographical Conventions 12
+Abs 13
+Answer! 14
+Asc$ 14
+Atn 15
+Bit (Function) 15
+Bit (Instruction) 16
+BrkTsk 16
+Chr 17
+CmpI 17
+CmpR 18
+CmpT 19
+CmpX 19
+Cmp$ 20
+ComDP 21
+ComI 22
+ComL 22
+CompileIf ... Else ... EndIf 23
+ComR 24
+ComRW 24
+ComX 25
+Com$ 25
+Cos 26
+CRC16Add 26
+CRC16Check 27
+CrcCcittAdd 27
+CrcCcittCheck 28
+CvI (to X) 29
+CvI (to R) 29
+CvI (to $) 29
+CvL (to X) 30
+CvL (to $) 30
+CvR (to X) 31
+CvR (to I) 31
+CvRF 32
+CvRS 33
+CvX (to I) 33
+CvX (to R) 34
+CvX (to $) 34
+Cv$ (to L) 35
+Cv$ (to X) 35
+Cv$ (to I) 36
+Cv$ (to R) 36
+Cycle! 37
+CycleX! 38
+DecX 38
+DecI 39
+DefFunc ... EndFunc (with argument) 39
+DefFunc ... EndFunc (without argument) 41
+DefStat ... EndStat 42
+Delay 43
+Do ... EndDo 45
+DownLoop ... EndLoop 45
+DPac (Instruction) 46
+DPac (Function) 46
+e! 47
+EdgeI 48
+EdgeL 48
+EdgeR 49
+EdgeX 50
+Edge$ 50
+Exit 51
+ExitIf 51
+Exp 52
+False! 52
+FF 52
+FF! 53
+I 53
+If ... Else ... EndIf 54
+Illegal! 55
+IncI 56
+IncX 56
+InKey! 57
+InOut$ 57
+L 58
+Len$ 58
+LF! 59
+Lg 59
+LgE! 59
+LN 60
+LN10! 61
+LN2! 61
+LoadV 62
+Loop ... EndLoop 63
+LPrint$ 64
+Mid$ (part of string from the right) 64
+Mid$ (part of string from the left) 65
+Mid$ (left formatted string assignment) 66
+Mid$ (right formatted string assignment) 67
+ModVar 67
+ModVarAddr 69
+ModVarAddrL, ModVarAddrH, ModVarPage,
+ModVarPageAddr 69
+ModVarLn 70
+NaN! 71
+NegInf! 71
+Not (integer) 72
+Not (index number) 72
+Overflow! 73
+Page 73
+PageLen (function) 74
+PageLen (instruction) 74
+PI! 75
+PID 75
+Poll! 77
+PosInf! 78
+PowerUp! 78
+Print 79
+Priority! 79
+ProjVarAddr 80
+ProjVarAddrL, ProjVarAddrH, ProjVarPage,
+ProjVarPageAddr 80
+ProjVarPLA, ProjVarELA, ProjVarLn 81
+R 82
+ReadV 82
+Repeat .. Until 83
+RIB 84
+RIV (communication) 84
+RLB 85
+RLV (RLV (communication) 86
+RRB 87
+RRV (communication) 88
+RunTsk 88
+RXB 89
+RXV (communication) 89
+R$V (communication) 91
+Scan (data type X) 92
+Scan (data type I) 93
+SIB 94
+Sin 94
+SIV (communication) 95
+SLB 96
+SLV (communication) 96
+Sq 98
+SqRt 98
+SqRt2! 99
+SqRt3! 99
+SRB 99
+SRV (communication) 100
+SwapI 101
+SwapL 101
+SwapR 101
+SwapX 102
+Switch .. Pole .. ElsePole .. EndSwitch 102
+SXB 104
+SXV (communication) 104
+S$V (communication) 105
+Tab! 106
+Tan 106
+TimePer 107
+TLN! 109
+True! 109
+Tsk 110
+UpLoop ... EndLoop 110
+ValidVariable 111
+Wait 111
+While .. EndWhile 112
+X 112
+@ 113
+$ 113
+$Var (function) 114
+$Var instruction 114
+8 Document's title
+Chapter 1 EXOL Programs
+Programs in EXOL are highly modular. The actual program running is described in program
+controllers called Tasks. These Tasks use variables which are declared as local, directly in
+the Task itself, or as common, usable in variable tables called DPacs and Text files.
+Data Types
+EXOL has five data types according to the following:
+Data Type Description Value
+Logic Binary: 0 or 1 0, 1
+Index Interger: 0 to 255 0 to 255
+Integer
+value
+Interger -32768 to 32767 -32768 to 32767
+Real value Real value -3.40E38 to +3.40E38 -3.40E38 to +3.40E38
+Textstring Texts with 0 to 110 characters 0 to 120 characters
+Literals and Names
+A literal is a constant which is not declared, but which is instead, the actual value. A literal
+can be written directly in the code, or be used to initiate a variable or the name of a constant.
+An example of literals:
+0 -912 31415.92E-4 "Text literal"
+A variable contains (has) a value of a given type. This value may be changed during a
+program’s run. When a variable is defined, an area will be created for it and its variable name
+will be defined. The latter is used to refer to the variable in the program.
+A constant contains a value of a given type, which cannot be changed during the execution
+of the program. When defining a constant, the name will be defined as an equivalent and a
+synonym for the value.
+Constant must be defined in the { CONST } section of a Task and may only be used in the
+section { CODE }. When they are used, it is equivalent to using the the literal.
+It is impossible to have an array with constants, as the constant is the value. There is nowhere
+for the program to look up the value. You may of course, use an array with never-changing
+variables for this purpose.
+Chapter 1 EXOL Programs 9
+Literals
+Literals are stated for the different data types in the following way.
+Logic: 0 or 1. See however, the functions True! on page 109 and False! on page
+52.
+Index: An integer between 0 and 255 stated as digits.
+Integer: sddddd
+s is a minus sign, if any, ddddd is a number (using digits) between 0 and
+32767. Note that a blank space may not be used between the minus sign and
+the digits.
+Real: saa.bbESee
+s is a minus sign, if any, aa.bb is a number of the type 23.4. If there is a
+decimal (".4" in the example), the decimal point is compulsory, but the aapart
+is not. The point is not compulsory if there is no decimal. The integer part
+is compulsory if there is no decimal (there must be at least one digit).
+E is the letter E, which starts the exponential part. S is the exponential’s minus
+sign, if any, and ee is an integer. See the section above regarding the real
+values range. The exponential part is not compulsory.
+String: "string" or 'string'. If quotation marks are used, you may not use
+quotations marks in the string and likewise, if apostrophes are used, you may
+not use apostrophes in the string. These characters may, however, occur in
+strings enclosed by the other character. Both of these characters may not occur
+in the same string literal. These strings may however be concatenated, i.e., be
+joined, later in the program. The string "" is called the empty string and has the
+length 0.
+A real variable can have the "values" +∞, -∞ or Not-A-Number. It is not possible to state
+these values as literals in the language. There are, however, constants which can return these
+values: see PosInf!, NegInf!, NaN! and CmpT.
+Strings are assumed to be written in what is known as the OEM format in the PC world. This
+corresponds to the internationally accepted ASCII table for the first 128 characters
+(thereafter it is specific for each country). Internally, all characters are handled in the same
+way except in the cases Cv$, etc, when all the significant characters (numbers, points etc.)
+are placed in the common half.
+Please note that Windows does not used the OEM table. It uses a similar design, the socalled
+ANSI table, which is not compatible. Some editors, EXOedit for Windows amongst
+others, are able to perform automatic conversions between these formats, thus enabling
+editing of files in OEM format (for example Tasks) in the Windows environment.
+Names
+The first character must be a letter and the following characters letters, digits or one of the
+following characters $ _ !. Most international characters in the Western European
+languages are allowed. Upper and lower case letters are not distinguished, however see the
+OEM-ANSI discussion above.
+10 Document's title
+Operators
+An operator is a language element specifying a calculation rule. EXOL's operators are listed
+below. The column Priority specifies in which order the operator is executed in an
+expression. The operator with the lowest priority digit value will be executed first. The order
+is the same as in elementary mathematics. The Version column states as of which version
+the EXOL operator is implemented.
+Logic Operators
+Operator Priority Version Description
+Not 1 1.01 Logic complement
+And 5 1.0 Logic AND
+Xor 6 1.0 Logic exclusive OR
+Or 6 1.0 Logic OR
+> 7 1.02 Larger than
+>= => 7 1.02 Larger than or equal
+to
+<= =< 7 1.02 Smaller than or equal
+to
+< 7 1.02 Smaller than or equal
+to
+= 7 1.02 Equal to
+<> >< 7 1.02 Not equal
+1 The operator Not requires EXOL version 2.2 or later.
+2 The comparison operator requires EXOL verson 3.0 or later, to be able to used freely in
+expressions outside the specific comparison functions.
+Index Operators
+Operator Priority Version Description
+* 3 1.0 Multiplication
+/ 3 1.0 Division
+Mod 3 2.4 Modulo (division remainder)
++ 4 1.0 Addition
+- 4 1.0 Subtraction
+And 5 1.0 Logic AND
+Xor 6 1.0 Logic exclusive OR
+Or 6 1.0 Logic OR
+Chapter 1 EXOL Programs 11
+Integer Operators
+Operator Priority Version Description
+- 1 1.0 Negation
+* 3 1.0 Multiplication
+/ 3 1.0 Division
+Mod 3 2.4 Modulo (division remainder)
++ 4 1.0 Addition
+- 4 1.0 Subtraction
+And 5 1.0 Logic AND
+Xor 6 1.0 Logic exclusive OR
+Or 6 1.0 Logic OR
+Real Value Operators
+Operator Priority Version Description
+- 1 1.0 Negation
+^ 2 1.0 Exponentiation (not negative exponents)
+* 3 1.0 Multiplication
+/ 3 1.0 Division
++ 4 1.0 Addition
+- 4 1.0 Subtraction
+String Operators
+Operator Priority Version Description
++ 4 2.0 Concatenation, joining
+Procedures
+Procedures is a collective term for user-defined functions and instructions. All procedures are
+defined in a special procedure Task. This Task cannot itself execute, as it contains procedure
+definitions. The procedures are executed by calls from other user-defined Tasks. The
+procedures cannot call each other.
+The Procedure Task contains local variables, which must be used to allow calls from other
+Tasks. The procedures may, however, use VPac and QPac variables. If this is the case, the
+programmer must ensure that calls from other Tasks do not occur, or interfere with each
+other.
+The procedure facility is, among other things, used for increasing the instruction repertoire
+with new powerful, application adapted instructions.
+12 Document's title
+Chapter 2 EXOL Reference
+Methodology
+Each element description opens with a main heading equivalent to the element name.
+The following subheadings are then used to describe the elements in detail:
+Subheading Description
+Syntax Correct syntax for the instruction or function.
+Type States if the element is an instruction or a function. If it is a
+function, it will also state its data type. Thus we have the
+following types: instruction, logic function, index function,
+integer function, real value function and string function. A
+function can exist as several types in certain cases. It is then
+described as separate elements.
+Version In which EXOL version the element was introduced. See below.
+Function Short description of what the instruction or the function does.
+Description Detailed description of what the instruction or the function does,
+what happens in special cases , which flags are affected etc.
+Fast Tasks Particular conditions valid for Tasks with a cycle time of less
+than 0.1 seconds. See also the document EXOL Programming.
+See also Other elements with close, functional relationships to the element.
+Example Example of an application of the instruction or the function, with
+a short description.
+More about versions Part II of this book describes EXOL independently of its implementation in EXOapt and
+EXOreal. The language is developed in parallel with its implementations, and an instruction
+added to the language can often not be used with older controllers and EXOload.
+The version number stated for each instruction or function refers to the language’s version.
+Which language version is supported by a certain compiler, can be found in the compiler
+(currently, this is identical to the EXOload version).
+A function will also require the corresponding version of EXOreal, the EXO controller’s
+operating system.
+Exceptions from this rule are described below by each function.
+Typographical Conventions
+Text in Courier New Bold should literally be part of the source code.
+Text in Courier New Italic should be replaced by the programmer.
+Existing argument types are stated in the following way:
+Chapter 2 EXOL Reference 13
+Argument Description
+LVar Logic variable
+XVar Index variable
+IVar Integer variable
+RVar Real variable
+$Var String variable
+LExp Logic expression
+XExp Index expression
+IExp Integer expression
+RExp Real expression
+$Exp String expression
+VPac VPac name
+Stat Name of user-defined instruction
+Func Name of user-defined function
+Program lines Zero or several lines of program code.
+All boxed text under Example is direct excerpts from a Task.
+Abs
+Syntax
+Abs (RExp)
+Type Real function
+Version 1.0
+Function Calculates the absolute value
+Description The function’s output value is the absolute value of RExp.
+The minus sign will be removed if RExp<0. The value will otherwise be returned
+unchanged.
+Example
+Err = Abs (Actual_value-Set_point_value)
+The variable Err is assigned the value of the absolute difference between Actual_Value
+and Set_Point_Value.
+14 Document's title
+Answer!
+Syntax
+Answer!
+Type Logic function.
+Version 2.1
+Function Reads an answer flag.
+Description If a variable in another controller is read or written in EXOL via communication on a port,
+then the Task’s answer flag will be set or reset, depending on whether or not the operation
+was successful
+The flag is handled by RLV, RXV, RIV, RRV, SLV, SXV, SIV, SRV, LoadV,
+ReadV and InOut$. It will be set when communication is successful. Otherwise it will
+be reset. For further information, see the above-mentioned instructions and functions.
+It is not possible write a value in the flag.
+The flag will not be reset when read by Answer!
+The answer flag is individual for each Task.
+See also RLV, RXV, RIV, RRV, R$V, SLV, SXV, SIV, SRV and S$V.
+Example
+Count = 5
+Repeat
+RValue = RRV( Port, PLA, ELA, LDN, Cell )
+DecX Count
+Until Answer! Or ( Count = 0 )
+If Answer!
+; Normal handling
+Else
+; Error handling
+EndIf
+A real variable is read with the RRV function via communication on port Port until an
+answer is received (to a maximum of five times).
+Note that when Answer! is not set to zero, then this fact can be exploited when halting the
+repeated questioning and when selecting the handling method.
+Asc$
+Syntax
+Asc$ ($Exp)
+Type Index function.
+Version 2.0
+Function Calculates the ASCII code for the first character in $Exp.
+Description All characters and letters utilised for building a string correspond to a code called the ASCII
+code, based on ISO standard 646.
+The function’s output value is the ASCII code for the first character; $Exp.
+If $Exp is empty, the overflow flag will be set and the function will give the output value 0
+Chapter 2 EXOL Reference 15
+See also Chr
+Example
+TempText = "Exomatic"
+Code = ASC$( TempText )
+The index variable CODE is assigned the ASCII code of the character E.
+Atn
+Syntax
+Atn (RExp)
+Type Real function.
+Version 1.0
+Function Calculates arc tangent.
+Description The output value of the function arc tangent stated in radians for RExp.
+(1 degree = π/180 radians).
+The output value is in the -π/2 to π/2 interval.
+This function should also be used when calculating arc sine or arc cosine. Use the following
+expressions:
+arcsinx arctan
+x2
+1 x2 ≡
+−
+arccosx arctan
+1
+x ≡ 2 − 1
+See also Sin, Cos, Tan and Pi!
+Example
+Angle = Atn (X/Y)
+The variable ANGLE receives the value for arc tangent for X/Y.
+Bit (Function)
+Syntax
+Bit(XVar,XExp)
+Type Logic function
+Version 1.0
+Function Returns separate bit in index expressions.
+Description The output value of the function is the logic value of the bit in position XExp in the index
+variable XVar.
+If XExp > 7, the illegal flag is set and the output value zero (0) is received.
+16 Document's title
+The bits in XVar are numbered according to the below:
+MSB LSB
+7 6 5 4 3 2 1 0
+...where LSB is the least significant bit.
+See also The instruction BIT.
+Example
+Flag = Bit(Rev,7) Or Bit(Rev,6)
+The logic variable Flag receives the value one (1) if bit #6 or bit #7 in the variable Rev has
+the value one (1).
+Bit (Instruction)
+Syntax
+Bit(XVar,XExp) = LExp
+Type Instruction
+Version 1.0
+Function Assignment of separate bit in index variable
+Description The calculated result of the logic expression LExp is assigned the bit position in XVar, as
+indicated by XExp.
+The illegal flag is set and assignment is not performed if XExp > 7.
+The bits in Xvar are numbered according to the figure below:
+MSB LSB
+7 6 5 4 3 2 1 0
+...where LSB is the least significant bit.
+The instruction sets the transient flag for XVar if XVar is changed (see EdgeX). The
+transient flag is always set in EXOreal versions earlier than 2.6.
+See also The function Bit.
+Example
+UpLoop Number From 0 To 7
+Bit(A, Number) = In(Number)
+EndLoop
+The example places the logic variables In(0) to In(7) in index variable A.
+BrkTsk
+Syntax
+Chapter 2 EXOL Reference 17
+BrkTsk XExp
+Type Instruction
+Version 1.0
+Function Terminates Task
+Description Terminates the execution of Tasks with load number XExp.
+A Task can be terminated, provided it is loaded and started. The Task continues to execute to
+end or wait mode, where it is terminated. If conditions for termination are not met, the
+operation will not be performed. The illegal flag is then set.
+A Task can terminate itself.
+The instruction is comparable with the EXOline command BRKT.
+See also RunTsk, Tsk and TLn!
+Example
+. . .
+{ Code
+- - - -
+BrkTsk TLn!
+}
+The Task runs once, after which it terminates itself.
+Chr
+Syntax
+Chr(XExp)
+Type String function
+Version 2.0
+Function Returns character whose ASCII code is XExp.
+Description All characters and letters utilised to build a string corresponds to a code called the ASCII
+code based on ISO standard 646.
+The output string of the function is the ASCII code for the first character; $Exp.
+See also ASC$
+Example
+TempText = Chr(Code) + Code$
+The string variable TempText is assigned the character with the ASCII code Code, which
+is joined to the contents of CODE$.
+CmpI
+Syntax
+CmpI(IExp1 <=> IExp2)
+18 Document's title
+Type Logic function
+Version 1.0
+Function Compares two integer expressions.
+Description The expressions IExp1 and IExp2 are compared with each other. The function output
+value is either true or false (1 or 0), depending on which comparison operator is used.
+There are the following comparison operators:
+Operator Output Value =1 if...
+= IExp1 equals IExp2
+<> >< IExp1 does not equal IExp2
+> IExp1 is larger than IExp2
+< IExp1 is less than IExp2
+>= => IExp1 is larger than or equals IExp2
+<= <= IExp1 is less than or equals IExp2
+With EXOL version 3.0 or later the comparison operators can be used without the
+comparison function CmpI().
+See also CmpX, CmpR, CmpT and Cmp$
+Example
+If CmpI(IValue <-1000)
+Action = 1
+EndIf
+The variable Action is set if the integer variable IValue is below the value -1000.
+CmpR
+Syntax
+CmpR(RExp1 <=> RExp2)
+Type Logic function
+Version 1.0. For comparisons of equal, or not equal EXOL 3.0 is required.
+EXOreal version 1.0. For comprison of equal, or not equal to infinity or Not–A-Number requires 2.5
+Function Compares two real value expressions
+Description The expressions RExp1 and RExp2 are compared with each other. The function output
+value is either true or false (1 or 0), depending on which comparison operator is used.
+The following comparison operators are available:
+Operator Output Value =1 if...
+= RExp1 is equal to Rexp2
+<> >< RExp1 is not equal to Rexp2
+> RExp1 is larger than RExp2
+< RExp1 is less than RExp2
+>= => RExp1 is larger than or equal to RExp2
+Chapter 2 EXOL Reference 19
+<= => RExp1 is less or equal to RExp2
+With EXOL 3.0 or later the comparison operators can be used in expressions without the
+comparison function CmpR().
+See also CmpX, CmpI, CmpT and Cmp$
+Example
+If CmpR( RValue > 3.14 )
+Action = 1
+EndIf
+The variable Action is set if the real value variable RValue is larger than the value 3.14.
+CmpT
+Syntax
+CmpT(RExp1, RExp2 <=> RExp3)
+Type Logic function
+Version 1.0
+EXOreal version 1.0. Version 2.5 is however required for comparing with Not-A-Number or infinity.
+Function Compares two real value expressions with tolerance
+Description The expressions RExp2 and RExp3 are compared with each other with the tolerance
+RExp1. The function output value is either true or false (1 or 0), depending on which
+comparison operator is used.
+The following comparison operators are available:
+Operator Output Value =1 if...
+= The difference between RExp2 and RExp3 is less than RExp1
+<> >< The difference between RExp2 and RExp3 is larger than RExp1
+This function can also be used to compare the "numbers" +∞, -∞, and Not-A-Number. The
+tolerance should then be set to 0 (zero).
+See also CmpX, CmpI, CmpR and Cmp$. See also PosInf!, NegInf! and NaN!.
+Example
+If CmpT(0.1, RValue = 3.14) Or CmpT(0, RValue = NaN!)
+Action = 1
+EndIf
+The variable Action is set if the real value variable RValue has a value in the interval
+3.13 to 3.15, or is a Not-A-Number.
+CmpX
+Syntax
+CmpX(XExp1 <=> XExp2)
+20 Document's title
+Type Logic function
+Version 1.0
+Function Compares two index expressions
+Description The expressions XExp1 and XExp2 are compared with each other. The function output
+value is either true or false (1 or 0), depending on which comparison operator is used.
+The following comparison operators are available:
+Operator Output Value =1 if...
+= XExp1 equals XExp2
+<> >< XExp1 does nor equal XExp2
+> XExp1 is larger than XExp2
+< XExp1 is less than XExp2
+>= => XExp1 is larger than or equal to XExp2
+<= <= XExp1 is less than or equal to XExp2
+With EXOL 3.0 or later versions the comparison operators can be used in expressions
+without the comparison function CmpX().
+See also CmpI, CmpR, CmpT and Cmp$
+Example
+If CmpX(XValue > 100 )
+Action = 1
+EndIf
+The variable Action is set if the index variable XValue is larger than the value 100.
+Cmp$
+Syntax
+Cmp$ ($Exp = $Var)
+Type Logic function
+Version 2.0 For comparisons of not equal to, EXOL 3.0 is required.
+EXOreal version 2.0
+Function Compares two strings
+Description The strings $Exp and $Var are compared with each other. If they are equal, the function
+output value will be either true or false (1 or 0).
+The following comparison operators are available:
+Operator Output value = 1 if
+= XExp1 equal to Xexp2
+<> >< XExp1 not equal to Xexp2
+With EXOL 3.0 or later versions the comparison operators can be used in expressions
+without the comparison function Cmp$().
+See also CmpX, CmpI, CmpR and CmpT
+Chapter 2 EXOL Reference 21
+Example
+If Cmp$ ("Alarm" = Message)
+Action = 1
+EndIf
+The variable Action is set if the string variable MESSAGE contains the text "Alarm".
+ComDP
+Syntax
+ComDP(XExp)
+Type Logic function
+Version 1.1
+Function Reads communication flag
+Description There are two communication flags in each segment for each DPac in EXOreal.
+One flag, the write flag, is always set by the EXOline command LOADV via communication
+in the current segment.
+The function reads the value of the write flag in segment 0 for XExp and then sets the flag to
+zero.
+See also ComL, ComX, ComI, ComR, Com$ and ComRW
+Example
+If ComDP(Temperatures)
+RunTsk DoIt
+EndIf
+The Task DoIt is started each time writing occurs in the DPac Temperatures, via
+communication with the EXOline command LoadV.
+22 Document's title
+ComI
+Syntax
+ComI(IVar)
+Type Logic function
+Version 1.1
+Function Reads communication flag.
+Description A communication flag exists for each variable in EXOreal.
+This flag is always set via communication by the EXOline command SIV.
+The function reads the value of the communication flag for IVar and then sets the flag to
+zero.
+See also ComL, ComX, ComR, Com$, ComDP and ComRW
+Example
+If ComI(IVar)
+RunTsk DoIt
+EndIf
+The Task DoIt is started each time the integer variable IVar is assigned a value via
+communication with the EXOline command SIV.
+ComL
+Syntax
+ComL(LVar)
+Type Logic function
+Version 1.1
+Function Reads communication flag
+Description A communication flag exists for each variable in EXOreal.
+This flag is always set via communication by the EXOline command SLV.
+The function reads the value of the communication flag for LVar and then sets the flag to
+zero.
+See also ComX, ComI, ComR, Com$, ComDP and ComRW
+Example
+If ComL(LVar)
+RunTsk DoIt
+EndIf
+The Task DoIt is started each time the integer variable LVar is assigned a value via
+communication with the EXOline command SLV.
+Chapter 2 EXOL Reference 23
+CompileIf ... Else ... EndIf
+Syntax
+CompileIf LExp
+programlines1
+Else
+programlines0
+EndIf
+Type Instruction
+Version 3.0
+EXOreal version 1.0
+Function Conditionally executes a block of program lines.
+Description LExp is a constant expression which is calculated when converting.
+If LExp = 1, programlines2 are carried out. After that, the execution continues on the
+line after EndIf. Programlines0 are not loaded out to the controller.
+If LExp = 0, programlines0 are carried out. After that, the execution continues on the
+lines after EndIf.Programlines1 are not loaded out to the controller.
+Else and programlines0 may be excluded and then you get the following
+functionality:
+If LExp = 1, programlines2 are carried out. After that, the execution continues on the
+line after EndIf. Programlines0 are not loaded out to the controller.
+If LExp = 0, no code is loaded from this program section. The execution continues on the
+line after EndIf.
+Certain types of program errors are accepted in the part of the code which is not loaded.
+Among other things, it is allowed to use variable names that are not declared.
+Nesting is allowed, i.e. CompileIf EndIf is accepted in programlines, like other
+similar structures like e.g. If.
+Many compound logic expressions are too complex for EXOload to calculate when
+converting. Nesting can then be an alternative.
+See also ValidVariable
+Example
+CompileIf ValidVariable( Pump3_OnOff )
+If Pump1_OnOff and Pump2_OnOff and Pump3_OnOff
+; Keep number of running pumps below 3
+Pump3_OnOff = False!
+EndIf
+EndIf
+If three pumps are running, number 3 will be stopped. If there are only two pumps nothing
+will happen.
+24 Document's title
+ComR
+Syntax
+ComR(RVar)
+Type Logic function
+Version 1.1
+Function Reads communication flag
+Description A communication flag exists for each variable in EXOreal.
+This flag is always set via communication by the EXOline command SRV.
+The function reads the value of the communication flag for RVar and then sets the flag to
+zero.
+See also ComL, ComX, ComI, Com$, ComDP and ComRW
+Example
+If ComR(RVar)
+RunTsk DoIt
+EndIf
+The Task DoIt is started each time the integer variable RVar is assigned a value via
+communication with the EXOline command SXV.
+ComRW
+Syntax
+ComRW(XExp1,XExp2)
+Type Index function
+Version 2.2
+Function Reads communication flags
+Description There are two communication flags in each segment for each DPac in EXOreal.
+The write flag is always set by the EXOline command LoadV when communicating in
+slave-mode with the current segment.
+The read flag is always set by the EXOline command ReadV when communicating in slavemode
+to the current segment.
+The function reads the value of the flags in segment XExp2 for DPac load number XExp1.
+After this, it sets the flags to zero.
+The function’s output value receives the read flag in bit #0, and the write flag in bit #1.
+If the DPac does not exist, or if XExp2 states a segment number which is too high, the
+illegal flag will be set and the output value will be zero.
+See also ComL, ComX, ComI, ComR, Com$ and ComDP
+Example
+X XVar = ComRW(Temperatures, Seg)
+Chapter 2 EXOL Reference 25
+If Bit(XVar, 0)
+RunTsk DoIt
+EndIf
+The Task DoIt will be started each time the DPac Temperatures is read in the segment
+Seg with the EXOline command ReadV.
+ComX
+Syntax
+ComX(XVar)
+Type Logic function
+Version 2.0
+Function Reads communication flag
+Description A communication flag exists for each variable in EXOreal.
+This flag is always set via communication by the EXOline command SXV.
+The function reads the value of the communication flag for XVar and then sets the flag to
+zero.
+See also ComL, ComX, ComI, ComR, ComDP and ComRW
+Example
+If ComX(XVar)
+RunTsk DoIt
+EndIf
+The Task DoIt is started each time the index variable XVar is assigned a value via
+communication with the EXOline command SXV.
+Com$
+Syntax
+Com$($Var)
+Type Logic function
+Version 2.0
+Function Reads communication flag
+Description A communication flag exists for each variable in EXOreal.
+This flag is always set via communication by the EXOline command S$V.
+The function reads the value of the communication flag for $Var and then sets the flag to
+zero.
+See also ComL, ComX, ComI, ComR, ComDP and ComRW
+Example
+26 Document's title
+If Com$(TextVaR)
+RunTsk DoIt
+EndIf
+The Task DoIt is started each time the string variable TextVar is assigned a value via
+communication with the EXOline command S$V.
+Cos
+Syntax
+Cos (RExp)
+Type Real function
+Version 1.0
+Function Calculates cosine
+Description The function’s output value is cosine given in radians for RExp.
+(1 degree = π/180 radians)
+If -65536 < RExp < 65536 is not met, the overflow flag will be set and the output value will
+be undefined.
+For arc cosine, see Atn.
+See also Sin, Tan and Atn.
+Example
+Effect = Volts * Amps * Cos (Pi)
+The variable Effect receives the value of the product of Volts, Amps and cosine for
+Pi.
+CRC16Add
+Syntax
+CRC16Add XExp
+Type Instruction
+Version 2.7
+EXOreal version 2.6-1-31
+Function Adds an CRC-16 check sum at the end of a string variable.
+Description CRC-16 is a method for check sum calculations, which often is used for serial
+communication. The checksum consists of 2 bytes (16 bits).
+The instruction reads the string variable with string load number Xexp and calculates the
+CRC-16 check sum for the string. The result is added at the end of the string variable, which
+then becomes two characters longer.
+If the string variable does not exist, is empty or has a too short a maximum length for the
+checksum, the illegal flag is set.
+See also CRC16Check, CrcCcittAdd and CrcCcittCheck.
+Chapter 2 EXOL Reference 27
+Example CRC16Add @( MessageToSend )
+ReceivedMessage = InOut$( PortNo, MessageToSend )
+The CRC-16-checksum is calculated for the message in the string variable
+MessageToSend. The checksum is added to the end of the message, which thereafter is
+sent with binary communication on port PortNo.
+CRC16Check
+Syntax
+CRC16Check( XExp )
+Type Logic function
+Version 2.7
+EXOreal revision 2.6-1-31
+Function Checks and removes a CRC-16 –check sum at the end of a string variable.
+Description CRC-16 is a method for check sum calculation, which often is used for serial
+communication. The checksum consists of 2 bytes (16 bites).
+The function reads the string variable with string load number Xexp. The string is
+expected to contain a CRC-16 –check sum in the last two characters. The function calculates
+the check sumfor all the characters (except the last two) and compares the result with the last
+two characters. If they are the same the function return 1, otherwise 0.
+The check sum is removed from the string variable, which becomes two characters shorter.
+If the string variable does not exist or contains less than 3 characters, the illegal flag is set
+and the output value is set to 0.
+See also CRC16Add, CrcCcittAdd and CrcCcittCheck.
+Example
+ReceivedMessage = InOut$( PortNo, MessageToSend )
+CheckSumOk = CRC16Check( @( ReceivedMessage ) )
+A message is received with binary communiation on port PortNo and is stored in the string
+variable ReceivedMessage. If the message contains a correct CRC-16 check sum at the
+end, the variable will get the Checksum value 1, otherwise 0.
+CrcCcittAdd
+Syntax
+CrcCcittAdd XExp
+Type Instruction
+Version 3.0
+EXOreal revision 2.8-1-11
+Function Adds a CRC-CCITT –check sum at the end of the string variable.
+28 Document's title
+Description CRC-CCITT is a method for check sum calculation, which often is used at serial
+communiation. The check sum consists of 2 bytes (16 bites).
+The instruction reads the string variable with string load number XExp and calculates the
+CRC-CCITT check sum for the string. The result is added at the end of the string variable,
+which becomes two characters longer.
+If the string variable does not exist, is empty or has a too short max length for the checksum,
+the illegal flag is set.
+See also CrcCcittCheck, CRC16Add and CRC16Check.
+Example
+CrcCcittAdd @( MessageToSend )
+ReceivedMessage = InOut$( PortNo, MessageToSend )
+The CRC-CCITT-checksum is calculated for the message in the string variable
+MessageToSend. The checksum is added at the end of the message, which thereafter is
+sent with binary communiation on port PortNo.
+CrcCcittCheck
+Syntax
+CrcCcittCheck( XExp )
+Type Logic function
+Version 3.0
+EXOreal revision 2.8-1-11
+Function Checks and removes a CRC-CCITT –check sum at the end of the string variable.
+Description CRC-CCITT is a method for check sum calculations, which often is used for serial
+communcation. The checksum consists of 2 bytes (16 bites).
+The function reads the string variable with string load number Xexp. The string is
+expected to contain a CRC-CCITT –check sum in the last two characters. The function
+calculates the checksum for all the characters (except the last two) and compares the result
+with the last two characters. If they are the same the function returns 1 otherwise 0.
+The checksum is removed from the string varibel, which then becomes two characters
+shorter.
+If the string variable does not exist or contains less than 3 characters, the illegal flag is set
+and the value is set to 0.
+See also CrcCcittAdd, CRC16Add and CRC16Check.
+Example
+ReceivedMessage = InOut$( PortNo, MessageToSend )
+CheckSumOk = CrcCcittCheck( @( ReceivedMessage ) )
+A message is received with binary communiation on port PortNo, and is stored in the string
+variable ReceivedMessage. If the message contains a correct CRC-CCITT –check sum
+at the end, the variable Checksum will get the value 1 otherwise 0.
+Chapter 2 EXOL Reference 29
+CvI (to X)
+Syntax
+CvI(IExp)
+Type Index function
+Version 1.0
+Function Converts data type integer to data type index
+Description The value of the integer expression IExp is converted to an equivalent value of data type
+index.
+If IExp >= 256, the overflow flag will be set and the output value will be 255.
+If IExp < 0, the overflow flag will be set and the output value will be 0.
+See also CvL, CvX, CvR, CvRF, CvRS and Cv$.
+Example
+UpLoop Index From 0 To CvI( Count )
+.
+.
+EndLoop
+The variable Count is converted to an index value to enable use as an argument for
+UpLoop.
+CvI (to R)
+Syntax
+CvI(IExp)
+Type Real function
+Version 1.0
+Function Converts data type integer to data type real value
+Description The value of the integer expression IExp is converted to an equivalent value of data type
+real value.
+See also CvL, CvX, CvR, CvRF, CvRS and Cv$.
+Example
+R-Value = CvI(OffSet) + RValue * Scale
+The value in the integer variable OffSet is converted to a real value and added to the rest
+of the real value expression.
+CvI (to $)
+Syntax
+30 Document's title
+CvI(IExp)
+Type String function
+Version 2.0
+Function Converts data type integer to data type string
+Description The value of the integer expression IExp is converted to a Text string representing an
+equivalent value.
+The function’s output string will always contain two to six characters. The first character will
+always be a blank space or a minus sign. The last characters contain digits corresponding to
+the value of IExp.
+See also CvL, CvX, CvR, CvRF, CvRS and Cv$.
+Example
+TempText = CvI(IValue)
+Print Pos,@(TempText)
+The value of the variable IValue is written to a display.
+CvL (to X)
+Syntax
+CvL(LExp)
+Type Index function.
+Version 1.0
+Function Converts data type logic to index.
+Description The value of the logic expression LExp is converted to an equivalent value of data type
+index.
+See also CvX, CvI, CvR, CvRF, CvRS and Cv$.
+Example
+If (XValue + CvL(LValue)) > 5
+Action = 1
+EndIf
+The variable Action is set if the sum of the variables XValue and LValue exceeds the
+value 5.
+CvL (to $)
+Syntax
+CvL(LExp)
+Type String function.
+Version 2.0
+Function Converts data type logic to string.
+Chapter 2 EXOL Reference 31
+Description The value of the logic expression LExp is converted to an equivalent value of data type Text
+string.
+The function’s output string will always contain two characters. The first character will
+always be a blank space, and the second character will be either 0 or 1.
+See also CvX, CvI, CvR, CvRF, CvRS and Cv$.
+Example
+TempText = CvL(LValue)
+Print Pos,@(TempText)
+The value of the variable LValue is written to a display.
+CvR (to X)
+Syntax
+CvR(RExp)
+Type Index function
+Version 1.0
+Function Converts from data type integer to data type index
+Description The value of the logic expression RExp is converted to an equivalent value of data type
+index.
+The value RExp is always rounded off downwards to the nearest integer (so-called
+truncation) upon conversion.
+If RExp >=256, the overflow flag is set and the output value will be undefined.
+If RExp <0, the overflow flag is set and the output value will be undefined.
+See also CvL, CvX, CvI, CvRF, CvRS and Cv$
+Example
+XValue = CvR(AI1)
+The value of the real value AI1 is converted to an index value and put in the variable
+Value.
+CvR (to I)
+Syntax
+CvR(RExp)
+Type Integer function
+Version 1.0
+Function Converts from data type real value to data type integer
+Description The value of the real value expression RExp is converted to an equivalent value of data type
+integer.
+32 Document's title
+The value RExp is always rounded off downwards to the nearest integer (so-called
+truncation) upon conversion.
+If RExp >=32768, the overflow flag is set and the output value will be undetermined.
+If RExp <=-32769, the overflow flag is set and the output value will be undetermined.
+See also CvL, CvX, CvI, CvRF, CvRS and Cv$
+Example
+IValue = CvR(AI1)
+The value of the real value variable AI1 is converted to an integer value and put in the
+variable Value.
+CvRF
+Syntax
+CvRF(RExp With XExp)
+Type String function
+Version 2.0
+Function Converts from data type real value to string
+Description The value of the real value expression RExp is converted into a Text string with a XExp
+number of decimals and floating decimal point representing a value of an equivalent size.
+The value RExp is always rounded off downwards with stated number of decimals (so-called
+truncation) upon conversion.
+The function’s output string is constructed according to the following principles:
+sNN.nn
+s = Space character or minus sign
+NN = Integer part of the value
+. = Decimal point
+nn = Decimal part of the value
+The number of digits in NN depends on the value of RExp. As many digits as required will
+be used, and opening zeros will not be shown.
+The number of digits in nn is given by the value of XExp. A maximum of seven are
+allowed.
+If XExp > 7, the overflow flag is set and the number of decimals will still be seven.
+If RExp >= 1000000 the overflow flag is set and the output string
+will be ">999999.99..".
+If RExp = -1000000 the overflow flag is set and the output string
+will be "<-999999.99..".
+See also CvL, CvX, CvI, CvR, CvRS and Cv$.
+Example
+R Value = 273.16
+TempText = CvRF(RValue With 1)
+Chapter 2 EXOL Reference 33
+The string variable TempText will be 273.1.
+CvRS
+Syntax
+CvRS(RExp WITH XExp)
+Type String function
+Version 2.0
+Function Converts from data type real value to string
+Description The value of the real value expression RExp is converted to a Text string with XExp number
+of decimals, and floating decimal point or indexed form, representing an equivalent value.
+The value RExp is always rounded off towards zero, to the closest number, with a stated
+number of decimals (so-called truncation) upon conversion.
+If 0.1 =< RExp < 1000000, or -1000000 < RExp =< -0.1, the function output string will
+look like this:
+sNN.nn
+In most other cases it looks like this:
+sNN.nnESmm
+s = Space character or minus sign
+NN = Integer part of the value
+. = Decimal point
+nn = Decimal part of the value
+E = The letter 'E'
+S = Plus or minus sign
+mm = Exponent part of the value
+The number of digits in NN depends on the value of RExp. As many digits as required will
+be used, and opening zeros are not shown. There will only be one digit if the value is given
+in index form.
+The number of digits in nn is determined by the value of XExp, up to a maximum of seven.
+If XExp > 7, the overflow flag is set and the number of decimals will still be seven.
+The number of digits in mm depends on the value of RExp. An opening zero will not be
+displayed. Maximum value is 38.
+See also CvL, CvX, CvI, CvR, CvRF and Cv$
+Example
+RValue = 0.051265
+TempText = CvRS(RValue WITH 2)
+The string variable TempText becomes "5.12E-2".
+CvX (to I)
+Syntax
+34 Document's title
+CvX(XExp)
+Type Integer function.
+Version 1.0
+Function Converts from data type index to integer.
+Description The value of the index expression XExp is converted to an equivalent integer value.
+See also CvL, CvI, CvR, CvRF, CvRS and Cv$
+Example
+Value = RXB(File, CvX(Pos))
+The variable Value receives the index value of position Pos (index variable) in the BPac
+File.
+CvX (to R)
+Syntax
+CvX(XExp)
+Type Real function
+Version 1.0
+Function Converts from data type index to real value.
+Description The value of the index expression XExp is converted to an equivalent real value.
+See also CvL, CvI, CvR, CvRF, CvRS and Cv$
+Example
+RValue = CvX(Offset) + RValue * Scale
+The value in the index variable Offset is converted to a real value and added to the rest of
+the real value expression.
+CvX (to $)
+Syntax
+CvX(XExp)
+Type String function.
+Version 2.0
+Function Converts from data type index to string.
+Description The value of the index expression XExp is converted to a Text string with an equivalent
+value.
+The function’s output string will always contain two to four characters. The first character
+will always be a blank space, while the last characters contain digits corresponding to the
+value of XExp.
+Chapter 2 EXOL Reference 35
+See also CvL, CvI, CvR, CvRF, CvRS and Cv$
+Example
+TempText = CvX(XValue)
+Print Pos,@(TempText)
+The value of the variable XValue is written to a display.
+Cv$ (to L)
+Syntax
+Cv$($Exp)
+Type Logic function
+Version 2.0
+Function Converts from data type string to logic
+Description The output value of the string is the numerical value of the string $Exp.
+$Exp appears according to the following principles:
+"N"
+N = 0 or 1
+If $Exp contains invalid characters (characters other than leading blank spaces, digits and
+any opening minus sign), $Exp will be converted as far as the first invalid character.
+If the numeric value represented by $Exp is less than 0 or greater than 1, the overflow flag
+will be set and the output value will be undetermined.
+See also CvL, CvX, CvI, CvR, CvRF and CvRS
+Example
+TempText = "1"
+Value = Cv$(TempText)
+The logic value Value receives the value one (1).
+Cv$ (to X)
+Syntax
+Cv$( $Exp )
+Type Index function
+Version 2.0
+Function Converts from data type string to index
+Description The string’s output value is the numerical value of the string $Exp.
+$Exp appears according to the following principles:
+“NN”
+36 Document's title
+NN = One to three digits
+If $Exp contains invalid characters (characters other than leading blank spaces, digits and
+any opening minus sign), $Exp will be converted as far as the first invalid character.
+If the numeric value which $Exp represents is less than 0 or greater than 255, the overflow
+flag will be set and the output value will be undetermined.
+See also CvL, CvX, CvI, CvR, CvRF and CvRS
+Example
+TempText = "39"
+Value = Cv$( TempText )
+The index variable Value receives the value 39.
+Cv$ (to I)
+Syntax
+Cv$($Exp)
+Type Integer function
+Version 2.0
+Function Converts from data type string to integer
+Description The output value of the string is the numerical value of the string $Exp.
+$Exp appears according to the following principles:
+"sNN"
+s = A minus sign, if any
+NN = One to five digits
+If $Exp contains invalid characters (characters other than leading blank spaces, digits and
+any opening minus sign), $Exp will be converted up to the first invalid character.
+If the numeric value represented by $Exp is less than -32768 or greater than 32767, the
+overflow flag will be set and the output value will be undetermined.
+See also CvL, CvX, CvI, CvR, CvRF and CvRS
+Example
+TempText = " -715"
+Value = Cv$(TempText)
+The integer variable Value receives the value -715.
+Cv$ (to R)
+Syntax
+Chapter 2 EXOL Reference 37
+Cv$($Exp)
+Type Real function
+Version 2.0
+Function Converts from data type string to real value
+Description The string’s output value is the numerical value of the string $Exp.
+$Exp shall have an appearance according to the following principles:
+"sNN.nnESmm"
+s = A minus sign, if any
+NN = A number of digits for the integer part of the value
+.nn = Possible decimal point, with a number of digits for the decimal part of the value
+ESmm = An optional exponential part
+E = The letter 'E'
+S = A minus sign, if any
+mm = One or two digits for the exponent
+If $Exp contains invalid characters (characters other than leading blank spaces, digits and
+any opening minus sign), $Exp will be converted up to the first invalid character.
+If the numeric value represented by $Exp is less than -3.40E+38 or greater than 3.40E+38,
+the overflow flag will be set and the output value will be undetermined.
+See also CvL, CvX, CvI, CvR, CvRF and CvRS
+Example
+TempText = " -1223.61E-3"
+Value = Cv$(TempText)
+The real value variable Value receives the value -1.22361.
+Cycle!
+Syntax
+Cycle!
+Type Real constant
+Version 2.7
+EXOreal version 1.0
+Function Returns the cycle time in seconds for the local Task.
+Description The constant is calculated upon conversion, and thus there is no consideration to deviations
+from the desired cycle time due to overloading of the processor, etc. The constant is
+primarily intended for use in objects built into general Tasks, for which the programmer does
+not know the cycle time.
+The function may not be used in procedure Tasks.
+See also TLn!, Priority!, CycleX!
+Example A runtime routine independent of the cycle time:
+38 Document's title
+If Activate
+Activate = False!
+Active = True!
+Runlength = <Desired runtime in seconds>
+<Start whatever it is>
+EndIf
+If Active
+If RunLength < 0
+<Stop whatever it is>
+Active = 0
+EndIf
+RunLength = RunLength - Cycle!
+EndIf
+To do something periodically is even simpler:
+Counter = Counter - Cycle!
+If Counter < 0
+Counter = Counter + <Desired period time in seconds>
+<Do whatever is required>
+EndIf
+CycleX!
+Syntax
+CycleX!
+Type Index constant
+Version 2.7
+EXOreal version 1.0
+Function Returns the cycle time in 100 ms units for the local Task.
+Description The constant is calculated upon conversion, and thus there is no consideration to deviations
+from the desired cycle time due to overloading of the processor, etc. The function is intended
+for use in objects built into general Tasks, for which the programmer does not know the
+cycle time.
+The constant is intended to be used as a substitute for Cycle! in cases where it would use
+too much processor capacity
+The function may not be used in procedure Tasks.
+Fast Task The function gives a non-defined value when used with fast Tasks.
+See also TLn!, Priority!, Cycle!
+Example See Cycle!
+DecX
+Syntax
+DecX XVar
+Type Instruction
+Version 1.0
+Chapter 2 EXOL Reference 39
+Function Decreases variable value
+Description The value of XVar is decreased by 1.
+If XVar = 0, XVar receives the value 255 but the overflow flag will not be set.
+The transient flag for XVar is always set (see EdgeX).
+See also IncX, DecI and IncI
+Example
+DecX CountIf Count = 0
+DQ1=1
+Count=100
+EndIf
+Decreases Count by one (1) for each Task cycle until Count =0, when DQ receives the
+value 1.
+DecI
+Syntax
+DecI IVar
+Type Instruction
+Version 1.0
+Function Decreases variable value
+Description The value of IVar is decreased by 1.
+If IVar = 0, IVar receives the value 32767 but the overflow flag will not be set.
+The transient flag for IVar is always set (see EdgeI).
+See also IncI, DecX and IncX
+Example
+If DI1
+DecI Count
+If Count = 0
+DQ1 = 1
+Count = 1000
+EndIf
+EndIf
+DQ1 receives the value one (1) when DI1 has had the value one (1) for a thousand Task
+cycles.
+DefFunc ... EndFunc (with argument)
+Syntax
+DefFunc Func( t tVar1, t tVar2, .. .., )
+Program lines
+EndFunc t tExp1
+40 Document's title
+Type Instruction
+Version 2.0
+Function Defines a function (procedure)
+Description The instruction creates a user defined function, a so-called procedure.
+Procedures may only be defined in special procedure Tasks (see the document EXOL
+Programming). A procedure cannot be defined inside another procedure.
+Func is the function’s name, and is used to call the procedure.
+tVar1, tVar2 etc. are the function’s input variables, of the function and tExp1 is the
+output expression.
+The input variables can be of any number and data types. The output expression must,
+however, be on its own and must adopt a numeric data type. Only one of tVar1, tVar2,
+etc. may be of the string data type.
+The function adopts the same data type as tExp1.
+Each argument opens with a type notation (L, X, I, R or $), which specifies its data type.
+All of EXOL’s reserved instructions and functions, but no other procedures, may be used in
+program lines.
+The function Func can be called from the controller’s other Tasks with the following
+syntax:
+Func( t tExp11, t tExp12, etc )
+tExp11, tExp12 is the call's input expression. The following happens when calling:
+􀂉 The value of tExp11 is written in tVar1
+􀂉 The value of tExp12 is written in tVar2
+􀂉 … and so on for all input arguments
+􀂉 Program lines are run
+􀂉 The value of tExp1 is returned as the output value of the function.
+It is possible, when calling, to use fewer arguments than when defining, resulting in the
+remaining input variables being given the value zero.
+Several Tasks can call the same procedure simultaneously if only local variables are used in
+the procedure definition and program lines.
+See also DefStat
+Example Procedure Task
+DefFunc IMax(I Val(0), I Val(1), I Val(2), I Val(3))
+MaxVal = -32768
+UpLoop XO From 0 To 3
+If Val( XO ) > MaxVal
+MaxVal = Val( XO )
+EndIf
+EndLoop
+EndFunc I MaxVal
+Calling Task
+Max = IMax(IVar1, IVar2, IVar3, 1000)
+A function with the name IMax is defined. It examines which of the four input variables has
+the greatest value. This greatest value gives the function as an output value.
+The function is called from another Task with the variables IVar1, IVar2, IVar3 and the
+literal 1000 as input argument. The greatest value of the four input expressions is put in the
+variable MAXVAL.
+Chapter 2 EXOL Reference 41
+DefFunc ... EndFunc (without argument)
+Syntax
+DefFunc Func!
+Program lines
+EndFunc t tExp1
+Type Instruction
+Version 2.0
+Function Defines function (procedure)
+Description The instruction creates a user defined function, a so-called procedure.
+Procedures may only be defined in a special procedure Task (see the document EXOL
+Programming). A procedure cannot be defined inside another procedure.
+Func is the function name used to call the procedure.
+tExp1 is the function’s out-expression, which can be of any numeric data type. The
+argument is opened with a type notation (L, X, I or R), specifying its data type.
+The function adopts the same data type as tExp1.
+All of EXOL's defined instructions and functions may be used in program lines, but other
+procedures may not be used.
+The function Func can be called from the controller’s other Tasks with the following
+syntax:
+Func!
+The following happens when calling:
+􀂉 Program lines are executed
+􀂉 The value of tExp is returned as the function’s output value.
+Several Tasks can call the same procedure at the same time, if only local variables are used
+in the procedure definition and program lines.
+See also DefStat
+Example
+ProcedureTask
+DefFunc Alarm
+AlarmStatus = 0
+UpLoop XO From 0 To 5
+If AI(XO) > AlarmLimit
+AlarmStatus = 1
+EndIf
+EndLoop
+EndFunc L AlarmStatus
+Calling Task
+DQ2 = Alarm
+42 Document's title
+A function with the name Alarm! is defined. It examines if one of the variables AI(0),
+AI(1) ... AI(5) has a value exceeding the value of AlarmLimit. If this is the case, the
+function’s output value will be one. If not, it will be zero.
+The function is called from another Task. The result of these checks is put in the variable
+DQ2.
+DefStat ... EndStat
+Syntax
+DefStat Stat t tVar1, t tVar2, ...
+Program lines
+EndStat t tExp1, t tExp2, ...
+Type Instruction
+Version 2.0
+Function Defines an instruction (procedure)
+Description The instruction creates a user defined instruction, a so-called procedure.
+Procedures may be defined only in a special procedure Task (see the document EXOL
+Programming). A procedure cannot be defined inside another procedure.
+Stat is the instruction’s name, used for calling the procedure.
+tVar1, tVar2 etc., are the instruction’s input variables. tExp1, tExp2, etc. are the
+output values.
+All arguments may be of any number and data types. Only one of tVar1, tVar2 etc. may
+be of the data type string. The same applies for tExp1, tExp2 etc.
+Each argument opens with a type notation (L, X, I, R or $) specifying its data type.
+All of EXOL's defined instructions and functions may be used in program lines. Other
+procedures may not be used.
+The instruction Stat can be called from the controller’s other Tasks with the following
+syntax:
+Stat tExp11, tExp12, ... \ tVar11, tVar12, ...,
+tExp11, tExp12 etc. are the call’s input expressions, while tVar11, tVar12 etc. are the
+output variables.
+This is what happens when calling:
+􀂉 The value of tExp11 is written in tVar1
+􀂉 The value of tExp12 is written in tVar2
+􀂉 … and so on for all input arguments
+􀂉 Program lines are executed
+􀂉 The value of tExp1 is written in tVar11
+􀂉 The value of tExp2 is written in tVar12
+􀂉 …and so on for all output argument
+When calling, it is possible to use fewer arguments than at the definition. The result of this is
+that remaining input and output variables are assigned the value zero.
+Chapter 2 EXOL Reference 43
+Several Tasks can simultaneously call the same procedure if only local variables are used in
+the procedure definition and program lines.
+See also DefFunc
+Example
+Procedure Task
+DefStat Compute R Value1, R Value2
+Sum = CvR( Value1 + Value2 )
+Diff = CvR( Value1 - Value2 )
+Quote = CvR( Value1 / Value2 )
+EndStat I Sum, I Diff, I Quote
+Calling Task
+Compute Temp1, Temp2 \ IVar1, IVar2, IVar3
+An instruction with the name Compute is defined. It calculates the sum, difference and
+quotient of the two real input variables, and presents the result as integers.
+The instruction is called from another Task with the variables Temp1 and Temp2 as input
+arguments. The calculated sum, difference and quotient are put in IVar1, IVar2 and
+IVar3.
+Delay
+Syntax
+Delay XExp
+Type Instruction
+Version 1.0
+Function Postpones execution
+Description This instruction delays execution of the Task by XExp tenths of seconds.
+The Task is put in wait mode during the pause, and all other Tasks are executed normally.
+Afterwards, the Task continues according to its normal priority and may therefore not always
+run immediately if Tasks with higher priority are already being run.
+EXOreal has a clock which ticks every 100 ms. The Task will be put in wait mode until
+XExp 100 ms ticks have elapsed. In reality this means that the wait is between XExp-1 and
+XExp times 100 ms. On the other hand, if a Task runs several Delay’s at short intervals,
+for example in a loop, there will not have been enough time to complete much of the started
+100 milliseconds period before the application runs again. This means that the interval will
+be fairly close to the actual.
+If XExp is 1, the Task will enter wait mode until the next 100 ms tick, i.e. between 0 and 100
+ms.
+If XExp is 0, the instruction will do nothing.
+Fast Tasks The instruction is not permitted in fast Tasks.
+Example
+44 Document's title
+DO1 = 1
+Delay 33
+DO1 = 0
+The output DO1 returns a 3.3 second pulse.
+Chapter 2 EXOL Reference 45
+Do ... EndDo
+Syntax
+Do XExp Times
+program lines
+EndDo
+Type Instruction
+Version 1.0
+Function Repeats a number of program lines
+Description Program lines between Do and EndDo are executed a number of times, according to the
+numerical value of XExp.
+The calculation XExp is executed once at the beginning of the instruction.
+The loop will be executed the number of times initially calculated, even if the value of XExp
+changes in program lines.
+If XExp is 0, program lines will be executed 0 times.
+Example
+Do Index + 4 Times
+IncX Count
+EndDo
+The variable Count will have a value Index +4 higher than the initial value.
+DownLoop ... EndLoop
+Syntax
+DownLoop XVar From XExp1 To XExp2
+program lines
+EndLoop
+Type Instruction
+Version 1.0
+Function Repeats a number of program lines
+Description This is a Loop structure using XVar as a counter. XVar is first assigned the value of
+XExp1. Program lines are then executed until XVar < XExp2. XVar is decreased by
+1 (one) for each loop. The last time program lines are executed is when
+XVar=XExp2.
+If XVar does not change during the loop, program lines will be executed XExp1 -
+XExp2 + 1 times and will be XVar=XExp2 - 1 after EndLoop .
+The expressions are calculated once at the beginning of the instruction. To change the
+number of loops, it is permissible to change the value of XVar during the loop.
+XVar may not be an element in an array.
+46 Document's title
+XExp2 may not equal 0.
+The transient flag for XVar is set each time program lines are started (see EdgeX).
+See also UpLoop and Loop.
+Example
+DownLoop Port From StartV To StartV-3
+Out(Port) = Value(Port-5)
+EndLoop
+If StartV=8 then:
+Out(8)=Value(3)
+Out(7)=Value(2)
+Out(6)=Value(1)
+Out(5)=Value(0)
+DPac (Instruction)
+Syntax
+DPac( XExp1, XExp2 ) = ReadV( ... )
+Type Instruction
+Version 2.5
+Function Assigns a DPac -segment a communications result
+Description This instruction assigns a DPac segment a communications result, using the function ReadV.
+It can only be used together with this function.
+See the function ReadV for a detailed description of the actual communication.
+If the DPac is a VPac, the copy will have the same variable structure as the original. Tasks
+referring to variables in the copy must be converted with reference VPac’s of exactly the
+same structure.
+Note that DPacs must either be used as instructions or functions.
+See also ReadV and LoadV.
+Example
+DPac( MyLn, MySeg ) = ReadV( Port,HisPLA,HisELA,HisLn,HisSeg )
+The DPac segment HisLn:HisSeg in the controller HisPLA:HisELA is copied to
+MyLn:MySeg.
+DPac (Function)
+Syntax
+DPac( XExp1, XExp2 )
+Chapter 2 EXOL Reference 47
+Type DPac function
+Version 2.5
+Function Returns a DPac segment for communication.
+Description This function returns a DPac segment for communication, using the instruction LoadV. It
+can only be used with this instruction.
+See the instruction LoadV for a detailed description of the communication.
+Note that DPacs must either be used as instructions or functions.
+See also LoadV and ReadV.
+Example
+LoadV( Port,HisPLA,HisELA,HisLn,HisSeg ) = DPac( MyLn, MySeg )
+The DPac segment MyLn:MySeg is copied to HisLn:HisSeg in the controller
+HisPLA:HisELA.
+e!
+Syntax
+e!
+Type Real constant
+Version 2.5
+EXOreal version 1.0
+Function Returns the number e (≈ 2.7183...)
+Description The function returns the value with the highest precision allowed by the real value format.
+See also Ln, Exp, LgE!
+48 Document's title
+EdgeI
+Syntax
+EdgeI(IVar)
+Type Logic function
+Version 1.1
+Function Reads the transient flag
+Description There is a transient flag for each variable in EXOreal.
+This flag is set by most instructions in EXOL when the value of the variable changes. See the
+description for each instruction or function for detailed descriptions of how the transient flag
+is handled.
+Certain system variables (in QPacs) handled by the controller’s operating system also have a
+transient flag which is set when the value changes (see the document EXOL Programming).
+You cannot use the transient flags for write and parameter variables in application
+programs in EXOflex, because they are used internally by EXOreal.
+The function reads the value of the transient flag for IVar and then sets the flag to zero.
+See also EdgeL, EdgeX, EdgeR and Edge$
+Example
+If EdgeI( IVar )
+RunTsk DoIt
+EndIf
+The Task DoIt is started each time the value of the integer variable IVar changes.
+EdgeL
+Syntax
+EdgeL( LVar )
+Type Logic function
+Version 1.1
+Function Reads transient flag
+Description There is a transient flag for each variable in EXOreal.
+This flag is set by most EXOL instructions when the value of the variable changes. See the
+description for each instruction or function for detailed descriptions of how the transient flag
+is handled.
+Certain system variables, (in QPacs), handled by the operating system of the controllers have
+a transient flag which is set when the value changes (see the document EXOL
+Programming).
+You cannot use the transient flags for write and parameter variables in application
+programs in EXOflex, because the are used internally by EXOreal.
+Chapter 2 EXOL Reference 49
+The function reads the value for LVar and then sets the flag to zero.
+See also EdgeX, EdgeI, EdgeR and Edge$
+Example
+If EdgeL(DI1)
+IncI Count
+EndIf
+The value of Count will increase by one (1) each time the value of the logic variable DI1
+changes.
+EdgeR
+Syntax
+EdgeR(RVar)
+Type Logic function
+Version 1.1
+Function Reads the transient flag
+Description There is a transient flag for each variable in EXOreal.
+This flag is set by most EXOL instructions when the value of the variable changes. See the
+description for each instruction or function for detailed descriptions of how the transient flag
+is handled.
+Certain system variables, (in QPacs), handled by the operating system of the controllers have
+a transient flag which is set when the value changes (see the document EXOL
+Programming).
+You cannot use the tranisent flags for write and parameter variables in application
+programs in EXOreal, because they are used internally by EXOreal.
+The function reads the value for RVar and then sets the flag to zero.
+See also EdgeL, EdgeX, EdgeI and Edge$
+Example
+If EdgeR(RVar)
+RunTsk DoIt
+EndIf
+The Task DoIt starts each time the value of the real value RVar is changed.
+50 Document's title
+EdgeX
+Syntax
+EdgeX( XVar )
+Type Logic function
+Version 1.1
+Function Reads transient flag
+Description There is a transient flag for each variable in EXOreal.
+This flag is set by most EXOL instructions when the value of the variable changes. See the
+description for each instruction or function for detailed descriptions of how the transient flag
+is handled.
+Certain system variables, (in QPacs), handled by the operating system of the controllers have
+a transient flag which is set when the value changes (see the document EXOL
+Programming).
+You cannot use the tranisent flags for write and parameter variables in application
+programs in EXOflex, because they are ued internally by EXOreal.
+The function reads the value for XVar and then sets the flag to zero.
+See also EdgeL, EdgeI, EdgeR and Edge$
+Example
+If EdgeX(XVar)
+RunTsk DoIt
+EndIf
+The Task DoIt starts each time the value of the real value XVar is changed.
+Edge$
+Syntax
+Edge$($Var)
+Type Logic function
+Version 2.0
+Function Reads transient flag
+Description There is a transient flag for each variable in EXOreal.
+This flag is set by most EXOL instructions when the value of the variable changes. See the
+description for each instruction or function for detailed descriptions of how the transient flag
+is handled.
+The function reads the value for $Var and then sets the flag to zero.
+See also EdgeL, EdgeX, EdgeI and EdgeR
+Example
+Chapter 2 EXOL Reference 51
+If Edge$(TextVar)
+RunTsk DoIt
+EndIf
+The Task DoIt starts each time the value of the real value TextVar is changed.
+Exit
+Syntax
+Exit
+Type Instruction
+Version 1.0
+Function Terminates the execution of a Task cycle
+Description Jumps to the end of the Task and terminates the Task cycle.
+Execution is commenced as usual at the next Task cycle.
+See also ExitIf
+Example
+If Temp > Limit
+L Pump = 0
+Exit
+EndIf
+PID Pump
+If Temp > Limit, then the variable Pump receives the value zero and the rest of the Task is
+not executed.
+ExitIf
+Syntax
+ExitIf LExp
+Type Instruction
+Version 1.1
+Function Terminates the execution of the Task cycle if certain conditions are met.
+Description Jumps to the end of the Task if LExp = 1 and terminates the Task cycle.
+Execution is commenced as usual at the next Task cycle.
+See also Exit
+Example
+UpLoop Index From 0 To 5
+ExitIf (AI( Index ) > 10
+EndLoop
+The rest of the Task will not be run if one of the variables AI(0) up to and including
+AI(5) has a value greater than ten (10).
+52 Document's title
+Exp
+Syntax
+Exp(RExp)
+Type Real function
+Version 1.0
+Function Calculates natural index
+Description The function’s output value is the base e to the power of RExp.
+If -87.34 < RExp < 88.72 is not met, the overflow flag will be set and the returned value will
+be undefined
+See also LN and Lg.
+Example
+Value1 = Exp(Value2)
+The variable Value1 receives the value of the base e elevated to Value2.
+False!
+Syntax
+False!
+Type Logic constant
+Version 2.7
+EXOreal version 1.0
+Function Returns 0 (False).
+Description The constant returns the logic value 0 (False).
+See also True!
+Example
+SumAla = False!
+UpLooP ix from 1 to NumAla
+if Ala(ix)
+SumAla = True!
+EndIf
+EndLoop
+SumAla will be true if one of the logic variables Ala(1) to Ala(NumAla) is true. If not,
+SumAla will be false.
+FF
+Syntax
+Chapter 2 EXOL Reference 53
+FF( LVar, LExp1, LExp2 )
+Type Logic function
+Version 1.0
+Function Flip-Flop.
+Description The function implements a Flip-Flop, also-called a Set/Reset lever.
+If LExp1 is 1, LVar will be set to 1. LExp1 is called Set.
+If LExp2 is 1, LVar will be set to 0. LExp2 is called Reset.
+If both LExp1 and LExp2 are 1, LVar will be set to 0, that is, Reset has priority.
+If neither LExp1 nor LExp2 is 1, LVar will keep its value.
+The function always returns the value of LVar after a possible change.
+See also If
+Example
+Buzzer = FF(Alarm, OnGoing, OffGoing)
+Alarm is set and the buzzer sounds when OnGoing flashes. It will be set to zero when the
+alarm is acknowledged with OffGoing.
+FF!
+Syntax
+FF!
+Type String constant
+Version 2.0
+Function Returns a form feed string
+Description The constant returns a string of characters. According to convention, the characters, when
+sent to a printer, mean that the printer should continue to write on the next page.
+The string consists of two characters as follows:
+[12][13] (ASCII values)
+See also Chr, LF! and Tab!
+Example
+Text = "Motor Alarm:" + FF!
+LPrint$ Port, Text
+A form feed string is added to the text Motor Alarm:. It is then put in the string variable
+Text, which is sent to a printer.
+I
+Syntax
+54 Document's title
+I IVar = IExp
+Type Instruction
+Version 1.0
+Function Assignment of variable
+Description IExp is calculated and the received value placed in the integer variable IVar.
+Assignment can be carried out without the type mark I with EXOL version 3.0 or later.
+The syntax is then IVar = IExp
+IVar may be a part of IExp. If this is the case, the value of IVar before the assignment
+will be used.
+The transient flag for IVar is set if IExp has a value differing from that of IVar before the
+assignment (see EdgeI).
+See also L, X, R and $
+Example
+I Contact = -12731
+The integer variable Contact is assigned the value -12731.
+If ... Else ... EndIf
+Syntax
+If LExp
+program lines1
+Else
+program lines0
+EndIf
+Type Instruction
+Version 1.0
+Function Executes a number of program lines when certain conditions are met
+Description If LExp = 1, program lines1 will be executed. After this the execution will continue on
+the line after EndIf.
+If LExp = 0, program lines0 will be executed. After this the execution will continue on
+the line after EndIf.
+Else and program lines0 may be excluded. You will then get the following function:
+If LExp = 1, program lines1 will be executed. After this, execution will continue on
+the line after EndIf.
+If LExp = 0, the execution will continue on the line after EndIf.
+See also Switch
+Example
+If Level
+Water = "Flood"
+Else
+Water = "EBB"
+EndIf
+Chapter 2 EXOL Reference 55
+If Level = 1, the variable Water will get the text Flood. If not, it gets the text Ebb.
+Illegal!
+Syntax
+Illegal!
+Type Logic function
+Version 2.0
+Function Reads illegal flag
+Description If a Task contains a routine which is impossible for the controller to carry out (often a
+reference to a non-existent Task, DPac, variable, etc), the illegal flag will be set.
+It is not possible to write a value to the flag. It will be set to zero when read with Illegal!
+The flag may be used to determine if illegal instructions have been carried out. Suitable
+action can then be taken.
+The flag is individual for each Task.
+See the descriptions of each instruction or function for a more detailed description of when
+the flag will be set.
+If you want to determine whether or not a certain program row sets the illegal flag you must
+make sure that the flag is not set to begin with. This is done by assigning a junk variable the
+value of this function on the previous row.
+See also Overflow!
+Example
+Value = RXB(Buffer,Pos)
+If Illegal!
+Value = 100
+EndIf
+A value is read in the BPac Buffer. If the BPac does not exist, or Pos points beyond the
+end, Value will receive the value 100.
+56 Document's title
+IncI
+Syntax
+IncI IVar
+Type Instruction
+Version 1.0
+Function Increases variable value
+Description The value of IVar is increased by 1.
+The transient flag for IVar is always set (see EdgeI).
+If IVar = 32767, IVar will get the value -32768 and the overflow flag will not be set.
+See also DecI, DecX and IncX
+Example
+Pos = 0
+UpLoop Row From 0 To 99
+UpLoop COL From 0 To 9
+CS = CS XOR RXB(File, Pos)
+IncI Pos
+EndLoop
+EndLoop
+Calculates the result of XOR on the first 1000 elements in the BPac FILE to the variable CS.
+IncX
+Syntax
+IncX XVar
+Type Instruction
+Version 1.0
+Function Increases variable value
+Description The value of XVar is increased with 1.
+The transient flag for XVar is always set (see EdgeX).
+If XVar = 255, XVar will get the value 0 and the overflow flag will not be set.
+See also DecX, IncI and DecI
+Example
+Count = 0
+Found = 0
+While Not Found
+TQ = RXV(-PLA,-KLA, LN, Cell)
+IncX Count
+Found = Answer! Or ( Count = 5 )
+EndWhile
+Executes the EXOline command until an answer has been received, however a maximum of
+five times.
+Chapter 2 EXOL Reference 57
+InKey!
+Syntax
+InKey!
+Type Index function
+Version 2.1
+Function Reads latest keystroke
+Description The return value of the function equals the code for the latest keystroke. See the controller
+descriptions for the key codes.
+When the function has been executed, it will return zero until the next keystroke is made.
+Several Tasks cannot, independent of each other, use the function as it returns each keystroke
+only once.
+This function is only available for controllers with keyboards.
+Example
+Key = InKey!
+If Key > 0
+TempText = Chr( Key )
+EndIf
+The string variable TempText is assigned a string with a digit character corresponding to
+the last keystroke.
+InOut$
+Syntax
+InOut$ ( XExp, $Exp )
+Type String function
+Version 2.5
+Function Sends $Exp on the communication port numbered XExp, waits for an answer, and returns
+the received string
+Description This function is described in detail in the document EXOL Programming.
+The port XExp must be configured as master.
+The answer flag will be set according to the answer.
+See also Answer!
+Example
+TempText = InOut$ (1, "")
+The string variable TempText is assigned whatever is read on port #1.
+58 Document's title
+L
+Syntax
+L LVar = LExp
+Type Instruction
+Version 1.0
+Function Assignment of variable
+Description LExp is calculated and the resulting value is placed in the logic variable LVar.
+Assignment can be carried out without the type mark L with EXOL version 3.0 or later
+versions. The syntax will then be LVar = Lexp.
+LVar may be included in LExp. The value of LVar, prior to the assignment, will then be
+used.
+The transient flag for LVar will be set if LExp has a value different to that of LVar, prior to
+the assignment (see EdgeL).
+See also X, I, R and $
+Example
+L Contact = 1
+The logic variable Contact is assigned the value one (1).
+Len$
+Syntax
+Len$ ( $Exp )
+Type Index function
+Version 2.0
+Function Calculates the length and number of characters of $Exp
+Description The function can calculate the length of all $Exp, but please note that the value can never be
+greater than the maximum length of the string buffer for the Task defined ($BUF), which
+normally stores 100 characters.
+Example
+Length = Len$ ( NameText + " " + LastNameText )
+The number of characters in the variables NameText and LastNameText, as well as in a
+string containing a blank space, is calculated.
+Chapter 2 EXOL Reference 59
+LF!
+Syntax
+LF!
+Type String constant
+Version 2.0
+Function Returns line feed string
+Description The constant returns a string with characters. According to convention, the characters, when
+sent to a printer, mean that the printer should continue to print on the next line.
+The string consists of two characters as follows:
+[10][13] (ASCII values)
+See also FF! and Tab!
+Example
+Text = "Motor Alarm:" + LF!
+LPrint$ Port, Text
+A line feed string is added to the text Motor Alarm: It is then put in the string variable
+Text, which is sent to a printer.
+Lg
+Syntax
+Lg( RExp )
+Type Real function
+Version 1.0
+Function Calculates base ten logarithm
+Description The function out value is the base ten logarithm for RExp.
+If RExp > 0 is not met, the overflow flag will be set and the return value becomes
+undetermined.
+See also LN and Exp
+Example
+Value1 = LG(Value2)
+The variable Value1 receives the value of the base ten logarithm for Value2.
+LgE!
+Syntax
+LgE!
+60 Document's title
+Type Real constant
+Version 2.5
+EXOreal version 1.0
+Function Returns base ten logarithm of e (lge ≈ 0.4343...)
+Description The constant returns the value with the highest possible accuracy allowed by the real value
+format.
+This constant is intended for converting logarithmic values with the base ten to the base e,
+by using:
+log log
+a log
+c
+c
+x x
+a
+=
+See also LN, Lg, Ln2!, Ln10!
+Example
+LNx = LGx / LgE!
+Converts LGx (which is the base ten logarithm of x) to LNx (which becomes the natural
+logarithm of the same x) .
+LN
+Syntax
+LN ( RExp )
+Type Real function
+Version 1.0
+Function Calculates natural logarithm
+Description The return value of the function is the natural logarithm of RExp.
+If RExp > 0 is not met, the overflow flag will be set and the return value becomes
+undetermined.
+See also Lg and Exp
+Example
+Value1 = LN (Value2)
+The variable Value1 receives the value of the natural logarithm for Value2.
+Chapter 2 EXOL Reference 61
+LN10!
+Syntax
+Ln10!
+Type Real constant
+Version 2.5
+EXOreal version 1.0
+Function Returns the natural logarithm of 10. (ln 10 ≈ 2.3026).
+Description The constant returns the value with the highest possible accuracy allowed by the real value
+format.
+This constant is intended for converting logarithmic values with the base ten to the base e,
+by using:
+log ln
+a ln x x
+a
+=
+See also LN, Lg, Ln2!, LgE!
+Example
+LGx = LNx / Ln10!
+Converts LNx (which is the natural logarithm of x) to LGx (which becomes the base ten
+logarithm of the same x) .
+LN2!
+Syntax
+Ln2!
+Type Real constant
+Version 2.5
+EXOreal version 1.0
+Function Returns the natural logarithm of 2. (ln 2 ≈ 0.6931....).
+Description The constant returns the value with the highest possible accuracy allowed by the real value
+format.
+This constant is intended to simplify base 2 logarithms, by using:
+log ln
+a ln x x
+a
+=
+See also LN, Lg, Ln10!, LgE!
+Example
+BitsInNumber = cvr(ln( cvi(ANumber) ) / Ln2!)
+Calculates the most significant set bit in ANumber.
+62 Document's title
+LoadV
+Syntax
+LoadV( XPort, XPla, XEla, XLn, XSeg ) = DPac( ... )
+Type Instruction
+Version 2.5
+Function Downloads a DPac segment via communication
+Description This instruction loads a complete DPac segment, assigned to it by the function DPac. It may
+only be used together with this function.
+The segment must be allocated in the indicated controller. The easiest way to do this is to
+load the same DPac to each controller in question and to then use this instruction to transfer
+the contents.
+The segment will receive the same length as the original.
+The copy will receive the same variable structure as the original if the DPac is a VPac. Tasks
+referring to variables in the copy must be compiled with reference VPac’s with exactly the
+same structure.
+Assignment to the local controller will occur if both XPla and XEla are identical to the
+controller's Pla:Ela, or if both are zero (0).
+The answer flag is set in all cases if communication was successful. Otherwise it will be reset
+to zero.
+The longer the data package transferred, the more sensitive the communication. It is
+therefore particularly important that communication occurs with a reasonable number of
+re-sends in case of communication errors. This applies to communication over very short
+distances as well.
+Fast Tasks Communication functions are not allowed in fast Tasks. Writing to a segment in the same
+controller is however, allowed.
+See also ReadV, DPac, Answer!, ComDP and PageLen.
+Example
+Cnt = 5
+Repeat
+DecX Cnt
+LoadV( Port, HisPLA, HisELA, HisLn, HisSeg ) = DPac( MyLn, MySeg )
+until Answer! or (Cnt = 0)
+The DPac segment MyLn:MySeg will be copied to HisLn:HisSeg in the controller
+HisPLA:HisELA with a maximum of five (5) communication attempts.
+Chapter 2 EXOL Reference 63
+Loop ... EndLoop
+Syntax
+Loop XVar
+program lines
+EndLoop
+Type Instruction
+Version 1.0
+Function Repeats a number of program lines.
+Description Program lines between Loop and EndLoop are executed until XVar=0. XVar is
+decreased by one each time the loop is completed.
+XVar may be changed in program lines to change the number of loops. The last time
+program lines is executed is XVar=1. After EndLoop, will be XVar=0.
+XVar may not be an element in an array.
+Program rows will be executed zero (0) times if XVar=0 at the beginning of the
+instruction.
+The transient flag for XVar is set each time program lines is commenced (see EdgeX).
+See also UpLoop and DownLoop
+Example
+Port = 4
+Loop Port
+Out(Port) = Value(Port)
+EndLoop
+Loop is run through four times. Port is decremented at EndLoop. The function will be as
+follows:
+Port is set to the value 4.
+Out(4)=Value(4) and Port=3
+Out(3)=VALUE(3) and Port=2
+Out(2)=Value(2) and Port=1
+Out(1)=Value(1) and Port=0
+64 Document's title
+LPrint$
+Syntax
+LPrint$ XExp, $Exp
+Type Instruction
+Version 2.5
+Function Sends string to printer (serial port).
+Description The string $Exp is sent on port XExp with mode, baud rate and protocol defined in certain
+system variables in the QPac QCom. See the document EXOreal.
+The port XExp should be defined as master.
+If the printer is busy when this function is to be executed, then the Task will be set in wait
+mode until the printer is ready to receive the text (up to a maximum of 15 seconds). This
+means that the Task’s other instructions will not be run during this period. This hand shaking
+procedure is performed with the help of the port’s RTS/CTS signals.
+Several Tasks can, independent of each other, make print-outs on the same printer without
+colliding. This instruction is only available for multiport controllers.
+Example
+LPrint$ 2, MenuText
+The string variable MenuText is sent to the printer on port 2.
+Mid$ (part of string from the right)
+Syntax
+Mid$($Exp FromRight XExp1 To XExp2)
+Mid$($Exp FromRight XExp1)
+Mid$($Exp FromRight To XExp2)
+Type String function
+Version 2.0
+Function Returns part of a string
+Description The function selects characters from the string $Exp, from and including character number
+XExp2 to and including character position XExp1, as seen from the right.
+All characters, as of the beginning of the string and including character position XExp1 as
+seen from the right, will be selected if To XExp2 is omitted.
+All characters, as of the beginning of the string to and including character position XExp1
+counted from the right, will be selected if XExp1 is omitted.
+No characters will be selected and the overflow flag will be set if XExp1 is larger than the
+string length.
+Characters from the beginning of the string will be selected and the overflow flag will be set
+if XExp2 is larger than the string length.
+If XExp2 is larger than the string length, characters up to and including the last character of
+the string will be selected, and the overflow flag will be set
+If XExp1 equals zero (0), the characters up to and including the last character of the string
+will be selected and the overflow flag will be set,.
+Chapter 2 EXOL Reference 65
+No characters at all will be selected if XExp2 equals zero (0). Note that the overflow flag is
+not set.
+8 7 6 5 4 3 2 1 = Character Position
+$Var T1 T2 T3 T4 T5 T6 T7 T8 XExp1 = 3
+XExp2 = 6
+Output
+string
+T3 T4 T5 T6
+See also Mid$
+Example
+R Value = 3.14159
+TempText = " "+CvRF(RValue WITH 2)
+TempText = Mid$(TempText FromRight To 6)
+The string variable Temp becomes a text corresponding to the numeric value in Value. The
+value is stated with two decimals and is aligned to right in the variable which has become six
+characters long.
+Mid$ (part of string from the left)
+Syntax
+Mid$($Exp FromLeft XExp1 To XExp2)
+Mid$($Exp FromLeft XExp1)
+Mid$($Exp FromLeft To XExp2)
+Type String function
+Version 2.0
+Function Returns part of a string
+Description The function selects characters from right from the string $Exp as of character number
+XExp1 and including character position XExp2 seen from the left.
+All characters, from the beginning of the string up to and including character position
+XExp1 counted from the left, will be selected if To XExp2 is excluded.
+No characters will be selected and the overflow flag will be set if XExp1 is larger than the
+string length.
+All characters, as of position 1 up to and including character position XExp1, will be
+selected if XExp2 is excluded.
+No characters will be selected and the overflow flag will be set if XExp1 is larger than the
+string length.
+Characters up to and including the last character of the string, will be selected and the
+overflow flag will be set if XExp2 is larger than the string length.
+Characters up to and including the last character of the string, will be selected and the
+overflow flag will be set if XExp2 is larger than the string length.
+Characters up to and including the last character of the string will be selected and the
+overflow flag will be set, if XExp1 equals zero (0).
+No characters at all will be selected if XExp2 equals zero (0). Note that the overflow flag
+will not be set.
+66 Document's title
+8 7 6 5 4 3 2 1 = Character position
+$Var T1 T2 T3 T4 T5 T6 T7 T8 XExp1 = 3
+XExp2 = 6
+Output
+string
+T3 T4 T5 T6
+No string operators may be used in $Exp.
+See also Mid$
+Example
+Text1 = "Hot Air Unit"
+Text2 = Mid$(S1 FromLeft 5 To 8) + "piping"
+The string Text2 becomes “Air Piping”.
+Mid$ (left formatted string assignment)
+Syntax
+Mid$($Var FromLeft XExp) = $Exp
+Type Instruction
+Version 2.0
+Function Left formatted string assignment
+Description Selected positions in the result variable $Var are assigned new characters equalling the
+result of the string calculation $Exp. $Exp is written in $Var so that $Exp's first character
+is placed in position XExp as seen from the left (see the figure).
+8 7 6 5 4 3 2 1 = Character position
+$Var T1 T2 T3 T4 T5 T6 T7 T8 XExp1 = 3
+XExp2 = 6
+$Exp T3 T4 T5 T6
+If $Exp and XExp are such that $Exp ends up partly outside the current length of $Var,
+this part will be added to the end and the current length will increase.
+If $Exp ends up completely outside the current length in $Var, there will be no assignment
+and the overflow flag will be set.
+$Exp will be written from position 1 and the overflow flag will be set if XExp = 0.
+The transient flag for $Var is always set (see Edge$).
+See also $ and Mid$
+Example
+Chapter 2 EXOL Reference 67
+StatText = "The Level In Tank 3 Is ...."
+If LevelOK
+Mid$(StatText FromLeft 23) = "Good"
+Else
+Mid$(STATTEXT FromLeft 23) = "Poor"
+EndIf
+Mid$ (right formatted string assignment)
+Syntax
+Mid$($Var FromRight XExp) = $Exp
+Type Instruction
+Version 2.0
+Function Right formatted string assignment
+Description Selected positions in the result variable $Var are assigned new characters equalling the
+result of the string calculation $Exp. $Exp is written in $Var so that $Exp's first character
+is placed in position XExp seen from the right (see the figure).
+8 7 6 5 4 3 2 1 = Character position
+$Var T1 T2 T3 T4 T5 T6 T7 T8 XExp1 = 3
+XExp2 = 6
+$Exp T3 T4 T5 T6
+If $Exp and XExp are such that $Exp ends up partly outside the beginning of $Var, these
+characters will be cut out and the overflow flag will be set.
+$Exp will end up as of position 1 and the overflow flag will be set if XExp = 0.
+The transient flag for $Var is always set (see Edge$).
+See also $ and Mid$
+Example
+TXT1 = "Temp: DEGREES"
+TXT2 = "Temp: DEGREES"
+Mid$(TXT1 FromRight 9) = CvRF(0 With 2)
+Mid$(TXT2 FromRight 9) = CvRF(273.16 With 2)
+TXT1 receives the text "Temp: 0.00 DEGREES".
+TXT2 receives the text "Temp: 273.16 DEGREES".
+ModVar
+Syntax
+68 Document's title
+ModVar(VPac.Variable)
+ModVar(VPac.Variable(XExpr))
+ModVar(VPac.Pages(XConst).Variable)
+ModVar(VPac.Pages(XConst).Variable(XExpr))
+ModVar(BPac.Records(IExpr).Field)
+Type Function (gets the argument’s type)
+Version 3.0
+EXOreal 1.0
+Function Returns the value of the argument
+Description The function returns the value of the argument, which can be a variable or BPac field in the
+controller. Thus it does not have to be declared in the Task. The argument has the same
+syntax as the address functions ModVarLn, etc.
+The argument can be a variable in a QPac, a ususal VPac or a multi-page VPac, or a field in
+a BPac. Local variables or strings are not supported.
+You may freely use expressions for variable index or BPac post. These expressions may use
+the variables that are declared in the Task, including local variables and functions including
+ModVar itself.
+For multi-page VPac it is required that the page mark is a literal or a constant.
+Example
+Uploop ix From 0 To 250
+If ModVar( Log0.Posts( CvX(ix) ).Ch0 ) > 100.0
+; This post in log0 is more than 100!
+EndIf
+EndLoop
+In the example the first 250 posts in the BPac Log0 are searched for fields where Ch0 is
+greater than 100.
+Chapter 2 EXOL Reference 69
+ModVarAddr
+Syntax
+ModVarAddr(VPac.Variable)
+ModVarAddr(VPac.Variable(XExpr))
+ModVarAddr(VPac.Pages(XExpr).Variable)
+ModVarAddr(VPac.Pages(XExpr).Variable(XExpr))
+ModVarAddr(BPac.Records(IExpr).Field)
+Type Integer function
+Version 3.1
+EXOreal version 1.0
+Function Returns the address (cell / offset) to the argument.
+Description The function returns the address of the argument that can be a variable or a BPac field in the
+controller. Thus it does not have to be declared in the Task. The argument has the same
+syntax as the address functions ModVarLn etc.
+The argument can be a variable in a QPac, a ususal VPac or a multi-page VPac, or a field in
+a BPac. Local variables or strings are not supported.
+You may freely use expressions for variable index or BPac post. These expressions may use
+the variables that are declared in the Task, including local variables, and functions.
+For VPac the return value is a cell number between 0 and 15299. Normally ModVarPage or
+ModVarPageAddr is used, and will automatically calculate the page and the cell on the page.
+For BPac the return value is an offset between 0 and 30599.
+See also See also the document EXOL Programming.
+Example
+LogCell = ModVarAddr(Point2.OutdTemp)
+ModVarAddrL, ModVarAddrH,
+ModVarPage, ModVarPageAddr
+Syntax
+ModVarAddrL(VPac.Variable)
+ModVarAddrH(VPac.Variable(XExpr))
+ModVarPage(VPac.Pages(XExpr).Variable)
+ModVarPageAddr(VPac.Pages(XExpr).Variable(XExpr))
+ModVarAddrL(BPac.Records(IExpr).Field)
+Type Index function
+Version 3.1
+EXOreal version 1.0 or 2.3 depending on whether the index that is used must be calculated at run-time.
+Function Returns the address (cell / offset) to the argument.
+Description These functions are rather like the function ModVarAddr, but they do not return an integer
+value, but an Index value.
+ModVarAddrL returns the 8 lowest bits of the address, and ModVarAddrH returns the
+other bits. ModVarPage returns the page, and ModVarPageAddr returns the cell on the
+page.
+70 Document's title
+It is not necessary for the argument to be declared in the Task. The argument has the same
+syntax as the address functions ModVarLn etc. See also the document EXOL Programming.
+The argument can be a variable in a QPac, a ususal VPac or a multi-page VPac. Local
+variables or strings are not supported. Fields in BPac are supported by ModVarAddrL and
+ModVarAddrH, but not by ModVarPage or ModVarPageAddr.
+You may freely use expressions for variable index or BPac post. These expressions may use
+the variables that are declared in the Task, including local variables, and functions.
+The relation between the functions and ModVarAddr can be seen in the following table:
+Expression Equivalent expression
+ModVarAddrL(var) Cvi(ModVarAddr(var) mod 256)
+ModVarAddrH(var) Cvi(ModVarAddr(var) / 256)
+ModVarPage(var) Cvi(ModVarAddr(var) / 60)
+ModVarPageAddr(var) Cvi(ModVarAddr(var) mod 60)
+See also See also the document EXOL Programming.
+Example
+LogCellHi = ModVarAddrH(Point2.OutdTemp)
+ModVarLn
+Syntax
+ModVarLn(VPac.Variable)
+ModVarLn(VPac.Variable(XExpr))
+ModVarLn(BPac.Records(IExpr).Field)
+ModVarLn(Text.Stringvariable)
+ModVarLn(Text.Stringvariable(Xexpr))
+Type Index function
+Version 3.1
+EXOreal version 1.0
+Function Returns the load number of the argument.
+Description The function returns the load number of the argument that can be a variable or a BPac field
+in the controller. Thus it does not have to be declared in the Task. The argument has the
+same syntax as the address functions ModVarAddr etc. See also the the document EXOL
+Programming.
+The argument can be a variable in a QPac, a ususal VPac or a multi-page VPac, a string or a
+field in a BPac. Local variables are not supported.
+You may freely use expressions for variable index or BPac post. These expressions may use
+the variables that are declared in the Task, including local variables, and functions. They will
+be ignored if the index variable is a string.
+See also See also the document EXOL Programming.
+Example
+LogLn = ModVarLn(Point2.OutdTemp)
+Chapter 2 EXOL Reference 71
+NaN!
+Syntax
+NaN!
+Type Real constant.
+Version 2.5
+EXOreal version 1.0
+Function Returns the value Not-A-Number.
+Description The number interval for the data type real value also contains a number of special codes for
+invalid values, among other things. This constant returns this special code.
+Not-A-Number is the result of, e.g. square root extractions of negative numbers. EXOreal
+version 2.5 and later will also set analog inputs to this value when detecting sensor errors.
+All real value operations where at least one operand is Not-A-Number becomes a Not-ANumber.
+See also PosInf!, NegInf!, CmpT
+Example
+ExitIf MyReal = NaN!
+The rest of the Task will not be run if MyReal is Not-A-Number.
+NegInf!
+Syntax
+NegInf!
+Type Real constant.
+Version 2.5
+EXOreal version 1.0
+Function Returns the value -∞.
+Description The number interval for the data type real value also contains a number of special codes for,
+among other things, infinity. This constant returns the special code for negative infinity.
+Infinity is returned as a result of certain mathematically prohibited operations, such as
+division by zero (0).
+See also PosInf!, NaN!, CmpT
+Example
+ExitIf MyReal = NegInf!
+The rest of the Task will not be run if MyReal is minus infinity.
+72 Document's title
+Not (integer)
+Syntax
+Not(IExp)
+Type Integer function
+Version 1.0
+Function Returns logic Not
+Description The output value of the function is the logic, bit by bit, complement to IExp.
+This is functionally equivalent to the expression: IExp XOR -1.
+Example
+IResult = Not( IVar )
+The value of the integer variable IVar is complemented bit by bit and put in the variable
+IResult.
+Not (index number)
+Syntax
+Not(XExp)
+Type Index function
+Version 1.0
+Function Returns logic Not
+Description The output value of the function is the logic, bit by bit, complement to XExp.
+Functionally this is equivalent to the expression: XExp XOR 255.
+Example
+Result = Not( XVar )
+The value of the integer variable XVar is complemented bit by bit and put in the variable
+Result.
+Chapter 2 EXOL Reference 73
+Overflow!
+Syntax
+Overflow!
+Type Logic function
+Version 2.0
+Function Reads the overflow flag
+Description The overflow flag will be set if the controller performs a calculation or tries to execute some
+other instruction in a Task returning a result (often too large) not valid for presenting in
+EXOL.
+It is not possible to write a value in the flag. It will be set to zero when read with
+Overflow!.
+The flag can be used to establish whether there has been an invalid calculation result or not.
+Suitable measures may then be taken.
+The flag is individual for each Task.
+For a more detailed description of when the overflow flag is set, see the description for each
+instruction and function.
+If you wish to establish whether a particular program line sets the overflow flag or not, you
+must make sure that the flag is not set to start with. This is done by assigning a junk variable
+the value of this function on the previous row.
+See also Illegal!
+Example
+Temp = Temp * 2
+If Overflow!
+Temp = MaxTemp
+EndIf
+The value of Temp is doubled. If the result is greater than the greatest valid value for
+integers (32767), then Temp = MAXTEMP will be set.
+Page
+Syntax
+Page VPac = XExp
+Type Instruction
+Version 1.0
+Function Activates a page in amultiple-page VPac
+Description The instruction activates the page XExp for VPac.
+VPac is the name stated with parameter Name in the VPac file's head (see the document
+EXOL Programming).
+Activation of a page in an VPac occurs individually for each Task.
+The new page is active until the next Page instruction for VPac in the Task is executed, or
+until the Task has finished executing. Page 0 is always active at the beginning of the Task.
+74 Document's title
+No change will take place and the overflow flag will be set if XExp has a value greater than
+the number of pages in the VPac.
+Example
+UpLoop Index From 0 To 3
+Page KData = Index
+Result = Result + KD1
+EndLoop
+If KD1 is a variable in the VPac KData, then Result will have the value of the sum of
+variable KD1 on pages 0 through 3.
+PageLen (function)
+Syntax
+PageLen( XLn, XSeg )
+Type Index function
+Version 2.2
+Function Returns the length of a segment in a DPac
+Description The instruction returns the length of segment XSeg in the DPac with load number XLn.
+The illegal flag will be set and the function returns zero if the segment does not exist.
+This instruction is, in practice, only used when implementing transfer protocols similar to
+those used between the main computer and the standard applications.
+See also ReadV.
+Example
+X CurLength = PageLen( InBPacLn, CurSeg )
+The variable CurLength is assigned the length of segment CurSeg in the DPac
+InBPacLn.
+PageLen (instruction)
+Syntax
+PageLen( XLn, XSeg ) = XExp
+Type Instruction
+Version 2.2
+Function Sets the length of a segment in a DPac
+Description The instruction sets the length of segment XSeg in the DPac with load number XLn to
+XExp.
+The illegal flag will be set if the segment does not exist, or if XExp is greater than 120.
+This instruction is, in practice, only used when implementing transfer protocols similar to
+those used between the main computer and the standard applications.
+Chapter 2 EXOL Reference 75
+See also LoadV.
+Example
+PageLen( OutBPacLn, CurSeg ) = NewLength
+The segment CurSeg in the DPac OutBPacLn receives the length NewLength.
+PI!
+Syntax
+Pi!
+Type Real constant
+Version 2.5
+EXOreal version 1.0
+Function Returns the number π (≈ 3.14159...)
+Description The constant returns the value with the highest accuracy allowed by the real value format.
+See also Sin etc.
+Example
+Circumference = Radius * 2 * Pi!
+Calculates the circumference of a circle.
+PID
+Syntax
+PID LVar
+Type Instruction
+Version 1.0
+Function Returns PID control
+Description PID is a function block which works as a PID control. It is functionally equivalent to
+traditional analog controllers.
+You can tune the three control parameters P, I and D as well as specifying set point value
+and actual value, while the instruction PID calculates the output value.
+The variable setting in the VPac for PID should always appear as follows:
+Cell Type Name Description
+00 L PidOn Control ON/OFF
+01 L PidAuto Output Value: 0=Manual ; 1=Control
+02 X PidSampfact *Sample Factor = Sample Time/Task Cycle Time
+03 R PidSetp Set Point Value
+76 Document's title
+06 R PidInput Actual Value
+09 R PidOutput Output Value
+12 R PidHLim * High Limit for Output Value
+15 R PidLLim *.Low Limit for Output Value
+18 R PidManSet Output Value at Manual Runtime
+21 R PidPConst *Proportional Amplification
+24 R PidITime ;*Integration Time
+27 R PidDTime *Derivation Time
+30 R PidMDGain *Maximum Derivation Amplification
+33 R PidAIconst Internal Variable
+36 R PidADconst Internal Variable
+39 R PidKDconst Internal Variable
+42 R PidErr Automation Divergence
+45 R PidZZ InternalVariable
+48 R PidVV Internal Variable”
+51 R PidII Internal Variable”
+54 R PidCycletime Internal Variable"
+57 X RCntr Internal Variable"
+58 L PidParFlg The control initiate sthe control after changes of parameters"
+59 X PidTime Internal Variable
+LVar is the VPac’s first variable (in cell zero). In this case PidOn.
+The VPac often consists of a single page but it can have several pages. It is possible to have
+one control per page in the VPac if s it uses the instruction Page.
+Parameters marked * should be configured by the user.
+PidInput=actual value and PidSetp=set point value are input signals, and PidOutput
+is the output value.
+The instruction PID should be run cyclically. If PidSampfact=1, the control will be run
+with the same cycle time as the Task which the PID instruction is part of. If
+PidSampfact=2, it will run at every second cycle, etc.
+If PidOn = 0, the control is deactivated and will not be run.
+When PidOn is set to 1, the control is initiated with the specified parameter values and starts
+to run. The parameters PidSampfact, PidPConst, PidITime, PidDTime and
+PidMDGain are read only at initiation.
+If PidAuto= 0, the output value PidOutput will be equal to the value in PidManSet
+all the time.
+If PidAuto is set, the control runs and the output value PidOutput is regulated according
+to its parameters
+Lowest and highest limits for the output value are defined in PidLLim and PidHLim.
+PidITime is the control’s integration time in seconds, while PidDTime is its derivation
+time in seconds.
+After a change of parameters the control must be re-initiated by setting PidParFlag = 0.
+Example
+PidInput_8 = AI3
+PID PidOn_8
+AQ1 = PidOutput_8
+Chapter 2 EXOL Reference 77
+The value of the real value variable AI3 works as the actual value for the control in the VPac
+PID_8. The control’s output value is sent to the variable AQ1.
+Cooling control To get cooling regulation, i.e. increased control output signal when the actual value is higher
+than the set-point value, invert the output signal in the following way:
+PidInput_8 = AI3
+PID PidOn_8
+AQ1 = (PidHLim_8-PidOutput_8+PIDLLim_8) / 10
+Poll!
+Syntax
+Poll!
+Type Logic function
+Version 1.0
+Function Reads the controller’s communication flag.
+Description When the controller receives a message via EXOline, viewed as a valid message and which
+does not return an error code, the communication flag is set and remains set until a Task
+reads the flag with Poll!
+It is not possible to write a value in the flag.
+The flag will be set to zero when read by POLL!.
+The flag may be used to detect communication breaks in the controller. Suitable action may
+then be taken.
+The flag is not individual for each Task and should therefore be tested in one Task only.
+Example
+IfNot Poll!
+DecX Count
+If Count=0
+Print 0, @(ErrorText)
+BrkT Supply
+EndIf
+Else
+Count = 50
+EndIf
+The Task Supply is terminated and a warning text is written to the display if
+communication breaks down.
+78 Document's title
+PosInf!
+Syntax
+PosInf!
+Type Real constant.
+Version 2.5
+EXOreal version 1.0
+Function Returns the value +∞.
+Description The range for the data type real value also includes a number of special codes for, among
+other things, infinity. This constant returns the special code for positive infinity.
+Infinity is returned as a result of certain mathematically prohibited operations, e.g. division
+by 0.
+See also NegInf!, NaN!, CmpT
+Example
+ExitIf MyReal = PosInf!
+The rest of the Task will not be executed if MyReal is infinity.
+PowerUp!
+Syntax
+PowerUp!
+Type Logic function
+Version 2.0
+Function Reads the power-up flag
+Description When the controller is powered up, it sets the communication flag which remains set until a
+Task reads the flag with PowerUp!
+It is not possible to write a value in the flag.
+The flag will be set to zero when read by PowerUp!
+The flag may be used to discover power disturbances to the controller. Suitable action may
+then be taken.
+The power-up flag is individual for each Task which means that a test may simply be
+performed in one or more Tasks.
+Example
+If PowerUp!
+RunTsk( Init )
+Wait Tsk ( Init )
+BrkTsk( Init )
+EndIf
+The task Init is run once if the controller has its power supply interrupted.
+Chapter 2 EXOL Reference 79
+Print
+Syntax
+Print XExp1,XExp2
+Type Instruction
+Version 2.1
+Function Writes to the display
+Description XExp1 is the position on the display.
+The numbering of positions is made according to the folowing principle: The first line is
+numbered 0 to 19, and the second line is numbered 64 to 83.
+XExp2 is the string load number for the string which you wish to print.
+Several Task may independent of each other write to the display.
+Example
+Print 64, @(ErrorText)
+The string variable ErrorText is written to position 64.
+Priority!
+Syntax
+Priority!
+Type Index constant
+Version 2.7
+EXOreal version 1.0
+Function Returns priority for the same Task
+Description The constant is calculated at conversion. The constant is intended primarily for use in objects
+built into general Tasks for which the programmer does not know the priority.
+See also the document EXOL Programming for a description of the priority concept.
+The function may not be used in procedure Tasks.
+Fast Tasks The function gives the value 0 when using fast Tasks.
+See also TLn!, Cycle!
+80 Document's title
+ProjVarAddr
+Syntax
+ProjVarAddr(Controller.VPac.Variable)
+ProjVarAddr(Controller.VPac.Variable(XExpr))
+ProjVarAddr(Controller.VPac.Pages(XExpr).Variable)
+ProjVarAddr(Controller.VPac.Pages(XExpr).Variable(XExpr))
+ProjVarAddr(Controller.BPac.Records(IExpr).Field)
+Type Integer function
+Version 3.1
+EXOreal version 1.0
+Function Returns the address (cell / offset) to the argument.
+Description The function returns the address of the argument that can be a variable or a BPac field. The
+argument has the same syntax as the address functions ProjVarLn etc. See also the
+document EXOL Programming.
+The argument can be a variable in a QPac, a usual VPac or a multi-page VPac, or a field in a
+BPac. Local variables or strings are not supported.
+You may freely use expressions for variable index or BPac post. These expressions may use
+the variables that are declared in the Task, including local variables, and functions.
+For VPac the return value is a cell number between 0 and 15299. Normally ProjVarPage
+or ProjVarPageAddr is used, and will automatically calculate the page and the cell on
+the page.
+For BPac the return value is an offset between 0 and 30599.
+See also See also the document EXOL Programming.
+Example
+LogCell = ProjVarAddr(UC_291.Point2.OutdTemp)
+ProjVarAddrL, ProjVarAddrH,
+ProjVarPage, ProjVarPageAddr
+Syntax
+ProjVarAddrL(Controller.VPac.Variable)
+ProjVarAddrH(Controller.VPac.Variable(XExpr))
+ProjVarPage(Controller.VPac.Pages(XExpr).Variable)
+ProjVarPageAddr(Controller.VPac.Pages(XExpr).Variable(XExpr))
+ProjVarAddrL(Controller.BPac.Records(IExpr).Field)
+Type Index function
+Version 3.1
+EXOreal version 1.0 or 2.3 depending on whether the index that is used must be calculated at run-time.
+Function Returns the address (cell / offset) to the argument.
+Description These functions are rather like the function ProjVarAddr, but they do not return an
+integer value, but an Index value.
+ProjVarAddrL returns the 8 lowest bits of the addressen, and ProjVarAddrH returns
+the other bits. ProjVarPage returns the page, and ProjVarPageAddr returns the cell
+on the page.
+Chapter 2 EXOL Reference 81
+It is not necessary for the argument to be declared in the Task. The argument has the same
+syntax as the address functions ProjVarLn etc. See also the document EXOL
+Programming.
+The argument can be a variable in a QPac, a ususal VPac or a multi-page VPac. Local
+variables or strings are not supported. Fields in BPac are supported by ProjVarAddrL and
+ProjVarAddrH, but not by ProjVarPage or ProjVarPageAddr.
+You may freely use expressions for variable index or BPac post. These expressions may use
+the variables that are declared in the Task, including local variables, and functions.
+The relation between the functions and ProjVarAddr can be seen in the following table:
+Expression Equivalent expression
+ProjVarAddrL(var) cvi(ProjVarAddr(var) mod 256)
+ProjVarAddrH(var) cvi(ProjVarAddr(var) / 256)
+ProjVarPage(var) cvi(ProjVarAddr(var) / 60)
+ProjVarPageAddr(var) Cvi(ProjVarAddr(var) mod 60)
+See also See also the document EXOL Programming.
+Example See ProjVarPLA
+ProjVarPLA, ProjVarELA, ProjVarLn
+Syntax
+ModVarPLA(Controller.VPac.Variable)
+ModVarELA(Controller.VPac.Variable(XExpr))
+ModVarLn(Controller.BPac.Records(IExpr).Field)
+ModVarPLA(Controller.Text.Stringvariable)
+ModVarLn(Controller.Text.Stringvariable(Xexpr))
+Type Index function
+Version 3.1
+EXOreal version 1.0
+Function Returns the argument’s EXOline-address or load number, respectively.
+Description The functions returns the address or the load number of the argument, that can be a variable
+or a BPac field. The argument has the same syntax as the address functions ProjVarAddr
+etc. See also the document EXOL Programming.
+The argument can be a variable in a QPac, a usual VPac or a multi-page VPac, a string, or a
+field in a BPac. Local variables are not supported.
+You may freely use expressions for variable index or BPac post. These expressions may use
+the variables that are declared in the Task, including local variables, and functions. These are
+ignored for a string, except for ProjVarLn.
+See also See also the document EXOL Programming.
+Example
+82 Document's title
+X1 = ProjVarPLA(UC_291.OutdTemp)
+X2 = ProjVarELA(UC_291.OutdTemp)
+X3 = ProjVarLn(UC_291.OutdTemp)
+X4 = ProjVarPage(UC_291.OutdTemp)
+X5 = ProjVarPageAddr (UC_291.OutdTemp)
+R1 = RRV(MasterPort,x1,x2,x3,x4,x5)
+if Answer!
+OutdTemp = R1
+end if
+R
+Syntax
+R RVar = RExp
+Type Instruction
+Version 1.0
+Function Variable assignment
+Description RExp is calculated and the resulting value is placed in the real value variable RVar.
+Assignment may be carried out without the type mark R with the EXOL version 3.0 or later.
+The synstax is then: RVar = RExp
+RVar may be part of RExp. The value of RVar, before the assignment, will then be used.
+The transient flag for RVar will be set if RExp has a value different to that which RVar had
+before the assignment (see EdgeR).
+See also L, X, I and $
+Example
+R Contact = Pi!
+The real value variable Contact is assigned the value 3.14159.
+ReadV
+Syntax
+ReadV( XPort, XPla, XEla, XLn, XSeg)
+Type DPac function
+Version 2.5
+Function Reads a DPac segment via communication.
+Description This instruction reads a complete DPac segment for further assignment with the instruction
+DPac. It may only be used with this instruction.
+The length of the segment is also read when the page is read. The length of the segment in
+the same controller is set to this length.
+If the DPac is a VPac, the copy will receive the same variable structure as the original. Tasks
+referring to variables in the copy must be compiled using reference VPac’s with exactly the
+same structure.
+Chapter 2 EXOL Reference 83
+Reading will occur in the same controller if XPla and XEla are both identical to the
+controller's Pla:Ela, or if both are 0.
+The answer flag will always be set if communication succeeded. If not, it will be reset to
+zero.
+The larger the data packs transferred, the more sensitive the communication. Thus it is
+especially important in this case that communication is conducted using an adequate number
+of retries, in case of communication errors. This is also important when communicating over
+very short distances.
+Fast Task Communicating functions are not allowed in fast Tasks. Reading segments in the same
+controller is allowed.
+See also LoadV, DPac, Answer!, ComDP and PageLen.
+Example
+Cnt = 5
+Repeat
+DecX Cnt
+DPac( MyLn, MySeg ) = ReadV( Port, HisPLA, HisELA, HisLn, HisSeg )
+Until Answer! or (Cnt = 0)
+The DPac segment MyLn:MySeg is copied from HisLn:HisSeg in the controller
+HisPLA:HisELA, with a maximum of five (5) communication attempts.
+Repeat .. Until
+Syntax
+Repeat
+program lines
+Until LExp
+Type Instruction
+Version 2.35
+EXOreal version 1.0
+Function Repeats a number of program lines
+Description program lines between Repeat and Until will be repeated as long as LExp = 0.
+program lines will be executed at least once.
+Please note that it is very important that LExp receives the value 1 (True)
+within a short period of time. If not, the Task will be executed continuously and
+all other Tasks in the controller with lower priority will not execute at all.
+It is however permissible to let LExp have the value False (0) for a longer period, if
+program lines contains some kind of instruction or function which places the Task in
+wait mode.
+See also While
+Example
+Count = 5
+Repeat
+RValue = RRV( Port, PLA, ELA, LDN, Cell )
+DecX Count
+Until Answer! Or ( Count = 0 )
+84 Document's title
+A real value variable is read with the function RRV via communication on port Port until an
+answer is received, up to a maximum of five times.
+RIB
+Syntax
+RIB ( XExp, IExp )
+Type Integer function
+Version 2.1
+Function Reads value in a BPac
+Description The function reads an integer value in BPac XExp in position IExp.
+XExp is the BPac load number, while IExp is a byte pointer within the BPac.
+Integer values occupy two bytes in a BPac.
+This function is well suited for logging and stacking large amounts of data.
+See also SIB, RLB, RXB and RRB
+Example
+Top = Top - 2
+IValue = RIB ( Stack, Top )
+An example of stack handling, where the uppermost element is taken from the stack and put
+in the integer variable IValue. The stack counter decreases.
+Stack is the load number for the BPac with the stack, while the integer variable Top points
+to the top of the stack.
+RIV (communication)
+Syntax
+RIV( XExp1, XExp2, XExp3, XExp4, XExp5, XExp6 )
+RIV( XExp1, XExp2, XExp3, XExp4, XExp6 )
+RIV( XExp2, XExp3, XExp4, XExp6 )
+RIV( XExp4, XExp5, XExp6 )
+RIV( XExp4, XExp6 )
+Type Integer function
+Version 2.3 (if two, three, four or six arguments are used)
+2.1 (if five arguments are used)
+Function Reads integer variable
+Description The function reads an integer variable, indicated by the arguments.
+The number of arguments may be varied (see Syntax above).
+The variable may be placed either in the local controller or in an external controller.
+The following arguments are used to indicate a variable:
+Chapter 2 EXOL Reference 85
+Argument Indicates....
+XExp1 Port number
+XExp2 PLA
+XExp3 ELA
+XExp4 DPac-load number
+XExp5 Segment number
+XExp6 Cell number
+See RLV for further details.
+See also SXV, RLV, RXV and RRV.
+Example
+IValue6 = RIV( Port, PLA, ELA, DLN, Seg, Cell )
+IValue5 = RIV( Port, PLA, ELA, DLN, Cell )
+IValue4 = RIV( PLA, ELA, DLN, Cell )
+IValue3 = RIV( DLN, Seg, Cell )
+IValue2 = RIV( DLN, Cell )
+The integer variables IValue2 to IValue6 are assigned the value of variables indicated
+by Port, PLA, ELA, DLN, Seg and Cell.
+RLB
+Syntax
+RLB( XExp, IExp )
+Type Logic function
+Version 2.1
+Function Reads value in BPac
+Description The function reads the logic value in the BPac XExp in position IExp.
+XExp is the BPac’s load number, while IExp is a byte pointer within the BPac.
+Logic values occupy one byte in BPacs.
+This function is well suited for logging and stacking large amounts of data.
+See also SLB, RXB, RIB and RRB
+Example
+DecI Top
+LValue = RLB( STACK, Top )
+Stack handling, where the uppermost element is taken from the stack and put in the integer
+variable LValue. The stack counter decreases.
+STACK is the load number for the BPac with the stack, while the integer variable Top points
+to the top of the stack.
+86 Document's title
+RLV (RLV (communication)
+Syntax
+RLV( XExp1, XExp2, XExp3, XExp4, XExp5, XExp6 )
+RLV( XExp1, XExp2, XExp3, XExp4, XExp6 )
+RLV( XExp2, XExp3, XExp4, XExp6 )
+RLV( XExp4, XExp5, XExp6 )
+RLV( XExp4, XExp6 )
+Type Logic function
+Version 2.3 (if two, three, four or six arguments are used)
+2.1 (if five arguments are used)
+Function Reads logic variable
+Description The function reads a logic variable, indicated by the arguments.
+The number of arguments may be varied (see Syntax above).
+The variable may be placed either in the local controller or in an external controller.
+The following arguments are used to indicate a variable:
+Argument Indicates....
+XExp1 Port number
+XExp2 PLA
+XExp3 ELA
+XExp4 DPac-load number
+XExp5 Segmnet number
+XExp6 Cell number
+When the function is used with one or two arguments, a variable in the same controller is
+always indicated.
+A variable in an external controller is always indicated when four or more arguments are
+used, unless XExp2 and XExp3 equal the local controller's Pla:Ela, or if XExp2 =
+XExp3 = 0, when a variable in the same controller is indicated.
+The indicated port is assumed to be configured as a master if the variable in question is in an
+external controller. If this is not the case, the illegal flag will be set and the output value will
+be zero.
+When reading a variable in an external controller the Task will be put in wait mode until the
+port is available. A suitable EXOline command is then sent and the Task is again put in wait
+mode until an answer is received. Execution will then continue as usual.
+The function will give an output value of zero and the answer flag will be set to zero if an
+answer is not received .
+Several Tasks may, independently of each other, read and write variables in external
+controllers via the same port, with no conflicts.
+If the indicated variable cannot be read, the function will give the output value zero.
+If four or more arguments are used, the answer flag will always be set, or be set to zero,
+depending on whether the reading was successful or not (see also Answer!).
+If two or three arguments are used, the answer flag will never change.
+When reading variables in the local controller, and when XExp4 and XExp5 indicate nonexistent
+DPacs or segments, the illegal flag will be set and the output value will be zero.
+If 1 =<XExp1 =<3 is not met, then the illegal flag will be set and the output value becomes
+zero.
+Chapter 2 EXOL Reference 87
+Variables in segment zero are indicated if two, four or five arguments are used.
+Port #1 is indicated if four arguments are used.
+Fast Tasks Communicating functions are not allowed in fast Tasks. Reading a variable in the local
+controller is allowed.
+See also SLV, RXV, RIV and RRV
+Example
+LValue6 = RLV( Port, PLA, ELA, DLN, Seg, Cell )
+LValue5 = RLV( Port, PLA, ELA, DLN, Cell )
+LValue4 = RLV( PLA, ELA, DLN, Cell )
+LValue3 = RLV( DLN, seg, Cell )
+LValue2 = RLV( DLN, Cell )
+The logic variables LValue2 to LValue6 are assigned the value of variables indicated by
+Port, PLA, ELA, DLN, Seg and Cell.
+RRB
+Syntax
+RRB( XExp, IExp )
+Type Real function
+Version 2.1
+Function Reads value in BPac
+Description The function reads the real value in the BPac XExp in position IExp.
+XExp is the BPac’s load number, while IExp is a byte pointer in the BPac.
+Real values occupy four bytes in the BPac.
+This function is well suited for logging and stacking large amounts of data.
+See also SRB, RLB, RXB and RIB
+Example
+Top = Top - 4
+RValue = RRB( Stack, Top )
+An example of stack handling, where the uppermost element is taken from the stack and
+placed in the integer variable RValue. The stack counter decreases.
+STACK is the load number for the BPac with the stack, while the integer variable Top points
+to the top of the stack.
+88 Document's title
+RRV (communication)
+Syntax
+RRV( XExp1, XExp2, XExp3, XExp4, XExp5, XExp6 )
+RRV( XExp1, XExp2, XExp3, XExp4, XExp6 )
+RRV( XExp2, XExp3, XExp4, XExp6 )
+RRV( XExp4, XExp5, XExp6 )
+RRV( XExp4, XExp6 )
+Type Real function
+Version 2.3 (if two, three, four or six arguments are used)
+2.1 (if five arguments are used)
+Function Reads real value variable
+Description The function reads a real variable, indicated by the arguments.
+The number of arguments may be varied (see Syntax above).
+The variable may be placed either in the local controller or in an external controller.
+The following arguments are used to indicate a variable:
+Argument Indicates....
+XExp1 Port number
+XExp2 PLA
+XExp3 ELA
+XExp4 DPac-load number
+XExp5 segment number
+XExp6 Cell number
+See RLV for further details.
+See also SXV, RLV, RXV and RIV.
+Example
+RValue6 = RRV( Port, PLA, ELA, DLN, Seg, Cell )
+RValue5 = RRV( Port, PLA, ELA, DLN, Cell )
+RValue4 = RRV( PLA, ELA, DLN, Cell )
+RValue3 = RRV( DLN, Seg, Cell )
+RValue2 = RRV( DLN, Cell )
+The integer variables RValue2 to RValue6 are assigned the value of variables indicated
+by Port, PLA, ELA0, DLN, Seg and Cell.
+RunTsk
+Syntax
+RunTsk XExp
+Type Instruction
+Version 1.0
+Function Starts Task
+Description Starts execution of Task with load number XExp.
+Chapter 2 EXOL Reference 89
+A Task can be started provided it is loaded and not already running. If the conditions for start
+are not met, the operation will not run and the illegal flag will be set.
+The instruction’s function corresponds to the EXOline command RUNT.
+See also BrkTsk, TLn!
+Example
+- - -
+{ Const
+X Regulator = 3
+X Init = 4
+}
+{ Code
+If Ready
+RunTsk Regulator
+Else
+RunTsk Init
+EndIf
+}
+The Task starts Task Regulator if the logic variable Ready = 1. If not, the initiation
+Task Init will be started.
+RXB
+Syntax
+RXB( XExp, IExp )
+Type Index function
+Version 2.1
+Function Reads value in BPac
+Description The function reads index value in the BPac XExp in position IExp.
+XExp is the BPac load number while IExp is a byte pointer within the BPac.
+Index values occupy one byte in the BPac.
+This function is very suitable for logging and stacking of large amounts of data.
+See also SXB, RLB, RIB and RRB
+Example
+DecI Top
+XValue = RXB( STACK, Top )
+Stack handling, where the uppermost element is taken from the stack and put in the integer
+variable XValue. The stack counter decreases.
+Stack is the load number for the BPac with the stack, while the integer variable Top points
+to the top of the stack.
+RXV (communication)
+Syntax
+90 Document's title
+RXV( XExp1, XExp2, XExp3, XExp4, XExp5, XExp6 )
+RXV( XExp1, XExp2, XExp3, XExp4, XExp6 )
+RXV( XExp2, XExp3, XExp4, XExp6 )
+RXV( XExp4, XExp5, XExp6 )
+RXV( XExp4, XExp6 )
+Type Index function
+Version 2.3 (if two, three, four or six arguments are used)
+2.1 (if five arguments are used)
+Function Reads index value variable
+Description The function reads an index variable, indicated by the arguments.
+The number of arguments may be varied (see Syntax above).
+The variable may be placed either in the local controller or in an external controller.
+The following arguments are used to indicate a variable:
+Argument Indicates....
+XExp1 Port number
+XExp2 PLA
+XExp3 ELA
+XExp4 DPac-load number
+XExp5 Segment number
+XExp6 Cell number
+See RLV for further details.
+See also SXV, RLV, RIV and RRV.
+Example
+XValue6 = RXV( Port, PLA, ELA, DLN, Seg, Cell )
+XValue5 = RXV( Port, PLA, ELA, DLN, Cell )
+XValue4 = RXV( PLA, ELA, DLN, Cell )
+XValue3 = RXV( DLN, Seg, Cell )
+XValue2 = RXV( DLN, Cell )
+The index variables XValue2 to XValue6 are assigned the value of the variables indicated
+by Port, PLA, ELA, DLN, Seg and Cell.
+Chapter 2 EXOL Reference 91
+R$V (communication)
+Syntax
+R$V( XExp1, XExp2, XExp3, XExp4 )
+R$V( XExp2, XExp3, XExp4 )
+Type String function
+Version 2.4
+Function Reads string variable
+Description The function reads a string variable, indicated by the arguments.
+The number of arguments may be varied (see Syntax above).
+The variable may be placed either in the local controller or in an external controller.
+The following arguments are used to indicate a variable:
+Argument Indicates....
+XExp1 Port number
+XExp2 PLA
+XExp3 ELA
+XExp4 String load number
+A variable in the local controller is indicated if XExp2 and XExp3 equal the local
+controller's Pla and Ela, or if both XExp2 and XExp3 are zero. Otherwise, a variable in
+an external controller is indicated.
+The port in question is assumed to be configured as master if a variable in an external
+controller is indicated. If this is not the case, the illegal flag will be set and the output value
+will be an empty string.
+The Task will be put in wait mode until the port is available when reading a variable in an
+external controller. A suitable EXOline command is then sent and the Task is again put in
+wait mode until an answer is received. Execution will then continue as usual.
+The function will give an output value as an empty string and the answer flag will be set to
+zero if an answer is not received .
+Several Tasks may, independently of each other, read and write variables in external
+controllers via the same port, with no conflicts.
+The answer flag will always be set or reset, depending on whether the reading was successful
+or not (see also Answer!).
+When reading variables in the local controller, and when XExp4 indicates non-existent
+string variables, the illegal flag will be set and the output value will be an empty string.
+If 1 =<XExp1 =<3 is not met, the illegal flag will be set and the output value will be an
+empty string.
+If three arguments are used, then Port #1 is indicated.
+Note that there is no short form for reading the local controller. If you wish to
+read variables in the local controller only, you may use the three-parameter case
+with XExp2 and XExp3 set to 0, or you may use $Var.
+See also S$V, RLV, RXV, RIV, RRV and $VAR.
+92 Document's title
+Example
+StringVar4 = R$V( Port, PLA, ELA, StrLn )
+StringVar3 = R$V( PLA, ELA, StrLn )
+The string variables StringVar3 and StringVar4 are assigned the contents of variables
+indicated by Port, PLA, ELA and StrLn.
+Scan (data type X)
+Syntax
+Scan ( XExp1, XExp2 )
+Type Index function
+Version 2.4
+Function Scans transient or communication flag.
+Description The function scans for a transient or communication flag set for some variable in VPac with
+load number XExp1.
+The function starts scanning from cell number XExp2 and keeps scanning until a set flag is
+found or until the end of the Vpac (or until cell 240 is reached).
+If a set flag is found, the current flag will be set to zero and the cell number is returned as
+output value.
+If a flag is not found, the output value will be 255.
+The VPac may contain variables of all numerical data types in any order.
+N.B. Please note, however, that XExp2 may not point to a cell "between" two variables.
+If VPac with load number XExp1 does not exist, the illegal flag will be set and the output
+value will be 255.
+You cannot use the transient flags for write and parameter variables in application
+programs in EXOflex, because they are used internally by EXOreal.
+See also EdgeL, EdgeX, EdgeI, EdgeR, ComL, ComX, ComI and ComR
+Example
+Cell = 0
+Repeat Cell = Scan ( VPacLDNo, Cell )
+If Cell < 255
+I IValue = RIV( VPacLDNo, Cell )
+.
+.
+EndIf
+Until Cell = 255
+The VPac with load number VPacLDNo will be scanned for each variable with a set
+transient or communication flag. The value, for each of these, will be read to the variable
+IValue. You may then treat the value as you wish.
+Chapter 2 EXOL Reference 93
+Scan (data type I)
+Syntax
+Scan( XExp, IExp1, IExp2 )
+Type Interger function
+Version 3.0
+EXOreal version 2.8-1-06
+Function Searches transient or communiation flag.
+Description The function searches for a tranisent or communication flag, that is set for a variable in the
+VPac with load number XExp.
+The function starts searching from cell number IExp1 and searches onwards to cell number
+IExp2, or until the VPac is finished.
+If a set flag is found, the flag is set zero and the cell number is returned as output value. If no
+set flag is found, the output value becomes -1.
+The VPac may contain variables of all numerical data types in any order.
+Note! IExp1 may not point to a cell ”between” two variables.
+If VPac with load number XExp1 does not exist, the illegal flag is set and the output value
+becomes –1.
+You cannot use the trarnisent flags for write and parameter variables in application
+programs in EXoflex, because they are used internally by EXOreal.
+See also EdgeL, EdgeX, EdgeI, EdgeR, ComL, ComX, ComI and ComR.
+Example
+Cell = 100
+LastCell = 700
+Repeat
+Cell = Scan( VPacLdNo, Cell, LastCell )
+If Cell >= 0
+I IValue = RIV( VPacLdNo, Cell )
+.
+.
+EndIf
+Until Cell < 0
+The VPac with load number VpacLdNo is searched from cell number 100 to 700, and for
+each variable that has a transient or communication flag which is set, the value is read into
+the variable Ivalue, and can be further processed as wished.
+94 Document's title
+SIB
+Syntax
+SIB ( XExp, IExp1 ) = IExp2
+Type Instruction
+Version 2.1
+Function Writes a value in a BPac
+Description The instruction writes the integer value IExp2 in the BPac XExp in position IExp1.
+XExp is the BPac’s load number, while IExp1 is a byte pointer within the BPac.
+Integer values occupy two bytes in BPacs.
+This instruction is well suited for logging and stacking large amounts of data.
+See also RIB, SLB, SXB and SRB
+Example
+SIB ( Stack, Top ) = IValue
+Top = Top + 2
+Stack handling, where the uppermost element is taken from the stack and put in the integer
+variable IValue. The stack counter increases.
+Stack is the load number for the BPac with the stack, while the integer variable Top points
+to the top of the stack.
+Sin
+Syntax
+Sin (RExp)
+Type Real function.
+Version 1.0
+Function Calculates sine
+Description The output value of the function is sine for RExp stated in radians for RExp.
+(1 degree = π/180 radians).
+If -65536 < RExp < 65536 is not met, the overflow flag will be set and the output value will
+become undetermined.
+For arc sine, see Atn.
+See also Cos, Tan and Atn
+Example
+CAT = Sin (Aangle)
+The variable Cat receives the value of sine for Angle.
+Chapter 2 EXOL Reference 95
+SIV (communication)
+Syntax
+SIV( XExp1, XExp2, XExp3, XExp4, XExp5, XExp6 ) = IExp
+SIV( XExp1, XExp2, XExp3, XExp4, XExp6 ) = IExp
+SIV( XExp2, XExp3, XExp4, XExp6 ) = IExp
+SIV( XExp4, XExp5, XExp6 ) = IExp
+SIV( XExp4, XExp6 ) = IExp
+Type Instruction
+Version 2.3 (if two, three, four or six arguments are used)
+2.1 (if five arguments are used)
+Function Writes to integer variable
+Description The value of XExp is written to an integer variable, indicated by the arguments.
+The number of arguments may be varied (see Syntax above).
+The variable may be placed either in the local controller or in an external controller.
+The following arguments are used to indicate a variable:
+Argument Indicates....
+XExp1 Port number
+XExp2 PLA
+XExp3 ELA
+XExp4 DPac-load number
+XExp5 Segment number
+XExp6 Cell number
+See also RXV, SLV, SXV and SRV
+Example
+SIV( Port, PLA, ELA, DLN, Seg, Cell ) = IValue6
+SIV( Port, PLA, ELA, DLN, Cell ) = IValue5
+SIV( PLA, ELA, DLN, Cell ) = IValue4
+SIV( DLN, Seg, Cell ) = IValue3
+SIV( DLN, Cell ) = IValue2
+Integer variables indicated by Port, PLA, ELA, DLN, Seg and Cell are assigned
+the value of the variables IValue2 to IValue6.
+96 Document's title
+SLB
+Syntax
+SLB ( XExp, IExp ) = LExp
+Type Instruction
+Version 2.1
+Function Writes value in BPac
+Description The instruction writes the logic value LExp in the BPac XExp in position IExp.
+XExp is the BPac’s load number, while IExp is a byte pointer within the BPac.
+Logic values occupy one byte in BPacs.
+This instruction is well suited for logging and stacking large amounts of data.
+See also RLB, SXB, SIB and SRB
+Example
+SLB ( Stack, Top ) = LValue
+IncI Top
+Stack handling, where the value of the logic variable LValue is put on top of the stack. The
+stack counter increases
+STACK is the load number for the BPac with the stack, while the integer variable Top points
+to the top of the stack.
+SLV (communication)
+Syntax
+SLV( XExp1, XExp2, XExp3, XExp4, XExp5, XExp6 ) = LExp
+SLV( XExp1, XExp2, XExp3, XExp4, XExp6 ) = LExp
+SLV( XExp2, XExp3, XExp4, XExp6 ) = LExp
+SLV( XExp4, XExp5, XExp6 ) = LExp
+SLV( XExp4, XExp6 ) = LExp
+Type Instruction
+Version 2.3 (if two, three, four or six arguments are used)
+2.1 (if five arguments are used)
+Function Writes to logic variable
+Description The value of LExp is written to a logic variable, indicated by the arguments.
+The number of arguments may be varied (see Syntax above).
+The variable may be placed either in the local controller or in an external controller.
+The following arguments are used to indicate a variable:
+Argument Indicates....
+XExp1 Port number
+XExp2 PLA
+Xexp3 ELA
+Chapter 2 EXOL Reference 97
+Xexp4 DPac-load number
+Xexp5 Segment number
+Xexp6 Cell number
+When the function uses two or three arguments, a variable in the local controller is always
+indicated
+A variable in the local controller is indicated if XExp2 and XExp3 equal the local
+controller's Pla and Ela, or if both XExp2 and XExp3 are zero. If not, or if four or more
+arguments are used, a variable in an external controller is indicated.
+The indicated port is assumed to be configured as a master if a variable in an external
+controller is indicated. If this is not the case, the illegal flag will be set and writing will not
+occur.
+If a variable in the local controller is indicated, the transient flag will be set for it if LExp has
+a different value than the one the controller had before assignment (see EdgeL)
+The Task will be put in wait mode until the port is available when writing to a variable in an
+external controller. A suitable EXOline command is then sent and the Task is again put in
+wait mode until an answer confirmation is received. Execution will then continue as usual.
+The answer flag will be set to zero if confirmation is not received.
+Several Tasks may, independently of each other, read and write in variables in external
+controllers via the same port, with no resulting conflicts.
+If four or more arguments are used, the answer flag will always be set or reset, depending on
+whether the writing was successful or not.
+The answer flag will never change if two or three arguments are used.
+When writing in a variable in the local controller, the illegal flag will be set and writing will
+not occur when XExp4 and XExp5 indicate a non-existent DPac or segment.
+If 1 =< XExp1 =< 3 is not met, the illegal flag will be set.
+Variables on segment zero are indicated when using two, four or five arguments.
+Port #1 is indicated when using four arguments.
+Fast Tasks Communicating instructions are not allowed in fast Tasks. Writing variables in the local
+controller is allowed.
+See also RLV, SXV, SIV and SRV.
+Example
+SLV( Port, PLA, ELA, DLN, Seg, Cell ) = LValue6
+SLV( Port, PLA, ELA, DLN, Cell ) = LValue5
+SLV( PLA, ELA, DLN, Cell ) = LValue4
+SLV( DLN, Seg, Cell ) = LValue3
+SLV( DLN, Cell ) = LValue2
+The logic variables indicated by Port, PLA, ELA, DLN, Seg and Cell, are assigned
+the value of the variables LValue2 to LValue6.
+98 Document's title
+Sq
+Syntax
+Sq (RExp)
+Type Real function
+Version 1.0
+Function Calculates square value
+Description The function’s output value is RExp squared.
+If -1.3043E19 < RExp < 1.3043E19 is not met, the overflow flag will be set and the output
+value will be undefined.
+See also SqRt
+Example
+Area = Sq (Page)
+The variable Area receives the squared value of the variable Page.
+SqRt
+Syntax
+SqRt (RExp)
+Type Real function
+Version 1.0
+Function Calculates square root
+Description The function’s output value is the square root of RExp.
+If RExp >= 0 is not fulfilled, the overflow flag will be set and the output value will be
+undefined.
+See also Sq, SqRt2!, SqRt3!
+Example
+Hyp = SqRt(Sq(Cat1) + Sq(Cat2))
+If values in the variables Cat1 and Cat2 correspond to the lengths of the catheti in a rightangled
+triangle, the value in Hyp will then correspond to the length of the hypotenuse.
+Chapter 2 EXOL Reference 99
+SqRt2!
+Syntax
+SqRt2!
+Type Real constant
+Version 2.5
+EXOreal version 1.0
+Function Returns the number √2 (≈ 1.4142...).
+Description The constant returns the value with the highest possible accuracy allowed by the real value
+format. See also SqRt, SqRt3!
+Example
+Diagonal = Side * SqRt2!
+Calculates the length of the diagonal of a square.
+SqRt3!
+Syntax
+SqRt3!
+Type Real constant
+Version 2.5
+EXOreal version 1.0
+Function Returns the number √3 (≈ 1.7321...)
+Description The constant returns the value with the highest possible accuracy allowed by the real value
+format. See also SqRt, SqRt2!
+Example
+Effect = Voltage * Current * SqRt3!
+Calculates power consumption in a three-phase circuit.
+SRB
+Syntax
+SRB ( XExp, IExp ) = RExp
+Type Instruction
+Version 2.1
+Function Writes a value in a BPac
+Description The instruction writes the real value RExp in the BPac XExp in position IExp.
+100 Document's title
+XExp is the BPac load number while IExp is a byte pointer within the BPac.
+Real values occupy four bytes in a BPac.
+This instruction is well suited for logging and stacking large amounts of data.
+See also RRB, SLB, SXB and SIB
+Example
+SRB ( Stack, Top ) = RValue
+Top = Top + 4
+Stack is the load number for the BPac with the stack, while the integer variable Top points
+to the top of the stack.
+SRV (communication)
+Syntax
+SRV( XExp1, XExp2, XExp3, XExp4, XExp5, XExp6 ) = RExp
+SRV( XExp1, XExp2, XExp3, XExp4, XExp6 ) = RExp
+SRV( XExp2, XExp3, XExp4, XExp6 ) = RExp
+SRV( XExp4, XExp5, XExp6 ) = RExp
+SRV( XExp4, XExp6 ) = RExp
+Type Instruction
+Version 2.3 (if two, three, four or six arguments are used)
+2.1 (if five arguments are used)
+Function Writes to real variable
+Description The value of RExp is written to a real variable, indicated by the arguments.
+The number of arguments may be varied (see Syntax above).
+The variable may be placed either in the local controller or in an external controller.
+The following arguments are used to indicate a variable:
+Argument Indicates....
+XExp1 Port number
+XExp2 PLA
+XExp3 ELA
+XExp4 DPac-load number
+XExp5 Segment number
+XExp6 Cell number
+See SLV for further details
+See also RXV, SLV, SXV and SIV.
+Example
+SRV( Port, PLA, ELA, DLN, Seg, Cell ) = RValue6
+SRV( Port, PLA, ELA, DLN, Cell ) = RValue5
+SRV( PLA, ELA, DLN, Cell ) = RValue4
+SRV( DLN, Seg, Cell ) = RValue3
+SRV( DLN, Cell ) = RValue2
+The real value variables indicated by Port, PLA, ELA, DLN, Seg and Cell are
+assigned the value of the variables RValue2 to RValue6.
+Chapter 2 EXOL Reference 101
+SwapI
+Syntax
+SwapI IVar1,IVar2
+Type Instruction
+Version 1.0
+Function Swaps values
+Description The instruction swaps values on the variables IVar1 and IVar2.
+The transient flags for IVar1 and IVar2 will always be set even if the values are equal.
+Nothing will happen if IVar1 and IVar2 is the same variable. The transient flags will be
+set however.
+See also SwapL, SwapX and SwapR
+Example
+SwapI Temp1, Temp2
+The integer variables Temp1 and Temp2 swap values.
+SwapL
+Syntax
+SwapL LVar1,LVar2
+Type Instruction
+Version 1.0
+Function Swaps values
+Description The instruction swaps values on the variables LVar1 and LVar2.
+The transient flags for LVar1 and LVar2 will always be set, even if the values are equal.
+Nothing will happen if LVar1 and LVar2 is the same variable. The transient flags will be
+set however.
+See also SwapX, SwapI and SwapR
+Example
+SwapL DI( Index ), FLAG1
+The logic variables DI(Index) and FLAG1 swap values.
+SwapR
+Syntax
+102 Document's title
+SwapR RVar1,RVar2
+Type Instruction
+Version 1.0
+Function Swaps values
+Description The instruction swaps values on the variables RVar1 and RVar2.
+The transient flags for RVar1 and RVar2 will always be set, even if the values are equal.
+Nothing will happen if RVar1 and RVar2 are the same variable. The transient flags will be
+set, however.
+See also SwapL, SwapX and SwapI
+Example
+SwapR AI( Index ), AI( Index+1 )
+The real variables AI(Index) and AI(Index+1) swap values.
+SwapX
+Syntax
+SwapX XVar1,XVar2
+Type Instruction
+Version 1.0
+Function Swaps values
+Description The instruction swaps values on the variables XVar1 and XVar2.
+The transient flags for XVar1 and XVar2 will always be set, even if the values are equal.
+Nothing will happen if XVar1 and XVar2 are the same variable. The transient flags will be
+set, however.
+See also SwapL, SwapI and SwapR
+Example
+SwapX Index, Operation
+The index variables Index and Operation swap values.
+Switch .. Pole .. ElsePole .. EndSwitch
+Syntax
+Chapter 2 EXOL Reference 103
+Switch XExp
+program lines0
+Pole 1
+program lines1
+Pole 2
+- - - -
+ElsePole
+program lines n
+EndSwitch
+Type Instruction
+Version 1.0
+Function Conditional execution of a number of program lines.
+Description If XExp = 0, program lines0 will be executed. Execution continues after
+EndSwitch.
+If XExp = 1, program lines1 will be executed. Execution continues after
+EndSwitch etc.
+If XExp > the number of poles, program lines n will be executed.
+Observe that the numbers of the Poles must be in numerical order with the first Pole as
+number 1. You may not skip any number.
+ElsePole and program lines n may be omitted. In this case, if XExp > the number
+of Poles, execution will continue on the row immediately following EndSwitch.
+See also If
+Example
+- - - -
+Switch DF ; DF = operation
+Set_Value = 23
+Pole 1
+Set_Value = 19
+ElsePole
+Set_Value = 17
+EndSwitch
+If DF= 0, SET_Value will get the value 23.
+If DF= 1, SET_Value will get the value 19.
+If DF>= 2, SET_Value will get the value 17.
+104 Document's title
+SXB
+Syntax
+SXB( XExp1, IExp ) = XExp2
+Type Instruction
+Version 2.1
+Function Writes a value in a BPac
+Description The instruction writes the index value XExp2 in the BPac XExp1 in position IExp.
+XExp1 is the BPac load number while IExp is a byte pointer within the BPac.
+Index values occupy one byte in a BPac.
+This instruction is well suited for logging and stacking large amounts of data.
+See also RXB, SLB, SIB and SRB
+Example
+SXB( Stack, Top ) = XValue
+IncI Top
+Stack handling, where the value of the index variable XValue is placed on top of the stack.
+The stack counter increases.
+Stack is the load number for the BPac with the stack, while the integer variable Top points
+to the top of the stack.
+SXV (communication)
+Syntax
+SXV( XExp1, XExp2, XExp3, XExp4, XExp5, XExp6 ) = XExp7
+SXV( XExp1, XExp2, XExp3, XExp4, XExp6 ) = XExp7
+SXV( XExp2, XExp3, XExp4, XExp6 ) = XExp7
+SXV( XExp4, XExp5, XExp6 ) = XExp7
+SXV( XExp4, XExp6 ) = XExp7
+Type Instruction
+Version 2.3 (if two, three, four or six arguments are used)
+2.1 (if five arguments are used)
+Function Writes to an index variable
+Description The value of XExp7 is written to an index variable, indicated by the arguments.
+The number of arguments may be varied (see Syntax above).
+The variable may be placed either in the local controller or in an external controller.
+The following arguments are used to indicate a variable:
+Argument Indicates....
+XExp1 Port number
+XExp2 PLA
+XExp3 ELA
+Chapter 2 EXOL Reference 105
+XExp4 DPac-load number
+XExp5 Segment number
+XExp6 Cell number
+See also RXV, SLV, SIV and SRV.
+Example
+SXV( Port, PLA, ELA, DLN, Seg, Cell ) = XValue6
+SXV( Port, PLA, ELA, DLN, Cell ) = XValue5
+SXV( PLA, ELA, DLN, Cell ) = XValue4
+SXV( DLN, Seg, Cell ) = XValue3
+SXV( DLN, Cell ) = XValue2
+The index variables indicated by Port, PLA, ELA, DLN, Seg and Cell are assigned
+the values of the variables XValue2 to XValue6.
+S$V (communication)
+Syntax
+S$V( XExp1, XExp2, XExp3, XExp4 ) = $Exp
+S$V( XExp2, XExp3, XExp4 ) = $Exp
+Type Instruction
+Version 2.4
+Function Writes string variable
+Description The function writes to a string variable, indicated by the arguments.
+The number of arguments may be varied (see Syntax above).
+The variable may be placed either in the local controller or in an external controller.
+The following arguments are used to indicate a variable:
+Argument Indicates....
+XExp1 Port number
+XExp2 PLA
+XExp3 ELA
+XExp4 String-load number
+A variable in the local controller is indicated if XExp2 and XExp3 equal the local
+controller's Pla and Ela, or if both XExp2 and XExp3 are zero. If not, or if four or more
+arguments are used, a variable in an external controller is indicated.
+The indicated port is assumed to be configured as master if a variable in an external
+controller is indicated. If this is not the case, the illegal flag will be set and writing will not
+occur.
+When writing to a variable in an external controller, the Task will be put in wait mode until
+the port is available. A suitable EXOline command is then sent and the Task is again put in
+wait mode until an answer confirmation is received. Execution will then continue as usual.
+Several Tasks may, independently of each other, read and write in variables in external
+controllers via the same port, with no conflicts.
+The answer flag will always be set ,or be set to zero, depending on whether the writing was
+successful or not.
+106 Document's title
+The illegal flag is set if 1 =< XExp1 =< 3, i.e. an invalid port is specified, or when writing to
+a variable in the local controller when XExp4 indicates a non-existent string variable.
+Port #1 is indicated if three arguments are used.
+Note that there is no short form for writing to the local controller. If you wish to
+write to variables in the local controller only, you may use the three parameter
+case, with XExp2 and XExp3 set to 0, or you may use $Var.
+Fast Tasks The function is not allowed in fast Tasks.
+See also R$V, SLV, SXV, SIV, SRV and $VAR.
+Example
+S$V( Port, PLA, ELA, StrLdn ) = StringVar4
+S$V( PLA, ELA, StrLdn ) = StringVar3
+The string variables indicated by Port, PLA, ELA and StrLdn are assigned the
+contents of StringVar3 and StringVar4.
+Tab!
+Syntax
+Tab!
+Type String constant
+Version 2.0
+Function Returns a tabulator string
+Description The constant returns a string with a character, that when e.g. sent to a printer,,according to
+convention, means that the printer should continue to write at the next tabulator position.
+The string consists of one character and appears as follows:
+[9] (ASCII values)
+See also LF! and FF!
+Example
+Text = "Motor Alarm:" + Tab!
+LPrint$ Port, Text
+A tabulator string is added to the text Motor Alarm:. It is then put in the string variable
+Text, which is sent to a printer.
+Tan
+Syntax
+Tan (RExp)
+Type Real function
+Version 1.0
+Function Calculates tangent
+Chapter 2 EXOL Reference 107
+Description The function’s output value is the tangent for RExp, stated in radians.
+(1 degree = π/180 radians )
+If -65536 < RExp < 65536 is not met, the overflow flag will be set and the output value will
+be undefined.
+See also Sin, Cos and Atn
+Example
+Cat1 = Tan (Angle) * Cat2
+The variable Cat1 receives the value of the product of Cat2 and tangent for Angle.
+TimePer
+Syntax
+TimePer ( XExp1, XExp2 )
+Type Logic function
+Version 1.0
+Function Checks time periods
+Description The function TimePer checks if the current time is within a certain interval of time. If this
+is the case, the output value will be one (1). If not, it will be zero (0).
+Time periods may be checked for year, month, date, day of week, number of week, hour,
+minute and/or second.
+XExp is a BPac load number. TimePer works with a data structure in this BPac. The BPac
+should have the following appearance:
+(NR :XY :X
+M
+:XD :X
+W
+:XWD :XH :X
+M
+:XS :XY :X
+M
+:XD :XW :XWD :XH :XM :XS)
+#0 .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. ..
+#1 .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. ..
+- - -
+#n .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. ..
+Each block (or row) in the data structure defines a time period.
+Each block is divided into two groups with eight parameters each. They have the following
+meaning:
+Parameter Meaning
+XY Year
+XM Month
+XD Date
+XW Number of Week
+XWD Day of Week
+XH Hour
+XM Minute
+XS Second
+108 Document's title
+If a parameter has the value 255, it means that it is not defined and will therefore not be
+checked by TimePer.
+Each group states a point of time. The point of time in the right hand group is called OFF
+time, while the point of time in the left hand group is called ON time.
+If the current point of time (in the controller’s real time clock), is in the time interval from
+OFF time to ON time for the block XExp2, the function's output value will be one (1). If not,
+it will be zero (0).
+Example
+{ BPac
+Name= TmeTab_13
+LN= 13
+DEF_X= 255
+}
+{ ValueS
+(NR :XY :XM :XD :XW :XWD :XH :XM :XS :XY :XM :XD :XW :XWD :XH :XM :XS)
+#0 86 08 16 33 5 11 50 10 * * * * * 17 30 *
+#1 * * * * * 9 30 * * * * * * 16 30 *
+#2 * * * * * 10 00 * * * * * * 12 15 *
+#3 * 3 27 * * * * * * 4 1 * * * * *
+#4 * 7 1 * * * * * * 7 27 * * * * *
+#5 * 5 20 * * * * * * 5 25 * * * * *
+#6 * * * * 1 * * * * * * * * 5 * *
+}
+{ Task
+..
+DQ1 = TimePer (TmeTab_13,1) And TimePer(TmeTab_13,6)
+DQ2 = TimePer(TmeTab_13,4)
+The logic variable DQ1 has the value of a weekday (Monday through Friday) between the
+hours of 9.30 and 16.30. Otherwise it has the value zero.
+The variable DQ2 has the value one (1) during the period of July 1 to July 27.
+Chapter 2 EXOL Reference 109
+TLN!
+Syntax
+TLN!
+Type Index constant
+Version 2.7
+EXOreal version 1.0
+Function Returns the local Task’s load number.
+Description The constant is calculated upon conversion, and is intended primarily for use in objects builtin
+into general Tasks, for which the programmer does not know the load number.
+The constant cannot be used in procedure Tasks.
+See also Priority!, Cycle!
+Example
+x ServerMBx = TLn!
+MBxInit TLn!
+True!
+Syntax
+True!
+Type Logic constant
+Version 2.7
+EXOreal version 1.0
+Function Returns 1 (True).
+Description The constant returns the logic value 1 (True).
+See also False!
+Example
+SumAla = False!
+UpLooP ix from 1 to NumAla
+if Ala(ix)
+SumAla = True!
+EndIf
+EndLoop
+SumAla becomes true if any of the logic variables Ala(1) to Ala(NumAla)are true. If
+they are not, SumAla will be false.
+110 Document's title
+Tsk
+Syntax
+Tsk XExp
+Type Logic function
+Version 1.0. Function Returns Task status
+Description The function’s output value will be 1 if a Task with load number XExp is started.
+If the Task is not running, but is started with RunTsk (EXOL) or RUNT (EXOline), the
+function will immediately receive the value one (1).
+If the Task is running but is stopped with BrkTsk (EXOL) or BRKT (EXOline), the function
+will not receive the output value zero until a started Task cycle (if any) has run to the end of
+the Task.
+The output value zero is received if the Task is not loaded or installed. The illegal flag will
+however, not be set.
+See also RunTsk and BrkTsk
+Example
+RunTsk Runtime
+Wait Not Tsk(Runtime)
+Starts the Task Service, which is assumed to stop itself in the Task. As soon as this has
+occurred the execution will continue after Wait.
+UpLoop ... EndLoop
+Syntax
+UpLoop XVar From XExp1 To XExp2
+program lines
+EndLoop
+Type Instruction
+Version 1.0
+Function Repeats a number of program lines
+Description A Loop structure using XVar as a counter. XVar is first assigned the value of XExp1.
+Program lines are then executed until XVar > XExp2. XVar increases by one (1) for
+each loop. XVar = XExp2 the last time program lines are executed.
+If XVar does not change inside the loop, program lines will then be executed XExp2 -
+XExp1 + 1 times and XVar will be equal to XExp2 + 1 after EndLoop.
+The expressions are calculated once in the beginning of the instruction.
+Changing the value of XVar inside the loop to enable adjustment of the number of loops is
+allowed.
+XVar cannot be an element in an array.
+Please note that XExp2 must not equal 255.
+The transient flag for XVar is set each time program lines are started (see EdgeX).
+Chapter 2 EXOL Reference 111
+See also DownLoop and Loop
+Example
+UpLoop Port From 0 To Number-1
+Out(Port) = Value(Port)
+EndLoop
+If Number =4 then:
+Out(0) = Value(0)
+Out(1) = Value(1)
+Out(2) = Value(2)
+Out(3) = Value(3)
+ValidVariable
+Syntax
+ValidVariable( Var )
+Type Logic function
+Version 3.0
+EXOreal version 1.0
+Function If the variable Var exists, 1 is returned, otherwise 0.
+Description The function’s output value becomes 1 if the variable exists.
+The function is intended for being used together with CompileIf to skip code sections if
+objects are missing.
+Var can be an element in an array, but not the array itself. See example below:
+ValidVariable( Var(0) )
+See also CompileIf
+Wait
+Syntax
+Wait LExp
+Type Instruction
+Version 1.0
+Function Pauses execution if certain conditions are met
+Description Execution of the Task pauses at this instruction until the logic expression LExp returns the
+result 1.
+112 Document's title
+While the Task pauses, it is in wait mode and all other Tasks execute normally. The
+expression LExp is calculated each 100ms. Other Tasks are, however, interrupted for this
+calculation only if the priority of the local Task is higher than the other's. In other cases, the
+expression is calculated when these Tasks have completed execution or when they
+themselves enter wait mode.
+The Task is activated within 100ms after the expression has become one (1).
+Fast Tasks The instruction Wait is not allowed in fast Tasks.
+Example
+Wait DI1
+The Task pauses the execution until DI1 = 1.
+While .. EndWhile
+Syntax
+While LExp
+program lines
+EndWhile
+Type Instruction
+Version 2.0
+EXOreal version 1.0
+Function Repeats a number of program lines
+Description Program lines between While and EndWhile are repeated as long as LExp = 1.
+Program lines are not executed at all if LExp = 0 the first time While is executed.
+Please note that it is very important that LExp receives the value zero within a
+short period of time. If this does not happen, the Task will execute continuously
+and all other Tasks in the controller with lower priority will not be able to
+execute at all.
+It is however, permissible be to allow LExp to have the value for a longer period if
+program lines contain an instruction or a function which places the Task in wait mode.
+See also Repeat
+Example
+Index = 0
+While BKL( Index ) >= 0
+IncX Index
+EndWhile
+The array BKL( .. ) with integer variables is examined until an element with a negative
+value is found. The index variable Index points to the end of the routine in the element
+found.
+X
+Syntax
+Chapter 2 EXOL Reference 113
+X XVar = XExp
+Type Instruction
+Version 1.0
+Function Variable assignment
+Description XExp is calculated and the received value is placed in the index variable XVar.
+With EXOl verson 3.0 or later versions, the assignment may be carried out without the type
+mark X. The syntax is then XVar = XExp.
+XVar may be part of XExp. The value of XVar before the assignment is then used.
+The transient flag for XVar will be set if XExp has a value other than the one XVar had
+before the assignment (see EdgeX).
+See also L, I, R and $
+Example
+X Contact = 17
+The index variable Contact is assigned the value 17.
+@
+Syntax
+@( $VAR )
+Type Index function
+Version 2.0
+Function Calculates string load number
+Description The function’s output value is the string load number for $Var, given as a numeric index
+number.
+Even indexed $Vars can be used.
+See also $Var
+Example
+AlaTextLn = @( AlaText0 )
+The load number for the text AlaText0 is placed in the variable AlaTextLn. If
+AlaTextLn is read by a master controller via EXOline, then the master controller can read
+an alarm text in this controller by adding the alarm point number with this number and then
+use R$V.
+$
+Syntax
+$ $Var = $Exp
+114 Document's title
+Type Instruction
+Version 2.0
+Function Variable assignment
+Description $Exp is calculated and the received string is put in the string variable $Var.
+With EXOl version 3.0 or later versions, the assignment may be carried out without the type
+mark $. The syntax is then: $Var = $Exp.
+$Var may be part of $Exp. The value of $Var before the assignment is then used.
+The transient flag for $Var will be set if $Exp is not the same as $Var was before the
+assignment (see Edge$).
+See also L, X, I and R
+Example
+$ Contact = "Master"
+The string variable Contact will be assigned the text Master.
+$Var (function)
+Syntax
+$Var( XExp )
+Type String function
+Version 2.0
+Function Reads string variable
+Description The function’s output string of the function will be the contents of a string variable with the
+string load number XExp.
+The illegal flag will be set and the output string will be empty if the variable with string load
+number XExp is missing.
+See also @ and the instruction $Var
+Example
+Text = $Var( StrLdNo )
+The text in a string variable with string load number StrLdNo is written to the variable
+Text.
+$Var instruction
+Syntax
+$Var( XExp ) = $Exp
+Type Instruction
+Version 2.0
+Function Writes to string variable
+Description The text in $Exp is written to a string variable with the string load number XExp.
+Chapter 2 EXOL Reference 115
+The illegal flag will be set and there will no assignment if the variable with string load
+number XExp is missing.
+See also @ and the function $Var
+Example
+$Var( StrLdNo ) = Text
+The text in string variable Text is written to string variable with string load number
+StrLdNo.

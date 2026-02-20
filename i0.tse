@@ -1,0 +1,7 @@
+Q_Heat = DO_VP[0]
+
+IF DO_VV <> 0
+  Q_VV = 0
+ELSE
+  Q_VV = 1
+ENDIF

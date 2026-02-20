@@ -1,0 +1,155 @@
+; ============================================================
+; GM_Sceduler.tse  (Task: Normal 2s)
+; Prisviktad catch-up - EXO-safe (ASCII only, no OR)
+; ============================================================
+; NOTE: Keep comments ASCII-only and start them with ';' in column 1.
+; Any non-ASCII (arrows, en-dash, a/ao/oe) can confuse the parser.
+;
+; Dry-run log (ASCII)
+; -------------------
+; Start: GM_true = -80, GM_sched = -80
+; Assumption: without heat GM_true changes by -2 per min,
+; with heat +3 per min (illustration only).
+;
+; Min 0-10: EXTREME_EXP = 1, allow_heat = 0, BETA_GM = 0.0
+;   => GM_sched frozen at -80, GM_true drifts to about -100.
+;
+; Min 11-20: cheap rank 2, BETA_GM = 0.5
+;   => GM_true rises ~+3/min, GM_sched follows halfway.
+;
+; Min 21-30: EXTREME_CHEAP = 1, BETA_GM = 1.0
+;   => GM_sched catches up fast (limited by STEP_UP_GM/STEP_DN_GM).
+;
+; Summary:
+; - Expensive hours: GM_sched frozen
+; - Cheap hours: controlled catch-up
+; - Extreme cheap: fast catch-up
+; ============================================================
+; OBS: Alla rader som inte är kod måste börja med semikolon (;).
+; Torrsim-kommentarerna är för dokumentation - ASCII-säkra.
+;
+; Torrsim (för ARBETSLOGG.md)
+; ---------------------------
+; Start GM_true = -80, GM_sched = -80
+; Utan varme faller GM_true ca -2/min, med varme stiger ca +3/min.
+;
+; Minut 0-10: EXTREME_EXP=1, allow_heat=0, BETA_GM=0.0
+;   GM_sched fryser, GM_true faller vidare till -100.
+;
+; Minut 11-20: Billigt (rank=2), BETA_GM=0.5
+;   GM_true stiger +3/min, GM_sched foljer halvvas.
+;
+; Minut 21-30: EXTREME_CHEAP=1, BETA_GM=1.0
+;   GM_sched ikapp snabbt (klippt av STEP_UP_GM/STEP_DN_GM).
+;
+; Slutsats:
+; - Dyra timmar: GM_sched fryser.
+; - Billiga timmar: kontrollerad catch-up.
+; - Ext billiga timmar: snabb ikapp.
+; ============================================================
+
+; --- Rank nu (0..95) från vald work-ström ---
+PRICE_RANK_NOW = RANK_W[P_NOW]
+
+; --- Enkla extrema flaggor för GM (skalar 96p) ---
+EXTREME_CHEAP = 0
+IF PRICE_RANK_NOW <= 3
+  EXTREME_CHEAP = 1
+ENDIF
+
+EXTREME_EXP = 0
+IF PRICE_RANK_NOW >= 92
+  EXTREME_EXP = 1
+ENDIF
+
+
+IF Minute <> GM_last_minute
+  ; --- 1) Fel och integrering (1 gang per minut) ---
+  e = T_fw_meas - T_fw_set
+  GM_true = GM_true + e
+
+  ; Klamp
+  IF GM_true > GM_BUF_MAX
+    GM_true = GM_BUF_MAX
+  ENDIF
+  IF GM_true < 0.0 - GM_EMERG
+    GM_true = 0.0 - GM_EMERG
+  ENDIF
+
+  ; Derivata
+  dGMdt = GM_true - GM_true_prev
+  GM_true_prev = GM_true
+
+  ; --- 2) Prisviktad catch-up for GM_sched ---
+  BETA_GM = 0.05
+
+  IF PRICE_RANK_NOW <= 7
+    BETA_GM = 0.25
+  ENDIF
+  IF PRICE_RANK_NOW <= 3
+    BETA_GM = 0.5
+  ENDIF
+
+  IF EXTREME_CHEAP = 1
+    BETA_GM = 1.0
+  ENDIF
+
+  IF allow_heat = 0
+    BETA_GM = 0.0
+  ENDIF
+  IF EXTREME_EXP = 1
+    BETA_GM = 0.0
+  ENDIF
+
+  ; Diff och ratelimit
+  GM_diff = GM_true - GM_sched
+  GM_diff_clip = GM_diff
+  IF GM_diff_clip > STEP_UP_GM
+    GM_diff_clip = STEP_UP_GM
+  ENDIF
+  IF GM_diff_clip < STEP_DN_GM
+    GM_diff_clip = STEP_DN_GM
+  ENDIF
+
+  ; Uppdatera GM_sched
+  GM_sched = GM_sched + BETA_GM * GM_diff_clip
+
+  ; Klamp GM_sched
+  IF GM_sched > GM_BUF_MAX
+    GM_sched = GM_BUF_MAX
+  ENDIF
+  IF GM_sched < 0.0 - GM_EMERG
+    GM_sched = 0.0 - GM_EMERG
+  ENDIF
+
+  ; --- 3) EMERG-flagga ---
+  IF GM_true <= 0.0 - GM_EMERG
+    EMERG = 1
+  ELSE
+    EMERG = 0
+  ENDIF
+
+ ; --- 4) HEAT_DEMAND ---
+
+; 1) Hard off
+IF allow_heat = 0
+  HEAT_DEMAND = 0
+ELSE
+
+  ; 2) Hysteresis with memory
+  IF HEAT_DEMAND = 0
+    IF GM_sched <= GM_START
+      HEAT_DEMAND = 1
+    ENDIF
+  ELSE
+    IF GM_sched >= GM_STOP
+      HEAT_DEMAND = 0
+    ENDIF
+  ENDIF
+
+ENDIF
+
+
+  ; --- 5) Bokslut ---
+  GM_last_minute = Minute
+ENDIF

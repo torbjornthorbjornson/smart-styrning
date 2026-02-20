@@ -1,0 +1,49 @@
+; =========================================
+; Elpanna-vakt (DO_ELP)
+; Start:
+;   HEAT_DEMAND = 1
+;   GM_sched <= STAGE_TEL         ; djup minus-GM, "nöd"
+;   T_fw_meas <= T_fw_set - EL_HYST
+;   P_running <= P_PEAK_TARGET - P_HEADROOM
+; Stop:
+;   HEAT_DEMAND = 0
+;   OR GM_sched >= STAGE_TEL + STAGE_HYST
+;   OR T_fw_meas >= T_fw_set
+; Respekterar allow_heat = 0
+; =========================================
+
+; safety: disable heat means disable ELP
+IF allow_heat = 0
+  DO_ELP = 0
+ENDIF
+
+; --------- START LOGIC ---------
+IF DO_ELP = 0
+  IF HEAT_DEMAND = 1
+    IF GM_sched <= STAGE_TEL
+      IF T_fw_meas <= T_fw_set - EL_HYST
+        IF P_running <= P_PEAK_TARGET - P_HEADROOM
+          DO_ELP = 1
+        ENDIF
+      ENDIF
+    ENDIF
+  ENDIF
+ENDIF
+
+; --------- STOP LOGIC ---------
+IF DO_ELP = 1
+  ; stop if heat not demanded
+  IF HEAT_DEMAND = 0
+    DO_ELP = 0
+  ENDIF
+
+  ; stop if GM has recovered above tel+hyst
+  IF GM_sched >= STAGE_TEL + STAGE_HYST
+    DO_ELP = 0
+  ENDIF
+
+  ; stop when we have reached setpoint
+  IF T_fw_meas >= T_fw_set
+    DO_ELP = 0
+  ENDIF
+ENDIF

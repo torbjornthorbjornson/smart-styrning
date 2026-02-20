@@ -1,0 +1,7 @@
+If Dryroom = 1
+  Shunt_Dryroom = 100
+  Fan_Dryroom = 1
+Else
+  Shunt_Dryroom = 0
+  Fan_Dryroom = 0
+Endif

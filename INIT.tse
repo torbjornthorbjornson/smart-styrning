@@ -1,0 +1,943 @@
+; ===== INIT (körs bara vid uppstart) =====
+If inivarden=0
+
+
+
+  ; --- Clamp av antal pumpar ---
+  IF CFG_PUMPS_TOTAL < 0
+    CFG_PUMPS_TOTAL = 0
+  ENDIF
+  IF CFG_PUMPS_TOTAL > 8
+    CFG_PUMPS_TOTAL = 8
+  ENDIF
+
+  ; --- Clamp av dygnstimmar (0..24) ---
+  IF CFG_HEAT_HOURS < 0
+    CFG_HEAT_HOURS = 0
+  ENDIF
+  IF CFG_HEAT_HOURS > 24
+    CFG_HEAT_HOURS = 24
+  ENDIF
+  IF CFG_VV_HOURS < 0
+    CFG_VV_HOURS = 0
+  ENDIF
+  IF CFG_VV_HOURS > 24
+    CFG_VV_HOURS = 24
+  ENDIF
+
+  ; --- Pris/fallback-status ---
+  PRICE_OK = 0
+  LAST_PRICE_STAMP = 0
+  PRICE_STAMP = 0
+  LAST_PRICE_CHECK_MIN = X_ZERO
+  PRICE_MISS_MIN = 999
+
+  ; --- Defaults om ej satt via HMI ---
+  IF CFG_HEAT_HOURS = 0
+    CFG_HEAT_HOURS = 4
+  ENDIF
+  IF CFG_VV_HOURS = 0
+    CFG_VV_HOURS = 2
+  ENDIF
+  IF CFG_PUMPS_TOTAL = 0
+    CFG_PUMPS_TOTAL = 1
+  ENDIF
+  ; CFG_ALLOW_OVERLAP lämnas som HMI ställt (0/1)
+
+  ; --- Latchar/räknare ---
+  allow_heat_latch = 1
+  allow_vv_latch = 1
+  NUM_RUNNING = 0
+  P_running = 0.0
+
+ 
+  IF GM_START = 0.0
+    GM_START = 120
+  ENDIF
+  IF GM_STOP = 0.0
+    GM_STOP = 20
+  ENDIF
+  IF GM_EMERG = 0.0
+    GM_EMERG = 600
+  ENDIF
+  IF GM_BUF_MAX = 0.0
+    GM_BUF_MAX = 200
+  ENDIF
+  IF EL_HYST = 0.0
+    EL_HYST = 0.5
+  ENDIF
+  IF P_HEADROOM = 0.0
+    P_HEADROOM = 1.5
+  ENDIF
+  IF P_PEAK_TARGET = 0.0
+    P_PEAK_TARGET = 18.0
+  ENDIF
+  IF B_PREHEAT = 0.0
+    B_PREHEAT = 3.0
+  ENDIF
+  IF B_RELIEF = 0.0
+    B_RELIEF = -1.0
+  ENDIF
+k = 0.1    ; justerbar i HMI
+a = 1.0    ; offset
+
+  ; --- VV-defaults (om 0) ---
+  IF VV_TARGET_M = 0.0
+    VV_TARGET_M = 55.0
+  ENDIF
+  IF VV_TARGET_E = 0.0
+    VV_TARGET_E = 55.0
+  ENDIF
+  IF VV_MIN = 0.0
+    VV_MIN = 40.0
+  ENDIF
+  IF MORNING_H = 0
+    MORNING_H = 6
+  ENDIF
+  IF EVENING_H = 0
+    EVENING_H = 19
+  ENDIF
+  IF LEGIO_H = 0
+    LEGIO_H = 2
+  ENDIF
+  IF VV_MAX_CYCLES = 0
+    VV_MAX_CYCLES = 3
+  ENDIF
+  IF VV_MAX_RUN_MIN = 0
+    VV_MAX_RUN_MIN = 180
+  ENDIF
+  IF VV_GAP_MAX_MIN = 0
+    VV_GAP_MAX_MIN = 360
+  ENDIF
+  IF VV_HYST = 0.0
+    VV_HYST = 2.0
+  ENDIF
+
+  ; --- Stagingtrösklar (bara om 0.0) ---
+  IF STAGE_T1 = 0.0
+    STAGE_T1 = -30
+  ENDIF
+  IF STAGE_T2 = 0.0
+    STAGE_T2 = -60
+  ENDIF
+  IF STAGE_T3 = 0.0
+    STAGE_T3 = -90
+  ENDIF
+  IF STAGE_T4 = 0.0
+    STAGE_T4 = -120
+  ENDIF
+  IF STAGE_T5 = 0.0
+    STAGE_T5 = -150
+  ENDIF
+  IF STAGE_T6 = 0.0
+    STAGE_T6 = -190
+  ENDIF
+  IF STAGE_T7 = 0.0
+    STAGE_T7 = -220
+  ENDIF
+  IF STAGE_T8 = 0.0
+    STAGE_T8 = -250
+  ENDIF
+  IF STAGE_TEL = 0.0
+    STAGE_TEL = -600
+  ENDIF
+  IF STAGE_HYST = 0.0
+    STAGE_HYST = 10
+  ENDIF
+
+  ; --- Min on/off (sätt om 0) ---
+  IF min_on[1] = 0
+    min_on[1] = 300
+  ENDIF
+  IF min_on[2] = 0
+    min_on[2] = 300
+  ENDIF
+  IF min_on[3] = 0
+    min_on[3] = 300
+  ENDIF
+  IF min_on[4] = 0
+    min_on[4] = 300
+  ENDIF
+  IF min_on[5] = 0
+    min_on[5] = 300
+  ENDIF
+  IF min_on[6] = 0
+    min_on[6] = 300
+  ENDIF
+  IF min_on[7] = 0
+    min_on[7] = 300
+  ENDIF
+  IF min_on[8] = 0
+    min_on[8] = 300
+  ENDIF
+
+  IF min_off[1] = 0
+    min_off[1] = 300
+  ENDIF
+  IF min_off[2] = 0
+    min_off[2] = 300
+  ENDIF
+  IF min_off[3] = 0
+    min_off[3] = 300
+  ENDIF
+  IF min_off[4] = 0
+    min_off[4] = 300
+  ENDIF
+  IF min_off[5] = 0
+    min_off[5] = 300
+  ENDIF
+  IF min_off[6] = 0
+    min_off[6] = 300
+  ENDIF
+  IF min_off[7] = 0
+    min_off[7] = 300
+  ENDIF
+  IF min_off[8] = 0
+    min_off[8] = 300
+  ENDIF
+
+  ; --- Stegeffekter (sätt om 0.0) ---
+  IF P_step[1] = 0.0
+    P_step[1] = 3.0
+  ENDIF
+  IF P_step[2] = 0.0
+    P_step[2] = 3.0
+  ENDIF
+  IF P_step[3] = 0.0
+    P_step[3] = 3.0
+  ENDIF
+  IF P_step[4] = 0.0
+    P_step[4] = 3.0
+  ENDIF
+  IF P_step[5] = 0.0
+    P_step[5] = 3.0
+  ENDIF
+  IF P_step[6] = 0.0
+    P_step[6] = 3.0
+  ENDIF
+  IF P_step[7] = 0.0
+    P_step[7] = 3.0
+  ENDIF
+  IF P_step[8] = 0.0
+    P_step[8] = 3.0
+  ENDIF
+
+  ; --- Säkert uppstartsläge ---
+  DO_VP[1] = 0
+  on_timer[1] = 0
+  off_timer[1] = 0
+
+  DO_VP[2] = 0
+  on_timer[2] = 0
+  off_timer[2] = 0
+
+  DO_VP[3] = 0
+  on_timer[3] = 0
+  off_timer[3] = 0
+
+  DO_VP[4] = 0
+  on_timer[4] = 0
+  off_timer[4] = 0
+
+  DO_VP[5] = 0
+  on_timer[5] = 0
+  off_timer[5] = 0
+
+  DO_VP[6] = 0
+  on_timer[6] = 0
+  off_timer[6] = 0
+
+  DO_VP[7] = 0
+  on_timer[7] = 0
+  off_timer[7] = 0
+
+  DO_VP[8] = 0
+  on_timer[8] = 0
+  off_timer[8] = 0
+  
+; ===== GM init (PowerUp) =====
+GM_true       = 0.0
+GM_true_prev  = 0.0
+GM_sched      = 0.0
+dGMdt         = 0.0
+e             = 0.0
+
+GM_START      = 120    ; start när GM_sched <= -120
+GM_STOP       = 20     ; stop när GM_sched >= -20
+GM_EMERG      = 600    ; nöd om GM_true <= -600
+GM_BUF_MAX    = 200    ; max positiv buffert
+
+
+  STEP_UP_GM   = 20.0     ; +GM/min (mot mindre underskott)
+  STEP_DN_GM   = -40.0    ; -GM/min (mot större underskott)
+  BETA_GM      = 0.05     ; default (skrivs ändå över i GM_Sceduler)
+  GM_diff      = 0.0
+  GM_diff_clip = 0.0
+  
+; ==== INIT - engångsvärden ====
+HEAT_ALLOWED = 0
+VV_ALLOWED   = 0
+EXTREME_CHEAP = 0
+EXTREME_EXP   = 0
+
+allow_heat = 0
+allow_vv   = 0
+
+
+
+VV_LEGIO_ACTIVE  = 0
+VV_CYCLES_TODAY  = 0
+VV_RUN_MIN_TODAY = 0
+VV_GAP_MIN       = 0
+VV_DAILY_RESET   = 0
+
+VV_LEGIO_ACTIVE  = 0
+VV_CYCLES_TODAY  = 0
+VV_RUN_MIN_TODAY = 0
+VV_GAP_MIN       = 0
+VV_DAILY_RESET   = 0
+
+
+; Standard - init
+PRICE_RANK_NOW = 99
+
+ 
+
+
+ VVP_PLAN_LAST_MIN = Minute
+ 
+ CFG_USE_PI_MASKS        = 0
+ CFG_EXTREME_BONUS       = 0
+ CFG_FREEZE_OUTSIDE_PLAN = 1
+ PLAN_COMPUTED_DATE      = 0
+ PLAN_SOURCE             = 0
+
+  ; LÄGG I DIN INIT-KOD (inivarden=1):
+ BOOT_SEQ = BOOT_SEQ + 1
+ PI_PUSH_REQ = 1
+ PI_PUSH_ACK = 0
+ BOOT_HOUR = Hour
+ BOOT_MIN = Minute
+ PUSH_last_minute=minute
+ 
+VV_TARGET_E_CL = 50
+VV_TARGET_M_CL = 50
+VV_MIN_CLAMP = 42
+
+VV_EMERG_MINSAFE_ACTIVE = 0
+IF VV_MINSAFE_DIFF_CL = 0.0
+  VV_MINSAFE_DIFF_CL = 5.0
+ENDIF
+
+  
+  
+
+ 
+; ===== INIT (vid uppstart) =====
+
+; Skalor
+ADM_DT_MIN   = -20.0
+ADM_DT_MAX   =  15.0
+ADM_IDX_MIN  = 0
+ADM_IDX_MAX  = 35
+
+; Planerings- och lärtid
+ADM_PLAN_H   = 13
+ADM_PLAN_M   = 5
+ADM_TRAIN_H  = 0
+ADM_TRAIN_M  = 0
+
+; Mognad
+ADM_MIN_LEARN_DAYS = 2
+ADM_LEARN_COUNT    = 0
+ADM_READY          = 0
+
+; Init-loop
+adm_idx_fill = ADM_IDX_MIN
+ADM_IDX      = ADM_IDX_MIN
+ADM_INIT_LOOP = 1
+
+; Driftid
+ADM_H_USED = 0.0
+
+; Startvärden kurva
+IF ADM_C0_COLD_H = 0.0
+  ADM_C0_COLD_H = 16.0
+ENDIF
+IF ADM_C0_WARM_H = 0.0
+  ADM_C0_WARM_H = 2.0
+ENDIF
+; Förinställda linjära profiler (sparbara)
+IF ADM_PROF1_COLD_H = 0.0
+  ADM_PROF1_COLD_H = 12.0
+ENDIF
+IF ADM_PROF1_WARM_H = 0.0
+  ADM_PROF1_WARM_H = 1.0
+ENDIF
+IF ADM_PROF2_COLD_H = 0.0
+  ADM_PROF2_COLD_H = 16.0
+ENDIF
+IF ADM_PROF2_WARM_H = 0.0
+  ADM_PROF2_WARM_H = 2.0
+ENDIF
+IF ADM_PROF3_COLD_H = 0.0
+  ADM_PROF3_COLD_H = 22.0
+ENDIF
+IF ADM_PROF3_WARM_H = 0.0
+  ADM_PROF3_WARM_H = 10.0
+ENDIF
+
+
+; Segment defaults
+IF ADM_SEG_PT0_H = 0.0
+  ADM_SEG_PT0_H = 16.0
+ENDIF
+IF ADM_SEG_PT1_H = 0.0
+  ADM_SEG_PT1_H = 12.0
+ENDIF
+IF ADM_SEG_PT2_H = 0.0
+  ADM_SEG_PT2_H = 9.0
+ENDIF
+IF ADM_SEG_PT3_H = 0.0
+  ADM_SEG_PT3_H = 7.0
+ENDIF
+IF ADM_SEG_PT4_H = 0.0
+  ADM_SEG_PT4_H = 5.0
+ENDIF
+IF ADM_SEG_PT5_H = 0.0
+  ADM_SEG_PT5_H = 3.5
+ENDIF
+IF ADM_SEG_PT6_H = 0.0
+  ADM_SEG_PT6_H = 2.0
+ENDIF
+
+; Linjär lutning
+ADM_C0_SLOPE = (ADM_C0_WARM_H - ADM_C0_COLD_H) / CvI(ADM_IDX_MAX - ADM_IDX_MIN)
+
+; Första planering
+ADM_FIRST_PLAN_DONE = 0
+ADM_SAVE_PROFILE = 0
+
+; ===== Viktigt =====
+; Lägg neutralt startvärde så systemet inte står still första 20-60 sek
+ADM_H_REQ = 8
+
+;efterdetta troligen skrot
+
+; ===== ADM defaults (endast om 0.0) =====
+IF ADM_ALPHA = 0.0
+  ADM_ALPHA = 0.20
+ENDIF
+IF ADM_DB_HOURS = 0.0
+  ADM_DB_HOURS = 0.25
+ENDIF
+IF ADM_DB_GM = 0.0
+  ADM_DB_GM = 0.05
+ENDIF
+IF ADM_W_HOURS = 0.0
+  ADM_W_HOURS = 1.0
+ENDIF
+IF ADM_W_GM = 0.0
+  ADM_W_GM = 1.0
+ENDIF
+IF ADM_C1_STEP_MAX = 0.0
+  ADM_C1_STEP_MAX = 1.0
+ENDIF
+IF ADM_C1_SMOOTH = 0.0
+  ADM_C1_SMOOTH = 0.5
+ENDIF
+IF ADM_C1_TOTAL_MIN = 0.0
+  ADM_C1_TOTAL_MIN = 0.5
+ENDIF
+IF ADM_C1_TOTAL_MAX = 0.0
+  ADM_C1_TOTAL_MAX = 24.0
+ENDIF
+
+; init av GM-dygnsstatistik
+ADM_GM_SUM_TODAY   = 0.0
+ADM_GM_COUNT_TODAY = 0
+ADM_GM_MIN_TODAY   = 0.0
+ADM_GM_MAX_TODAY   = 0.0
+
+; init av overlay om du vill vara extra trygg
+; (kan hoppas om du redan nollar i din loop)
+; I = ADM_IDX_MIN
+; WHILE I <= ADM_IDX_MAX
+;   ADM_C1[I] = 0.0
+;   I = I + 1
+; ENDWHILE
+
+;
+; ===== INIT (körs bara vid uppstart) =====
+
+
+  ; (befintlig kod orörd ovanför) ...
+
+  ; ===== INIT för ADM "last"-variabler =====
+  ADM_CURVE_MODE_LAST = -1
+  ADM_PROFILE_LAST    = -1
+  ADM_C0_COLD_LAST    = ADM_C0_COLD_H
+  ADM_C0_WARM_LAST    = ADM_C0_WARM_H
+  ADM_SEG_PT0_LAST    = ADM_SEG_PT0_H
+  ADM_SEG_PT1_LAST    = ADM_SEG_PT1_H
+  ADM_SEG_PT2_LAST    = ADM_SEG_PT2_H
+  ADM_SEG_PT3_LAST    = ADM_SEG_PT3_H
+  ADM_SEG_PT4_LAST    = ADM_SEG_PT4_H
+  ADM_SEG_PT5_LAST    = ADM_SEG_PT5_H
+  ADM_SEG_PT6_LAST    = ADM_SEG_PT6_H
+
+  ; startprofil default = normalhus
+  IF ADM_PROFILE = 0
+    ADM_PROFILE = 1
+  ENDIF
+
+ 
+ 
+
+
+; ===== ADM PROFIL-PUNKTER DEFAULTS =====
+IF ADM_PROF1_PT0_H = 0.0
+  ADM_PROF1_PT0_H = 14.0
+ENDIF
+IF ADM_PROF1_PT1_H = 0.0
+  ADM_PROF1_PT1_H = 11.0
+ENDIF
+IF ADM_PROF1_PT2_H = 0.0
+  ADM_PROF1_PT2_H = 8.0
+ENDIF
+IF ADM_PROF1_PT3_H = 0.0
+  ADM_PROF1_PT3_H = 6.0
+ENDIF
+IF ADM_PROF1_PT4_H = 0.0
+  ADM_PROF1_PT4_H = 4.0
+ENDIF
+IF ADM_PROF1_PT5_H = 0.0
+  ADM_PROF1_PT5_H = 2.5
+ENDIF
+IF ADM_PROF1_PT6_H = 0.0
+  ADM_PROF1_PT6_H = 1.5
+ENDIF
+
+IF ADM_PROF2_PT0_H = 0.0
+  ADM_PROF2_PT0_H = 16.0
+ENDIF
+IF ADM_PROF2_PT1_H = 0.0
+  ADM_PROF2_PT1_H = 12.0
+ENDIF
+IF ADM_PROF2_PT2_H = 0.0
+  ADM_PROF2_PT2_H = 9.0
+ENDIF
+IF ADM_PROF2_PT3_H = 0.0
+  ADM_PROF2_PT3_H = 7.0
+ENDIF
+IF ADM_PROF2_PT4_H = 0.0
+  ADM_PROF2_PT4_H = 5.0
+ENDIF
+IF ADM_PROF2_PT5_H = 0.0
+  ADM_PROF2_PT5_H = 3.5
+ENDIF
+IF ADM_PROF2_PT6_H = 0.0
+  ADM_PROF2_PT6_H = 2.0
+ENDIF
+
+IF ADM_PROF3_PT0_H = 0.0
+  ADM_PROF3_PT0_H = 20.0
+ENDIF
+IF ADM_PROF3_PT1_H = 0.0
+  ADM_PROF3_PT1_H = 16.0
+ENDIF
+IF ADM_PROF3_PT2_H = 0.0
+  ADM_PROF3_PT2_H = 12.0
+ENDIF
+IF ADM_PROF3_PT3_H = 0.0
+  ADM_PROF3_PT3_H = 9.0
+ENDIF
+IF ADM_PROF3_PT4_H = 0.0
+  ADM_PROF3_PT4_H = 7.5
+ENDIF
+IF ADM_PROF3_PT5_H = 0.0
+  ADM_PROF3_PT5_H = 5.0
+ENDIF
+IF ADM_PROF3_PT6_H = 0.0
+  ADM_PROF3_PT6_H = 3.0
+ENDIF
+
+; Flagga för omedelbar planering efter init-fyllning
+ADM_BOOT_PLAN_DONE = 0
+
+; ===== VVP PROFIL-DEFAULTS (endast om 0) =====
+; Profil 0
+IF VVP_P0_H_BASE = 0.0
+  VVP_P0_H_BASE = 12.0
+EndIf
+IF VVP_P0_WEEKEND_F = 0.0
+  VVP_P0_WEEKEND_F = 1.10
+ENDIF
+IF VVP_P0_SHARE_M_PCT = 0
+  VVP_P0_SHARE_M_PCT = 50
+ENDIF
+IF VVP_P0_ANCHOR_M_H = 0
+  VVP_P0_ANCHOR_M_H = 2
+EndIf
+IF VVP_P0_ANCHOR_M_LEN = 0
+  VVP_P0_ANCHOR_M_LEN = 5
+EndIf
+If VVP_P0_ANCHOR_E_H = 0
+  VVP_P0_ANCHOR_E_H = 14
+EndIf
+IF VVP_P0_ANCHOR_E_LEN = 0
+  VVP_P0_ANCHOR_E_LEN = 8
+EndIf
+VVP_P0_BUDGET_M_MIN = 120
+VVP_P0_BUDGET_E_MIN = 240
+If VVP_P0_MAX_INROW = 0.0
+  VVP_P0_MAX_INROW = 3.0
+ENDIF
+IF VVP_P0_MAX_GAP_H = 0.0
+  VVP_P0_MAX_GAP_H = 6.0
+ENDIF
+IF VVP_P0_CAP_SLACK_H = 0.0
+  VVP_P0_CAP_SLACK_H = 1.0
+ENDIF
+
+; Profil 1
+IF VVP_P1_H_BASE = 0.0
+  VVP_P1_H_BASE = 6.0
+ENDIF
+IF VVP_P1_WEEKEND_F = 0.0
+  VVP_P1_WEEKEND_F = 1.15
+ENDIF
+IF VVP_P1_SHARE_M_PCT = 0
+  VVP_P1_SHARE_M_PCT = 55
+ENDIF
+IF VVP_P1_ANCHOR_M_H = 0
+  VVP_P1_ANCHOR_M_H = 6
+ENDIF
+IF VVP_P1_ANCHOR_M_LEN = 0
+  VVP_P1_ANCHOR_M_LEN = 3
+ENDIF
+IF VVP_P1_ANCHOR_E_H = 0
+  VVP_P1_ANCHOR_E_H = 18
+ENDIF
+IF VVP_P1_ANCHOR_E_LEN = 0
+  VVP_P1_ANCHOR_E_LEN = 3
+ENDIF
+IF VVP_P1_MAX_INROW = 0.0
+  VVP_P1_MAX_INROW = 3.0
+ENDIF
+IF VVP_P1_MAX_GAP_H = 0.0
+  VVP_P1_MAX_GAP_H = 6.0
+ENDIF
+IF VVP_P1_CAP_SLACK_H = 0.0
+  VVP_P1_CAP_SLACK_H = 1.0
+ENDIF
+
+; Profil 2
+IF VVP_P2_H_BASE = 0.0
+  VVP_P2_H_BASE = 5.0
+ENDIF
+IF VVP_P2_WEEKEND_F = 0.0
+  VVP_P2_WEEKEND_F = 1.10
+ENDIF
+IF VVP_P2_SHARE_M_PCT = 0
+  VVP_P2_SHARE_M_PCT = 50
+ENDIF
+IF VVP_P2_ANCHOR_M_H = 0
+  VVP_P2_ANCHOR_M_H = 6
+ENDIF
+IF VVP_P2_ANCHOR_M_LEN = 0
+  VVP_P2_ANCHOR_M_LEN = 2
+ENDIF
+IF VVP_P2_ANCHOR_E_H = 0
+  VVP_P2_ANCHOR_E_H = 19
+ENDIF
+IF VVP_P2_ANCHOR_E_LEN = 0
+  VVP_P2_ANCHOR_E_LEN = 2
+ENDIF
+IF VVP_P2_MAX_INROW = 0.0
+  VVP_P2_MAX_INROW = 3.0
+ENDIF
+IF VVP_P2_MAX_GAP_H = 0.0
+  VVP_P2_MAX_GAP_H = 6.0
+ENDIF
+IF VVP_P2_CAP_SLACK_H = 0.0
+  VVP_P2_CAP_SLACK_H = 1.0
+ENDIF
+
+; Profil 3
+IF VVP_P3_H_BASE = 0.0
+  VVP_P3_H_BASE = 7.0
+ENDIF
+IF VVP_P3_WEEKEND_F = 0.0
+  VVP_P3_WEEKEND_F = 1.20
+ENDIF
+IF VVP_P3_SHARE_M_PCT = 0
+  VVP_P3_SHARE_M_PCT = 60
+ENDIF
+IF VVP_P3_ANCHOR_M_H = 0
+  VVP_P3_ANCHOR_M_H = 7
+ENDIF
+IF VVP_P3_ANCHOR_M_LEN = 0
+  VVP_P3_ANCHOR_M_LEN = 3
+ENDIF
+IF VVP_P3_ANCHOR_E_H = 0
+  VVP_P3_ANCHOR_E_H = 20
+ENDIF
+IF VVP_P3_ANCHOR_E_LEN = 0
+  VVP_P3_ANCHOR_E_LEN = 3
+ENDIF
+IF VVP_P3_MAX_INROW = 0.0
+  VVP_P3_MAX_INROW = 3.0
+ENDIF
+IF VVP_P3_MAX_GAP_H = 0.0
+  VVP_P3_MAX_GAP_H = 6.0
+ENDIF
+IF VVP_P3_CAP_SLACK_H = 0.0
+  VVP_P3_CAP_SLACK_H = 1.0
+ENDIF
+
+; Säkerställ giltig aktiv profil och välj 0 som default
+If VVP_PROFILE < 0
+  VVP_PROFILE = 0
+EndIf
+If VVP_PROFILE > 3
+  VVP_PROFILE = 0
+EndIf
+If VVP_PROFILE = 0
+  VVP_PROFILE = 0
+EndIf
+
+VV_MIN_SAFE = 42.0
+
+; Fyll UI från vald profil efter att defaults satts
+If VVP_PROFILE = 0
+  VVP_H_BASE_UI       = VVP_P0_H_BASE
+  VVP_WEEKEND_F_UI    = VVP_P0_WEEKEND_F
+  VVP_SHARE_M_PCT_UI  = VVP_P0_SHARE_M_PCT
+  VVP_ANCHOR_M_H_UI   = VVP_P0_ANCHOR_M_H
+  VVP_ANCHOR_E_H_UI   = VVP_P0_ANCHOR_E_H
+  VVP_ANCHOR_M_LEN_UI = VVP_P0_ANCHOR_M_LEN
+  VVP_ANCHOR_E_LEN_UI = VVP_P0_ANCHOR_E_LEN
+  VVP_MAX_INROW_UI    = VVP_P0_MAX_INROW
+  VVP_MAX_GAP_H_UI    = VVP_P0_MAX_GAP_H
+  VVP_CAP_SLACK_H_UI  = VVP_P0_CAP_SLACK_H
+ENDIF
+
+IF VVP_PROFILE = 1
+  VVP_H_BASE_UI       = VVP_P1_H_BASE
+  VVP_WEEKEND_F_UI    = VVP_P1_WEEKEND_F
+  VVP_SHARE_M_PCT_UI  = VVP_P1_SHARE_M_PCT
+  VVP_ANCHOR_M_H_UI   = VVP_P1_ANCHOR_M_H
+  VVP_ANCHOR_E_H_UI   = VVP_P1_ANCHOR_E_H
+  VVP_ANCHOR_M_LEN_UI = VVP_P1_ANCHOR_M_LEN
+  VVP_ANCHOR_E_LEN_UI = VVP_P1_ANCHOR_E_LEN
+  VVP_MAX_INROW_UI    = VVP_P1_MAX_INROW
+  VVP_MAX_GAP_H_UI    = VVP_P1_MAX_GAP_H
+  VVP_CAP_SLACK_H_UI  = VVP_P1_CAP_SLACK_H
+ENDIF
+
+IF VVP_PROFILE = 2
+  VVP_H_BASE_UI       = VVP_P2_H_BASE
+  VVP_WEEKEND_F_UI    = VVP_P2_WEEKEND_F
+  VVP_SHARE_M_PCT_UI  = VVP_P2_SHARE_M_PCT
+  VVP_ANCHOR_M_H_UI   = VVP_P2_ANCHOR_M_H
+  VVP_ANCHOR_E_H_UI   = VVP_P2_ANCHOR_E_H
+  VVP_ANCHOR_M_LEN_UI = VVP_P2_ANCHOR_M_LEN
+  VVP_ANCHOR_E_LEN_UI = VVP_P2_ANCHOR_E_LEN
+  VVP_MAX_INROW_UI    = VVP_P2_MAX_INROW
+  VVP_MAX_GAP_H_UI    = VVP_P2_MAX_GAP_H
+  VVP_CAP_SLACK_H_UI  = VVP_P2_CAP_SLACK_H
+ENDIF
+
+IF VVP_PROFILE = 3
+  VVP_H_BASE_UI       = VVP_P3_H_BASE
+  VVP_WEEKEND_F_UI    = VVP_P3_WEEKEND_F
+  VVP_SHARE_M_PCT_UI  = VVP_P3_SHARE_M_PCT
+  VVP_ANCHOR_M_H_UI   = VVP_P3_ANCHOR_M_H
+  VVP_ANCHOR_E_H_UI   = VVP_P3_ANCHOR_E_H
+  VVP_ANCHOR_M_LEN_UI = VVP_P3_ANCHOR_M_LEN
+  VVP_ANCHOR_E_LEN_UI = VVP_P3_ANCHOR_E_LEN
+  VVP_MAX_INROW_UI    = VVP_P3_MAX_INROW
+  VVP_MAX_GAP_H_UI    = VVP_P3_MAX_GAP_H
+  VVP_CAP_SLACK_H_UI  = VVP_P3_CAP_SLACK_H
+ENDIF
+
+
+; ===== Kopiera profil 0 till 1-3 om de saknar värden =====
+
+; --- Profil 1 ---
+IF VVP_P1_BUDGET_M_MIN = 0.0
+  VVP_P1_BUDGET_M_MIN = VVP_P0_BUDGET_M_MIN
+ENDIF
+IF VVP_P1_BUDGET_E_MIN = 0.0
+  VVP_P1_BUDGET_E_MIN = VVP_P0_BUDGET_E_MIN
+ENDIF
+IF VVP_P1_TOPO = 0.0
+  VVP_P1_TOPO = VVP_P0_TOPO
+ENDIF
+IF VVP_P1_DEG_EC_START = 0.0
+  VVP_P1_DEG_EC_START = VVP_P0_DEG_EC_START
+ENDIF
+IF VVP_P1_DEG_EC_STOP = 0.0
+  VVP_P1_DEG_EC_STOP = VVP_P0_DEG_EC_STOP
+ENDIF
+IF VVP_P1_DEG_EX_START = 0.0
+  VVP_P1_DEG_EX_START = VVP_P0_DEG_EX_START
+ENDIF
+IF VVP_P1_DEG_EX_STOP = 0.0
+  VVP_P1_DEG_EX_STOP = VVP_P0_DEG_EX_STOP
+ENDIF
+
+; --- Profil 2 ---
+IF VVP_P2_BUDGET_M_MIN = 0.0
+  VVP_P2_BUDGET_M_MIN = VVP_P0_BUDGET_M_MIN
+ENDIF
+IF VVP_P2_BUDGET_E_MIN = 0.0
+  VVP_P2_BUDGET_E_MIN = VVP_P0_BUDGET_E_MIN
+ENDIF
+IF VVP_P2_TOPO = 0.0
+  VVP_P2_TOPO = VVP_P0_TOPO
+ENDIF
+IF VVP_P2_DEG_EC_START = 0.0
+  VVP_P2_DEG_EC_START = VVP_P0_DEG_EC_START
+ENDIF
+IF VVP_P2_DEG_EC_STOP = 0.0
+  VVP_P2_DEG_EC_STOP = VVP_P0_DEG_EC_STOP
+ENDIF
+IF VVP_P2_DEG_EX_START = 0.0
+  VVP_P2_DEG_EX_START = VVP_P0_DEG_EX_START
+ENDIF
+IF VVP_P2_DEG_EX_STOP = 0.0
+  VVP_P2_DEG_EX_STOP = VVP_P0_DEG_EX_STOP
+ENDIF
+
+; --- Profil 3 ---
+IF VVP_P3_BUDGET_M_MIN = 0.0
+  VVP_P3_BUDGET_M_MIN = VVP_P0_BUDGET_M_MIN
+ENDIF
+IF VVP_P3_BUDGET_E_MIN = 0.0
+  VVP_P3_BUDGET_E_MIN = VVP_P0_BUDGET_E_MIN
+ENDIF
+IF VVP_P3_TOPO = 0.0
+  VVP_P3_TOPO = VVP_P0_TOPO
+ENDIF
+IF VVP_P3_DEG_EC_START = 0.0
+  VVP_P3_DEG_EC_START = VVP_P0_DEG_EC_START
+ENDIF
+IF VVP_P3_DEG_EC_STOP = 0.0
+  VVP_P3_DEG_EC_STOP = VVP_P0_DEG_EC_STOP
+ENDIF
+IF VVP_P3_DEG_EX_START = 0.0
+  VVP_P3_DEG_EX_START = VVP_P0_DEG_EX_START
+ENDIF
+IF VVP_P3_DEG_EX_STOP = 0.0
+  VVP_P3_DEG_EX_STOP = VVP_P0_DEG_EX_STOP
+ENDIF
+
+; ===== EC/EX standardvärden =====
+IF VVP_P0_DEG_EC_START = 0.0
+  VVP_P0_DEG_EC_START = 2.0
+ENDIF
+IF VVP_P0_DEG_EC_STOP = 0.0
+  VVP_P0_DEG_EC_STOP = 1.0
+ENDIF
+IF VVP_P0_DEG_EX_START = 0.0
+  VVP_P0_DEG_EX_START = -1.0
+ENDIF
+IF VVP_P0_DEG_EX_STOP = 0.0
+  VVP_P0_DEG_EX_STOP = -2.0
+ENDIF
+
+; ===== TOPO DEFAULTS =====
+IF VVP_P0_TOPO = 0.0
+  VVP_P0_TOPO = 1.0
+ENDIF
+IF VVP_P1_TOPO = 0.0
+  VVP_P1_TOPO = 1.0
+ENDIF
+IF VVP_P2_TOPO = 0.0
+  VVP_P2_TOPO = 1.0
+ENDIF
+IF VVP_P3_TOPO = 0.0
+  VVP_P3_TOPO = 1.0
+ENDIF
+
+; runtime default
+If VVP_TOPO_R = 0.0
+  VVP_TOPO_R = 1.0
+EndIf
+
+vvp_H_Min=1
+VVP_H_Max=24
+
+; --- Ny push/arbetskopia-init (läggs i IF inivarden = 0) ---
+PI_PUSH_DAY = 0
+PI_PUSH_REQ = 1
+PI_PUSH_ACK = 0
+
+TD_READY = 0
+TM_READY = 0
+PRICE_STAMP_TD = 0
+PRICE_STAMP_TM = 0
+MASK_STAMP_TD  = 0
+MASK_STAMP_TM  = 0
+OAT_SRC_STAMP_TD = 0
+OAT_SRC_STAMP_TM = 0
+
+ROLL_LAST_MIN = 99
+
+
+; Sync och trigg vid kallstart
+
+; VV-planeraren triggas av VVP_PLAN_NOW (inte VVP_PLAN_TRIG)
+VVP_PLAN_NOW = 1
+
+VVP_USE_PLAN = 1
+
+; === Init av funktionsswitchar (HMI) ===
+vvp_en_inrow =1
+vvp_en_gap =1
+vvp_en_wrap =1
+vvp_en_trim =1
+vvp_en_anchor_m =1
+vvp_en_anchor_e =1
+
+; ============================================================
+;  HEAT PLANNER INIT (körs vid uppstart eller reset)
+; ============================================================
+
+HP_MIN_P = 4
+HEAT_PLAN_OK = 0
+
+ CFG_ALLOW_OVERLAP_LAST = CFG_ALLOW_OVERLAP
+
+  ; --- nollställ räknare och flaggor ---
+  ADM_HEAT_PLAN_TRIG = 0
+  ADM_SEL_LIMIT      = 0
+  ADM_SEL_COUNT      = 0
+
+  ; --- nollställ hela planen (värme + färg) ---
+  LHEAT_CLR_K = 0
+  UpLoop LHEAT_CLR_K From 0 To 95
+    HEAT_PLAN[LHEAT_CLR_K] = 0
+    PLAN_MODE[LHEAT_CLR_K] = 0
+  EndLoop
+
+  ; --- default: överlapp
+  CFG_ALLOW_OVERLAP = 1
+
+  ; --- trigga ny plan vid första start ---
+  ADM_HEAT_PLAN_TRIG = 1
+
+HEAT_USE_PLAN=1
+
+
+
+; ===== Lämna INIT-läget =====
+inivarden = 1
+ENDIF
+
+
+
+
+ 

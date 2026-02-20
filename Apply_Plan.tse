@@ -1,0 +1,252 @@
+; =========================================
+; VVP_ApplyPlan - 96p gate VV_ALLOWED
+; =========================================
+
+; Heat plan sync: ACK från Pi återställ ACK och släck CHANGED
+; (motsvarar VV-planens handshake och förhindrar att CHANGED fastnar på 1)
+IF HEAT_PLAN_ACK <> 0
+  HEAT_PLAN_ACK = 0
+  HEAT_PLAN_CHANGED = 0
+ENDIF
+
+
+; =========================================
+; HEAT PLAN GENERATOR (TD) - välj billigaste perioder
+; Triggeras av:
+;   - HEAT_PLAN_TRIG (ny PRICE_STAMP_TD vid push eller midnattsrotation)
+;   - ADM_HEAT_PLAN_TRIG (init/manual)
+;   - ändrad ADM_H_REQ (behov)
+;   - ändrad CFG_ALLOW_OVERLAP (om VV+värme får överlappa)
+;
+; Plan bygger alltid på RANK_W[] (som alltid är TD i PUSH.tse).
+; Resultat skrivs till HEAT_PLAN[0..95] och flaggar HEAT_PLAN_CHANGED.
+; =========================================
+
+HEAT_RUN_TRIG = 0
+
+; Default diag (uppdateras nedan)
+DIAG_HEAT_PLAN = "HP_idle"
+DIAG_HEAT_S = HEAT_PLAN_STAMP
+DIAG_HEAT_N = HEAT_TD_CNT
+
+IF TD_READY = 1
+  IF ADM_HEAT_PLAN_TRIG <> 0
+    HEAT_RUN_TRIG = 1
+  ENDIF
+
+  ; Kör bara på HEAT_PLAN_TRIG om TD-stamp faktiskt bytt sedan senaste plan.
+  IF HEAT_PLAN_TRIG <> 0
+    IF PRICE_STAMP_TD <> HEAT_PLAN_STAMP
+      HEAT_RUN_TRIG = 1
+    ENDIF
+  ENDIF
+
+  ; Kör om behov (ADM_H_REQ) ändrats.
+  IF ADM_H_REQ_TD <> ADM_H_REQ
+    HEAT_RUN_TRIG = 1
+  ENDIF
+
+  ; Kör om överlapp-policy ändrats.
+  IF CFG_ALLOW_OVERLAP <> CFG_ALLOW_OVERLAP_LAST
+    HEAT_RUN_TRIG = 1
+  ENDIF
+ELSE
+  DIAG_HEAT_PLAN = "HP_no_TD"
+  DIAG_HEAT_S = HEAT_PLAN_STAMP
+  DIAG_HEAT_N = HEAT_TD_CNT
+ENDIF
+
+
+IF HEAT_RUN_TRIG = 1
+  IF HEAT_PLAN_BUSY = 0
+    HEAT_PLAN_BUSY = 1
+
+    DIAG_HEAT_PLAN = "HP_run"
+
+    ; --- målantal 15-min perioder (Integer) ---
+    ADM_SEL_LIMIT = CvR(ADM_H_REQ * 4.0 + 0.5)
+    IF ADM_SEL_LIMIT < 0
+      ADM_SEL_LIMIT = 0
+    ENDIF
+    IF ADM_SEL_LIMIT > 96
+      ADM_SEL_LIMIT = 96
+    ENDIF
+
+    ; UpLoop kräver Index-gränser
+    HP_kp = CvI(ADM_SEL_LIMIT)
+
+    ; --- nollställ arbetsplan ---
+    HP_K = 0
+    UpLoop HP_K From 0 To 95
+      HEAT_PLAN_TD[HP_K] = 0
+    EndLoop
+
+    ADM_SEL_COUNT = 0
+
+    ; --- välj billigaste perioderna, en i taget ---
+    HP_rI = 0
+    UpLoop HP_rI From 1 To HP_kp
+
+      HP_found = 0
+      worstRank = 999
+      worstP = 0
+
+      HP_K = 0
+      UpLoop HP_K From 0 To 95
+
+        IF HEAT_PLAN_TD[HP_K] = 0
+
+          ; Om överlapp ej tillåts: undvik VV-perioder.
+          IF CFG_ALLOW_OVERLAP <> 0
+
+            IF HP_found = 0
+              worstRank = RANK_W[HP_K]
+              worstP = HP_K
+              HP_found = 1
+            ELSE
+              IF RANK_W[HP_K] < worstRank
+                worstRank = RANK_W[HP_K]
+                worstP = HP_K
+              ENDIF
+            ENDIF
+
+          ELSE
+
+            IF VV_PLAN[HP_K] = 0
+              IF HP_found = 0
+                worstRank = RANK_W[HP_K]
+                worstP = HP_K
+                HP_found = 1
+              ELSE
+                IF RANK_W[HP_K] < worstRank
+                  worstRank = RANK_W[HP_K]
+                  worstP = HP_K
+                ENDIF
+              ENDIF
+            ENDIF
+
+          ENDIF
+
+        ENDIF
+
+      EndLoop
+
+      IF HP_found <> 0
+        HEAT_PLAN_TD[worstP] = 1
+        ADM_SEL_COUNT = ADM_SEL_COUNT + 1
+      ENDIF
+
+    EndLoop
+
+    HEAT_TD_CNT = ADM_SEL_COUNT
+
+    ; --- diff mot aktiv plan ---
+    HEAT_DIFF_CNT = 0
+    HP_K = 0
+    UpLoop HP_K From 0 To 95
+      IF HEAT_PLAN[HP_K] <> HEAT_PLAN_TD[HP_K]
+        HEAT_DIFF_CNT = HEAT_DIFF_CNT + 1
+      ENDIF
+    EndLoop
+
+    IF HEAT_DIFF_CNT > 0
+      HP_K = 0
+      UpLoop HP_K From 0 To 95
+        HEAT_PLAN[HP_K] = HEAT_PLAN_TD[HP_K]
+      EndLoop
+      HEAT_PLAN_CHANGED = 1
+      DIAG_HEAT_PLAN = "HP_changed"
+    ELSE
+      DIAG_HEAT_PLAN = "HP_nochange"
+    ENDIF
+
+    ; --- uppdatera plan-stamp och metadata ---
+    HEAT_PLAN_STAMP = PRICE_STAMP_TD
+    ADM_H_REQ_TD = ADM_H_REQ
+    CFG_ALLOW_OVERLAP_LAST = CFG_ALLOW_OVERLAP
+
+    DIAG_HEAT_S = HEAT_PLAN_STAMP
+    DIAG_HEAT_N = HEAT_TD_CNT
+
+    ; Kort statusrad för HMI (numerik i DIAG_HEAT_S/DIAG_HEAT_N)
+    DIAG_HEAT_PLAN = "HP_ok"
+
+    ; --- UI/diagnos: mode per period ---
+    HP_K = 0
+    UpLoop HP_K From 0 To 95
+      PLAN_MODE[HP_K] = 0
+      IF VV_PLAN[HP_K] <> 0
+        PLAN_MODE[HP_K] = 1
+      ENDIF
+      IF HEAT_PLAN[HP_K] <> 0
+        IF PLAN_MODE[HP_K] = 1
+          PLAN_MODE[HP_K] = 3
+        ELSE
+          PLAN_MODE[HP_K] = 2
+        ENDIF
+      ENDIF
+    EndLoop
+
+    ; --- släck manuella triggar ---
+    ADM_HEAT_PLAN_TRIG = 0
+    ADM_HEAT_NEED_UPDATE = 0
+
+    HEAT_PLAN_BUSY = 0
+  ELSE
+    DIAG_HEAT_PLAN = "HP_busy"
+  ENDIF
+ENDIF
+
+; ===== Stabil gate för VV_ALLOWED (1 gång/minut) =====
+IF VV_VVP_PLAN_LAST_MIN <> Minute
+  VV_VVP_PLAN_LAST_MIN = Minute
+
+  IF VVP_USE_PLAN <> 0
+    IF VV_PLAN[P_NOW] <> 0
+      VV_ALLOWED = 1
+    ELSE
+      VV_ALLOWED = 0
+    ENDIF
+  ELSE
+    ; Fri drift utan plan
+    VV_ALLOWED = 1
+  ENDIF
+
+  ; --- Min-safe emergency (latched): only when plan blocks VV ---
+  IF VVP_USE_PLAN <> 0
+    IF VV_EMERG_MINSAFE_ACTIVE <> 0
+      IF T_top >= (VV_MIN_SAFE + VV_MINSAFE_DIFF_CL)
+        VV_EMERG_MINSAFE_ACTIVE = 0
+      ENDIF
+    ELSE
+      IF (VV_ALLOWED = 0) AND (T_top < VV_MIN_SAFE)
+        VV_EMERG_MINSAFE_ACTIVE = 1
+      ENDIF
+    ENDIF
+  ELSE
+    VV_EMERG_MINSAFE_ACTIVE = 0
+  ENDIF
+
+  IF VV_EMERG_MINSAFE_ACTIVE <> 0
+    VV_ALLOWED = 1
+  ENDIF
+
+ENDIF
+
+
+
+; ===== Stabil gate för allow_heat (1 gång/minut) =====
+IF HEAT_PLAN_LAST_MIN <> Minute
+  HEAT_PLAN_LAST_MIN = Minute
+
+  IF HEAT_USE_PLAN <> 0
+    IF HEAT_PLAN[P_NOW] <> 0
+      allow_heat = 1
+    ELSE
+      allow_heat = 0
+    ENDIF
+  ELSE
+    ; Fri drift utan plan
+    allow_heat = 1
+  ENDIF
+ENDIF

@@ -1,0 +1,1647 @@
+; =====================================================================
+;  Adaptiv_Driftsmodell_Varmvatten
+;  - EN källa (profilminnet VVP_Pn_*) = "single source of truth"
+;  - UI->Profil commit sker EN gång per cykel, samlas i VVP_UI_CHANGE_FLAG
+;  - Plan triggas ENDAST av:
+;       * VVP_PLAN_NOW
+;       * verklig ändring (UI->profil)
+;       * profilbyte
+;       * extern självinlärning (ex. VV_Control sätter VVP_PLAN_NOW)
+;  - UI_REFRESH fyller UI men triggar INTE plan
+;  - All planeringslogik körs endast i detta block (ingen dubblett)
+;  - Åtgärd mot "89 perioder":
+;       * CAP_SLACK_H_R klampas 0..24
+;       * GAP-fill avslutas när pickedP >= (needP + CAP_SLACK_P)
+; =====================================================================
+
+; Runtime-signatur: om den här filen körs ska DIAG_PLAN_STEP2 vara 902.
+DIAG_PLAN_STEP2 = 902
+
+; Extra runtime-markör: om filen körs ska DIAG_PLAN_STEP inte kunna ligga kvar på 0.
+DIAG_PLAN_STEP = 1
+
+
+
+; Profilbyte via HMI: byt aktiv profil, fyll UI för vald profil, trigga plan
+IF VVP_PROFILE_UI <> VVP_PROFILE
+  VVP_PROFILE = VVP_PROFILE_UI
+  VVP_UI_REFRESH_TRIG = 1
+  VVP_UI_CHANGE_FLAG = 1
+ENDIF
+
+
+; (valfri skugga/logg)
+IF VVP_LAST_PROFILE <> VVP_PROFILE
+  VVP_LAST_PROFILE = VVP_PROFILE
+ENDIF
+
+
+; ------------------------------------------------------------
+; 1) PROFIL -> UI (endast när uttryckligen begärt att fylla UI)
+;    OBS: detta ska inte trigga plan i sig.
+; ------------------------------------------------------------
+IF VVP_UI_REFRESH_TRIG <> 0
+  VVP_UI_REFRESH_TRIG = 0
+
+  IF VVP_PROFILE = 0
+    VVP_H_BASE_UI       = VVP_P0_H_BASE
+    VVP_WEEKEND_F_UI    = VVP_P0_WEEKEND_F
+    VVP_SHARE_M_PCT_UI  = VVP_P0_SHARE_M_PCT
+    VVP_ANCHOR_M_H_UI   = VVP_P0_ANCHOR_M_H
+    VVP_ANCHOR_M_LEN_UI = VVP_P0_ANCHOR_M_LEN
+    VVP_ANCHOR_E_H_UI   = VVP_P0_ANCHOR_E_H
+    VVP_ANCHOR_E_LEN_UI = VVP_P0_ANCHOR_E_LEN
+    VVP_MAX_INROW_UI    = VVP_P0_MAX_INROW
+    VVP_MAX_GAP_H_UI    = VVP_P0_MAX_GAP_H
+    VVP_CAP_SLACK_H_UI  = VVP_P0_CAP_SLACK_H
+    VVP_BUDGET_M_MIN_UI = VVP_P0_BUDGET_M_MIN
+    VVP_BUDGET_E_MIN_UI = VVP_P0_BUDGET_E_MIN
+    VVP_TOPO_UI         = VVP_P0_TOPO
+    VVP_DEG_EC_START_UI = VVP_P0_DEG_EC_START
+    VVP_DEG_EC_STOP_UI  = VVP_P0_DEG_EC_STOP
+    VVP_DEG_EX_START_UI = VVP_P0_DEG_EX_START
+    VVP_DEG_EX_STOP_UI  = VVP_P0_DEG_EX_STOP
+  ENDIF
+
+  IF VVP_PROFILE = 1
+    VVP_H_BASE_UI       = VVP_P1_H_BASE
+    VVP_WEEKEND_F_UI    = VVP_P1_WEEKEND_F
+    VVP_SHARE_M_PCT_UI  = VVP_P1_SHARE_M_PCT
+    VVP_ANCHOR_M_H_UI   = VVP_P1_ANCHOR_M_H
+    VVP_ANCHOR_M_LEN_UI = VVP_P1_ANCHOR_M_LEN
+    VVP_ANCHOR_E_H_UI   = VVP_P1_ANCHOR_E_H
+    VVP_ANCHOR_E_LEN_UI = VVP_P1_ANCHOR_E_LEN
+    VVP_MAX_INROW_UI    = VVP_P1_MAX_INROW
+    VVP_MAX_GAP_H_UI    = VVP_P1_MAX_GAP_H
+    VVP_CAP_SLACK_H_UI  = VVP_P1_CAP_SLACK_H
+    VVP_BUDGET_M_MIN_UI = VVP_P1_BUDGET_M_MIN
+    VVP_BUDGET_E_MIN_UI = VVP_P1_BUDGET_E_MIN
+    VVP_TOPO_UI         = VVP_P1_TOPO
+    VVP_DEG_EC_START_UI = VVP_P1_DEG_EC_START
+    VVP_DEG_EC_STOP_UI  = VVP_P1_DEG_EC_STOP
+    VVP_DEG_EX_START_UI = VVP_P1_DEG_EX_START
+    VVP_DEG_EX_STOP_UI  = VVP_P1_DEG_EX_STOP
+  ENDIF
+
+  IF VVP_PROFILE = 2
+    VVP_H_BASE_UI       = VVP_P2_H_BASE
+    VVP_WEEKEND_F_UI    = VVP_P2_WEEKEND_F
+    VVP_SHARE_M_PCT_UI  = VVP_P2_SHARE_M_PCT
+    VVP_ANCHOR_M_H_UI   = VVP_P2_ANCHOR_M_H
+    VVP_ANCHOR_M_LEN_UI = VVP_P2_ANCHOR_M_LEN
+    VVP_ANCHOR_E_H_UI   = VVP_P2_ANCHOR_E_H
+    VVP_ANCHOR_E_LEN_UI = VVP_P2_ANCHOR_E_LEN
+    VVP_MAX_INROW_UI    = VVP_P2_MAX_INROW
+    VVP_MAX_GAP_H_UI    = VVP_P2_MAX_GAP_H
+    VVP_CAP_SLACK_H_UI  = VVP_P2_CAP_SLACK_H
+    VVP_BUDGET_M_MIN_UI = VVP_P2_BUDGET_M_MIN
+    VVP_BUDGET_E_MIN_UI = VVP_P2_BUDGET_E_MIN
+    VVP_TOPO_UI         = VVP_P2_TOPO
+    VVP_DEG_EC_START_UI = VVP_P2_DEG_EC_START
+    VVP_DEG_EC_STOP_UI  = VVP_P2_DEG_EC_STOP
+    VVP_DEG_EX_START_UI = VVP_P2_DEG_EX_START
+    VVP_DEG_EX_STOP_UI  = VVP_P2_DEG_EX_STOP
+  ENDIF
+
+  IF VVP_PROFILE = 3
+    VVP_H_BASE_UI       = VVP_P3_H_BASE
+    VVP_WEEKEND_F_UI    = VVP_P3_WEEKEND_F
+    VVP_SHARE_M_PCT_UI  = VVP_P3_SHARE_M_PCT
+    VVP_ANCHOR_M_H_UI   = VVP_P3_ANCHOR_M_H
+    VVP_ANCHOR_M_LEN_UI = VVP_P3_ANCHOR_M_LEN
+    VVP_ANCHOR_E_H_UI   = VVP_P3_ANCHOR_E_H
+    VVP_ANCHOR_E_LEN_UI = VVP_P3_ANCHOR_E_LEN
+    VVP_MAX_INROW_UI    = VVP_P3_MAX_INROW
+    VVP_MAX_GAP_H_UI    = VVP_P3_MAX_GAP_H
+    VVP_CAP_SLACK_H_UI  = VVP_P3_CAP_SLACK_H
+    VVP_BUDGET_M_MIN_UI = VVP_P3_BUDGET_M_MIN
+    VVP_BUDGET_E_MIN_UI = VVP_P3_BUDGET_E_MIN
+    VVP_TOPO_UI         = VVP_P3_TOPO
+    VVP_DEG_EC_START_UI = VVP_P3_DEG_EC_START
+    VVP_DEG_EC_STOP_UI  = VVP_P3_DEG_EC_STOP
+    VVP_DEG_EX_START_UI = VVP_P3_DEG_EX_START
+    VVP_DEG_EX_STOP_UI  = VVP_P3_DEG_EX_STOP
+  ENDIF
+
+  ; Shadow för diff-detektering (UI-"prev")
+  VVP_H_BASE_UI_PREV       = VVP_H_BASE_UI
+  VVP_WEEKEND_F_UI_PREV    = VVP_WEEKEND_F_UI
+  VVP_SHARE_M_PCT_UI_PREV  = VVP_SHARE_M_PCT_UI
+  VVP_ANCHOR_M_H_UI_PREV   = VVP_ANCHOR_M_H_UI
+  VVP_ANCHOR_M_LEN_UI_PREV = VVP_ANCHOR_M_LEN_UI
+  VVP_ANCHOR_E_H_UI_PREV   = VVP_ANCHOR_E_H_UI
+  VVP_ANCHOR_E_LEN_UI_PREV = VVP_ANCHOR_E_LEN_UI
+  VVP_MAX_INROW_UI_PREV    = VVP_MAX_INROW_UI
+  VVP_MAX_GAP_H_UI_PREV    = VVP_MAX_GAP_H_UI
+  VVP_CAP_SLACK_H_UI_PREV  = VVP_CAP_SLACK_H_UI
+  VVP_BUDGET_M_MIN_UI_PREV = VVP_BUDGET_M_MIN_UI
+  VVP_BUDGET_E_MIN_UI_PREV = VVP_BUDGET_E_MIN_UI
+  VVP_TOPO_UI_PREV         = VVP_TOPO_UI
+  VVP_DEG_EC_START_UI_PREV = VVP_DEG_EC_START_UI
+  VVP_DEG_EC_STOP_UI_PREV  = VVP_DEG_EC_STOP_UI
+  VVP_DEG_EX_START_UI_PREV = VVP_DEG_EX_START_UI
+  VVP_DEG_EX_STOP_UI_PREV  = VVP_DEG_EX_STOP_UI
+ENDIF
+
+
+; -------------------------------------------------------
+; 2) UI -> PROFIL: commit ENDAST vid verklig ändring
+;    (samla i VVP_UI_CHANGE_FLAG för att trigga plan en gång)
+; -------------------------------------------------------
+
+
+; H_BASE
+IF ABS(VVP_H_BASE_UI - VVP_H_BASE_UI_PREV) > 0.001
+  VVP_H_BASE_UI_PREV = VVP_H_BASE_UI
+  IF VVP_PROFILE = 0
+    VVP_P0_H_BASE = VVP_H_BASE_UI
+  ENDIF
+  IF VVP_PROFILE = 1
+    VVP_P1_H_BASE = VVP_H_BASE_UI
+  ENDIF
+  IF VVP_PROFILE = 2
+    VVP_P2_H_BASE = VVP_H_BASE_UI
+  ENDIF
+  IF VVP_PROFILE = 3
+    VVP_P3_H_BASE = VVP_H_BASE_UI
+  ENDIF
+  VVP_UI_CHANGE_FLAG = 1
+ENDIF
+
+; WEEKEND_F
+IF ABS(VVP_WEEKEND_F_UI - VVP_WEEKEND_F_UI_PREV) > 0.001
+  VVP_WEEKEND_F_UI_PREV = VVP_WEEKEND_F_UI
+  IF VVP_PROFILE = 0
+    VVP_P0_WEEKEND_F = VVP_WEEKEND_F_UI
+  ENDIF
+  IF VVP_PROFILE = 1
+    VVP_P1_WEEKEND_F = VVP_WEEKEND_F_UI
+  ENDIF
+  IF VVP_PROFILE = 2
+    VVP_P2_WEEKEND_F = VVP_WEEKEND_F_UI
+  ENDIF
+  IF VVP_PROFILE = 3
+    VVP_P3_WEEKEND_F = VVP_WEEKEND_F_UI
+  ENDIF
+  VVP_UI_CHANGE_FLAG = 1
+ENDIF
+
+; SHARE_M_PCT
+IF ABS(VVP_SHARE_M_PCT_UI - VVP_SHARE_M_PCT_UI_PREV) > 0.001
+  VVP_SHARE_M_PCT_UI_PREV = VVP_SHARE_M_PCT_UI
+  IF VVP_PROFILE = 0
+    VVP_P0_SHARE_M_PCT = VVP_SHARE_M_PCT_UI
+  ENDIF
+  IF VVP_PROFILE = 1
+    VVP_P1_SHARE_M_PCT = VVP_SHARE_M_PCT_UI
+  ENDIF
+  IF VVP_PROFILE = 2
+    VVP_P2_SHARE_M_PCT = VVP_SHARE_M_PCT_UI
+  ENDIF
+  IF VVP_PROFILE = 3
+    VVP_P3_SHARE_M_PCT = VVP_SHARE_M_PCT_UI
+  ENDIF
+  VVP_UI_CHANGE_FLAG = 1
+ENDIF
+
+; ANCHOR_M/E_H + LEN (intvärden, 0 giltigt)
+IF VVP_ANCHOR_M_H_UI <> VVP_ANCHOR_M_H_UI_PREV
+  VVP_ANCHOR_M_H_UI_PREV = VVP_ANCHOR_M_H_UI
+  IF VVP_PROFILE = 0
+    VVP_P0_ANCHOR_M_H = VVP_ANCHOR_M_H_UI
+  ENDIF
+  IF VVP_PROFILE = 1
+    VVP_P1_ANCHOR_M_H = VVP_ANCHOR_M_H_UI
+  ENDIF
+  IF VVP_PROFILE = 2
+    VVP_P2_ANCHOR_M_H = VVP_ANCHOR_M_H_UI
+  ENDIF
+  IF VVP_PROFILE = 3
+    VVP_P3_ANCHOR_M_H = VVP_ANCHOR_M_H_UI
+  ENDIF
+  VVP_UI_CHANGE_FLAG = 1
+ENDIF
+
+IF VVP_ANCHOR_M_LEN_UI <> VVP_ANCHOR_M_LEN_UI_PREV
+  VVP_ANCHOR_M_LEN_UI_PREV = VVP_ANCHOR_M_LEN_UI
+  IF VVP_PROFILE = 0
+    VVP_P0_ANCHOR_M_LEN = VVP_ANCHOR_M_LEN_UI
+  ENDIF
+  IF VVP_PROFILE = 1
+    VVP_P1_ANCHOR_M_LEN = VVP_ANCHOR_M_LEN_UI
+  ENDIF
+  IF VVP_PROFILE = 2
+    VVP_P2_ANCHOR_M_LEN = VVP_ANCHOR_M_LEN_UI
+  ENDIF
+  IF VVP_PROFILE = 3
+    VVP_P3_ANCHOR_M_LEN = VVP_ANCHOR_M_LEN_UI
+  ENDIF
+  VVP_UI_CHANGE_FLAG = 1
+ENDIF
+
+IF VVP_ANCHOR_E_H_UI <> VVP_ANCHOR_E_H_UI_PREV
+  VVP_ANCHOR_E_H_UI_PREV = VVP_ANCHOR_E_H_UI
+  IF VVP_PROFILE = 0
+    VVP_P0_ANCHOR_E_H = VVP_ANCHOR_E_H_UI
+  ENDIF
+  IF VVP_PROFILE = 1
+    VVP_P1_ANCHOR_E_H = VVP_ANCHOR_E_H_UI
+  ENDIF
+  IF VVP_PROFILE = 2
+    VVP_P2_ANCHOR_E_H = VVP_ANCHOR_E_H_UI
+  ENDIF
+  IF VVP_PROFILE = 3
+    VVP_P3_ANCHOR_E_H = VVP_ANCHOR_E_H_UI
+  ENDIF
+  VVP_UI_CHANGE_FLAG = 1
+ENDIF
+
+IF VVP_ANCHOR_E_LEN_UI <> VVP_ANCHOR_E_LEN_UI_PREV
+  VVP_ANCHOR_E_LEN_UI_PREV = VVP_ANCHOR_E_LEN_UI
+  IF VVP_PROFILE = 0
+    VVP_P0_ANCHOR_E_LEN = VVP_ANCHOR_E_LEN_UI
+  ENDIF
+  IF VVP_PROFILE = 1
+    VVP_P1_ANCHOR_E_LEN = VVP_ANCHOR_E_LEN_UI
+  ENDIF
+  IF VVP_PROFILE = 2
+    VVP_P2_ANCHOR_E_LEN = VVP_ANCHOR_E_LEN_UI
+  ENDIF
+  IF VVP_PROFILE = 3
+    VVP_P3_ANCHOR_E_LEN = VVP_ANCHOR_E_LEN_UI
+  ENDIF
+  VVP_UI_CHANGE_FLAG = 1
+ENDIF
+
+; MAX_INROW / MAX_GAP / CAP_SLACK
+IF ABS(VVP_MAX_INROW_UI - VVP_MAX_INROW_UI_PREV) > 0.001
+  VVP_MAX_INROW_UI_PREV = VVP_MAX_INROW_UI
+  IF VVP_PROFILE = 0
+    VVP_P0_MAX_INROW = VVP_MAX_INROW_UI
+  ENDIF
+  IF VVP_PROFILE = 1
+    VVP_P1_MAX_INROW = VVP_MAX_INROW_UI
+  ENDIF
+  IF VVP_PROFILE = 2
+    VVP_P2_MAX_INROW = VVP_MAX_INROW_UI
+  ENDIF
+  IF VVP_PROFILE = 3
+    VVP_P3_MAX_INROW = VVP_MAX_INROW_UI
+  ENDIF
+  VVP_UI_CHANGE_FLAG = 1
+ENDIF
+
+IF ABS(VVP_MAX_GAP_H_UI - VVP_MAX_GAP_H_UI_PREV) > 0.001
+  VVP_MAX_GAP_H_UI_PREV = VVP_MAX_GAP_H_UI
+  IF VVP_PROFILE = 0
+    VVP_P0_MAX_GAP_H = VVP_MAX_GAP_H_UI
+  ENDIF
+  IF VVP_PROFILE = 1
+    VVP_P1_MAX_GAP_H = VVP_MAX_GAP_H_UI
+  ENDIF
+  IF VVP_PROFILE = 2
+    VVP_P2_MAX_GAP_H = VVP_MAX_GAP_H_UI
+  ENDIF
+  IF VVP_PROFILE = 3
+    VVP_P3_MAX_GAP_H = VVP_MAX_GAP_H_UI
+  ENDIF
+  VVP_UI_CHANGE_FLAG = 1
+ENDIF
+
+IF ABS(VVP_CAP_SLACK_H_UI - VVP_CAP_SLACK_H_UI_PREV) > 0.001
+  VVP_CAP_SLACK_H_UI_PREV = VVP_CAP_SLACK_H_UI
+  IF VVP_PROFILE = 0
+    VVP_P0_CAP_SLACK_H = VVP_CAP_SLACK_H_UI
+  ENDIF
+  IF VVP_PROFILE = 1
+    VVP_P1_CAP_SLACK_H = VVP_CAP_SLACK_H_UI
+  ENDIF
+  IF VVP_PROFILE = 2
+    VVP_P2_CAP_SLACK_H = VVP_CAP_SLACK_H_UI
+  ENDIF
+  IF VVP_PROFILE = 3
+    VVP_P3_CAP_SLACK_H = VVP_CAP_SLACK_H_UI
+  ENDIF
+  VVP_UI_CHANGE_FLAG = 1
+ENDIF
+
+; BUDGET_M/E_MIN
+IF ABS(VVP_BUDGET_M_MIN_UI - VVP_BUDGET_M_MIN_UI_PREV) > 0.001
+  VVP_BUDGET_M_MIN_UI_PREV = VVP_BUDGET_M_MIN_UI
+  IF VVP_PROFILE = 0
+    VVP_P0_BUDGET_M_MIN = VVP_BUDGET_M_MIN_UI
+  ENDIF
+  IF VVP_PROFILE = 1
+    VVP_P1_BUDGET_M_MIN = VVP_BUDGET_M_MIN_UI
+  ENDIF
+  IF VVP_PROFILE = 2
+    VVP_P2_BUDGET_M_MIN = VVP_BUDGET_M_MIN_UI
+  ENDIF
+  IF VVP_PROFILE = 3
+    VVP_P3_BUDGET_M_MIN = VVP_BUDGET_M_MIN_UI
+  ENDIF
+  VVP_UI_CHANGE_FLAG = 1
+ENDIF
+
+IF ABS(VVP_BUDGET_E_MIN_UI - VVP_BUDGET_E_MIN_UI_PREV) > 0.001
+  VVP_BUDGET_E_MIN_UI_PREV = VVP_BUDGET_E_MIN_UI
+  IF VVP_PROFILE = 0
+    VVP_P0_BUDGET_E_MIN = VVP_BUDGET_E_MIN_UI
+  ENDIF
+  IF VVP_PROFILE = 1
+    VVP_P1_BUDGET_E_MIN = VVP_BUDGET_E_MIN_UI
+  ENDIF
+  IF VVP_PROFILE = 2
+    VVP_P2_BUDGET_E_MIN = VVP_BUDGET_E_MIN_UI
+  ENDIF
+  IF VVP_PROFILE = 3
+    VVP_P3_BUDGET_E_MIN = VVP_BUDGET_E_MIN_UI
+  ENDIF
+  VVP_UI_CHANGE_FLAG = 1
+ENDIF
+
+; TOPO
+IF ABS(VVP_TOPO_UI - VVP_TOPO_UI_PREV) > 0.001
+  VVP_TOPO_UI_PREV = VVP_TOPO_UI
+  IF VVP_PROFILE = 0
+    VVP_P0_TOPO = VVP_TOPO_UI
+  ENDIF
+  IF VVP_PROFILE = 1
+    VVP_P1_TOPO = VVP_TOPO_UI
+  ENDIF
+  IF VVP_PROFILE = 2
+    VVP_P2_TOPO = VVP_TOPO_UI
+  ENDIF
+  IF VVP_PROFILE = 3
+    VVP_P3_TOPO = VVP_TOPO_UI
+  ENDIF
+  VVP_UI_CHANGE_FLAG = 1
+ENDIF
+
+; DEG_EC/EX_START/STOP
+IF ABS(VVP_DEG_EC_START_UI - VVP_DEG_EC_START_UI_PREV) > 0.001
+  VVP_DEG_EC_START_UI_PREV = VVP_DEG_EC_START_UI
+  IF VVP_PROFILE = 0
+    VVP_P0_DEG_EC_START = VVP_DEG_EC_START_UI
+  ENDIF
+  IF VVP_PROFILE = 1
+    VVP_P1_DEG_EC_START = VVP_DEG_EC_START_UI
+  ENDIF
+  IF VVP_PROFILE = 2
+    VVP_P2_DEG_EC_START = VVP_DEG_EC_START_UI
+  ENDIF
+  IF VVP_PROFILE = 3
+    VVP_P3_DEG_EC_START = VVP_DEG_EC_START_UI
+  ENDIF
+  VVP_UI_CHANGE_FLAG = 1
+ENDIF
+
+IF ABS(VVP_DEG_EC_STOP_UI - VVP_DEG_EC_STOP_UI_PREV) > 0.001
+  VVP_DEG_EC_STOP_UI_PREV = VVP_DEG_EC_STOP_UI
+  IF VVP_PROFILE = 0
+    VVP_P0_DEG_EC_STOP = VVP_DEG_EC_STOP_UI
+  ENDIF
+  IF VVP_PROFILE = 1
+    VVP_P1_DEG_EC_STOP = VVP_DEG_EC_STOP_UI
+  ENDIF
+  IF VVP_PROFILE = 2
+    VVP_P2_DEG_EC_STOP = VVP_DEG_EC_STOP_UI
+  ENDIF
+  IF VVP_PROFILE = 3
+    VVP_P3_DEG_EC_STOP = VVP_DEG_EC_STOP_UI
+  ENDIF
+  VVP_UI_CHANGE_FLAG = 1
+ENDIF
+
+IF ABS(VVP_DEG_EX_START_UI - VVP_DEG_EX_START_UI_PREV) > 0.001
+  VVP_DEG_EX_START_UI_PREV = VVP_DEG_EX_START_UI
+  IF VVP_PROFILE = 0
+    VVP_P0_DEG_EX_START = VVP_DEG_EX_START_UI
+  ENDIF
+  IF VVP_PROFILE = 1
+    VVP_P1_DEG_EX_START = VVP_DEG_EX_START_UI
+  ENDIF
+  IF VVP_PROFILE = 2
+    VVP_P2_DEG_EX_START = VVP_DEG_EX_START_UI
+  ENDIF
+  IF VVP_PROFILE = 3
+    VVP_P3_DEG_EX_START = VVP_DEG_EX_START_UI
+  ENDIF
+  VVP_UI_CHANGE_FLAG = 1
+ENDIF
+
+IF ABS(VVP_DEG_EX_STOP_UI - VVP_DEG_EX_STOP_UI_PREV) > 0.001
+  VVP_DEG_EX_STOP_UI_PREV = VVP_DEG_EX_STOP_UI
+  IF VVP_PROFILE = 0
+    VVP_P0_DEG_EX_STOP = VVP_DEG_EX_STOP_UI
+  ENDIF
+  IF VVP_PROFILE = 1
+    VVP_P1_DEG_EX_STOP = VVP_DEG_EX_STOP_UI
+  ENDIF
+  IF VVP_PROFILE = 2
+    VVP_P2_DEG_EX_STOP = VVP_DEG_EX_STOP_UI
+  ENDIF
+  IF VVP_PROFILE = 3
+    VVP_P3_DEG_EX_STOP = VVP_DEG_EX_STOP_UI
+  ENDIF
+  VVP_UI_CHANGE_FLAG = 1
+ENDIF
+
+
+
+
+; -------------------------------------------------------
+; 3) RUNTIME (R) = AKTIV PROFIL (ingen HMI-override här)
+; -------------------------------------------------------
+IF VVP_PROFILE = 0
+  VVP_H_BASE_R        = VVP_P0_H_BASE
+  VVP_WEEKEND_F_R     = VVP_P0_WEEKEND_F
+  VVP_SHARE_M_PCT_R   = VVP_P0_SHARE_M_PCT
+  VVP_ANCHOR_M_H_R    = VVP_P0_ANCHOR_M_H
+  VVP_ANCHOR_M_LEN_R  = VVP_P0_ANCHOR_M_LEN
+  VVP_ANCHOR_E_H_R    = VVP_P0_ANCHOR_E_H
+  VVP_ANCHOR_E_LEN_R  = VVP_P0_ANCHOR_E_LEN
+  VVP_MAX_INROW_R     = VVP_P0_MAX_INROW
+  VVP_MAX_GAP_H_R     = VVP_P0_MAX_GAP_H
+  VVP_CAP_SLACK_H_R   = VVP_P0_CAP_SLACK_H
+  VVP_BUDGET_M_MIN_R  = VVP_P0_BUDGET_M_MIN
+  VVP_BUDGET_E_MIN_R  = VVP_P0_BUDGET_E_MIN
+  VVP_TOPO_R          = VVP_P0_TOPO
+  VVP_DEG_EC_START_R  = VVP_P0_DEG_EC_START
+  VVP_DEG_EC_STOP_R   = VVP_P0_DEG_EC_STOP
+  VVP_DEG_EX_START_R  = VVP_P0_DEG_EX_START
+  VVP_DEG_EX_STOP_R   = VVP_P0_DEG_EX_STOP
+ENDIF
+IF VVP_PROFILE = 1
+  VVP_H_BASE_R        = VVP_P1_H_BASE
+  VVP_WEEKEND_F_R     = VVP_P1_WEEKEND_F
+  VVP_SHARE_M_PCT_R   = VVP_P1_SHARE_M_PCT
+  VVP_ANCHOR_M_H_R    = VVP_P1_ANCHOR_M_H
+  VVP_ANCHOR_M_LEN_R  = VVP_P1_ANCHOR_M_LEN
+  VVP_ANCHOR_E_H_R    = VVP_P1_ANCHOR_E_H
+  VVP_ANCHOR_E_LEN_R  = VVP_P1_ANCHOR_E_LEN
+  VVP_MAX_INROW_R     = VVP_P1_MAX_INROW
+  VVP_MAX_GAP_H_R     = VVP_P1_MAX_GAP_H
+  VVP_CAP_SLACK_H_R   = VVP_P1_CAP_SLACK_H
+  VVP_BUDGET_M_MIN_R  = VVP_P1_BUDGET_M_MIN
+  VVP_BUDGET_E_MIN_R  = VVP_P1_BUDGET_E_MIN
+  VVP_TOPO_R          = VVP_P1_TOPO
+  VVP_DEG_EC_START_R  = VVP_P1_DEG_EC_START
+  VVP_DEG_EC_STOP_R   = VVP_P1_DEG_EC_STOP
+  VVP_DEG_EX_START_R  = VVP_P1_DEG_EX_START
+  VVP_DEG_EX_STOP_R   = VVP_P1_DEG_EX_STOP
+ENDIF
+IF VVP_PROFILE = 2
+  VVP_H_BASE_R        = VVP_P2_H_BASE
+  VVP_WEEKEND_F_R     = VVP_P2_WEEKEND_F
+  VVP_SHARE_M_PCT_R   = VVP_P2_SHARE_M_PCT
+  VVP_ANCHOR_M_H_R    = VVP_P2_ANCHOR_M_H
+  VVP_ANCHOR_M_LEN_R  = VVP_P2_ANCHOR_M_LEN
+  VVP_ANCHOR_E_H_R    = VVP_P2_ANCHOR_E_H
+  VVP_ANCHOR_E_LEN_R  = VVP_P2_ANCHOR_E_LEN
+  VVP_MAX_INROW_R     = VVP_P2_MAX_INROW
+  VVP_MAX_GAP_H_R     = VVP_P2_MAX_GAP_H
+  VVP_CAP_SLACK_H_R   = VVP_P2_CAP_SLACK_H
+  VVP_BUDGET_M_MIN_R  = VVP_P2_BUDGET_M_MIN
+  VVP_BUDGET_E_MIN_R  = VVP_P2_BUDGET_E_MIN
+  VVP_TOPO_R          = VVP_P2_TOPO
+  VVP_DEG_EC_START_R  = VVP_P2_DEG_EC_START
+  VVP_DEG_EC_STOP_R   = VVP_P2_DEG_EC_STOP
+  VVP_DEG_EX_START_R  = VVP_P2_DEG_EX_START
+  VVP_DEG_EX_STOP_R   = VVP_P2_DEG_EX_STOP
+ENDIF
+IF VVP_PROFILE = 3
+  VVP_H_BASE_R        = VVP_P3_H_BASE
+  VVP_WEEKEND_F_R     = VVP_P3_WEEKEND_F
+  VVP_SHARE_M_PCT_R   = VVP_P3_SHARE_M_PCT
+  VVP_ANCHOR_M_H_R    = VVP_P3_ANCHOR_M_H
+  VVP_ANCHOR_M_LEN_R  = VVP_P3_ANCHOR_M_LEN
+  VVP_ANCHOR_E_H_R    = VVP_P3_ANCHOR_E_H
+  VVP_ANCHOR_E_LEN_R  = VVP_P3_ANCHOR_E_LEN
+  VVP_MAX_INROW_R     = VVP_P3_MAX_INROW
+  VVP_MAX_GAP_H_R     = VVP_P3_MAX_GAP_H
+  VVP_CAP_SLACK_H_R   = VVP_P3_CAP_SLACK_H
+  VVP_BUDGET_M_MIN_R  = VVP_P3_BUDGET_M_MIN
+  VVP_BUDGET_E_MIN_R  = VVP_P3_BUDGET_E_MIN
+  VVP_TOPO_R          = VVP_P3_TOPO
+  VVP_DEG_EC_START_R  = VVP_P3_DEG_EC_START
+  VVP_DEG_EC_STOP_R   = VVP_P3_DEG_EC_STOP
+  VVP_DEG_EX_START_R  = VVP_P3_DEG_EX_START
+  VVP_DEG_EX_STOP_R   = VVP_P3_DEG_EX_STOP
+ENDIF
+
+; Clamp 0..24 där det är relevant  (ÅTGÄRD: CAP_SLACK övre gräns!)
+IF VVP_MAX_INROW_R < 0.0
+  VVP_MAX_INROW_R = 0.0
+ENDIF
+IF VVP_MAX_INROW_R > 24.0
+  VVP_MAX_INROW_R = 24.0
+ENDIF
+IF VVP_MAX_GAP_H_R < 0.0
+  VVP_MAX_GAP_H_R = 0.0
+ENDIF
+IF VVP_MAX_GAP_H_R > 24.0
+  VVP_MAX_GAP_H_R = 24.0
+ENDIF
+IF VVP_CAP_SLACK_H_R < 0.0
+  VVP_CAP_SLACK_H_R = 0.0
+ENDIF
+IF VVP_CAP_SLACK_H_R > 24.0
+  VVP_CAP_SLACK_H_R = 24.0
+ENDIF
+
+
+; -------------------------------------------------------
+; 4) R -> index (15-min perioder)
+; -------------------------------------------------------
+MAX_INROW_P = CvR(VVP_MAX_INROW_R * 4.0)
+MAX_GAP_P   = CvR(VVP_MAX_GAP_H_R * 4.0)
+CAP_SLACK_P = CvR(VVP_CAP_SLACK_H_R * 4.0)
+IF MAX_INROW_P < 0
+  MAX_INROW_P = 0
+ENDIF
+IF MAX_INROW_P > 96
+  MAX_INROW_P = 96
+ENDIF
+IF MAX_GAP_P < 0
+  MAX_GAP_P = 0
+ENDIF
+IF MAX_GAP_P > 96
+  MAX_GAP_P = 96
+ENDIF
+IF CAP_SLACK_P < 0
+  CAP_SLACK_P = 0
+ENDIF
+IF CAP_SLACK_P > 96
+  CAP_SLACK_P = 96
+ENDIF  ; sekundärt skydd
+
+; VV plan sync: ACK från Pi återställ ACK och släck CHANGED
+IF VV_PLAN_ACK <> 0
+  VV_PLAN_ACK = 0
+  VV_PLAN_CHANGED = 0
+ENDIF
+
+
+
+; -------------------------------------------------------
+; 4.9 Samlad trigg: plan körs max en gång per cykel
+; -------------------------------------------------------
+; Här samlas alla möjliga orsaker till ny planering.
+; VVP_PLAN_TRIG sätts EN gång efter att alla flaggor samlats.
+
+; Diagnos + självläkning: räkna aktiv VV-plan.
+; Om planen är tom kan vi trigga ny planering automatiskt.
+DIAG_VV_PLAN = "VV_idle"
+PLAN_CNT_VV = 0
+UpLoop kp From 0 To 95
+  IF VV_PLAN[kp] <> 0
+    PLAN_CNT_VV = PLAN_CNT_VV + 1
+  ENDIF
+EndLoop
+
+VVP_PLAN_TRIG = 0
+
+If VVP_PLAN_NOW <> 0
+  VVP_PLAN_TRIG = 1
+ENDIF
+IF VVP_UI_CHANGE_FLAG <> 0
+  VVP_PLAN_TRIG = 1
+ENDIF
+IF VVP_PROFILE_UI <> VVP_PROFILE
+  VVP_PLAN_TRIG = 1
+ENDIF
+
+IF VVP_PRICE_TRIG <> 0
+  VVP_PLAN_TRIG = 1
+ENDIF
+
+; Självläkning: om vi använder plan men VV_PLAN[] är tom,
+; trigga planering så att den byggs upp igen (t.ex. efter kallstart).
+IF VVP_USE_PLAN <> 0
+  IF PLAN_CNT_VV = 0
+    VVP_PLAN_TRIG = 1
+    DIAG_VV_PLAN = "VV_empty_autotrig"
+  ENDIF
+ENDIF
+
+
+
+; -------------------------------------------------------
+; 5) PLAN - körs endast om triggat, lås mot återinträde
+; -------------------------------------------------------
+IF VVP_PLAN_BUSY = 0
+  VVP_PLAN_BUSY = 1
+DIAG_PLAN_STEP = 10
+
+  IF VVP_PLAN_TRIG <> 0
+    VVP_PLAN_TRIG = 0
+DIAG_PLAN_STEP = 20
+
+    ; 5.1 Bastimmar (topo+helg) + clamp
+    VVP_H_BASE = VVP_H_BASE_R * VVP_TOPO_R
+    IF (WDay = 6) OR (WDay = 7)
+      VVP_H_BASE = VVP_H_BASE * VVP_WEEKEND_F_R
+    ENDIF
+    IF VVP_H_BASE < VVP_H_MIN
+      VVP_H_BASE = VVP_H_MIN
+    ENDIF
+    IF VVP_H_BASE > VVP_H_MAX
+      VVP_H_BASE = VVP_H_MAX
+    ENDIF
+DIAG_PLAN_STEP = 30
+    ; 5.2 Krävda perioder
+    needP = CvR(VVP_H_BASE*4.0 + 0.5)
+    IF needP < 0
+      needP = 0
+    ENDIF
+    IF needP > 96
+      needP = 96
+    ENDIF
+DIAG_PLAN_STEP = 35
+    ; 5.3 Nollställ plan
+    UpLoop LCLR_KP From 0 To 95
+      VV_PLAN[LCLR_KP] = 0
+    EndLoop
+    pickedP = 0
+DIAG_PLAN_STEP = 40
+
+    ; 5.4 Budgetar (min -> perioder)
+    m_startI = VVP_ANCHOR_M_H_R * 4
+    m_lenI   = VVP_ANCHOR_M_LEN_R * 4
+    e_startI = VVP_ANCHOR_E_H_R * 4
+    e_lenI   = VVP_ANCHOR_E_LEN_R * 4
+
+    ; Clamp mot giltiga index
+    IF m_startI < 0
+      m_startI = 0
+    ENDIF
+    IF m_startI > 95
+      m_startI = 95
+    ENDIF
+    IF e_startI < 0
+      e_startI = 0
+    ENDIF
+    IF e_startI > 95
+      e_startI = 95
+    ENDIF
+    IF m_lenI < 0
+      m_lenI = 0
+    ENDIF
+    IF m_lenI > 96
+      m_lenI = 96
+    ENDIF
+    IF e_lenI < 0
+      e_lenI = 0
+    ENDIF
+    IF e_lenI > 96
+      e_lenI = 96
+    ENDIF
+
+    ; Budget (min -> perioder)
+    budgetM_P = CvR((VVP_BUDGET_M_MIN_R + 14) / 15)
+    budgetE_P = CvR((VVP_BUDGET_E_MIN_R + 14) / 15)
+    IF budgetM_P < 0
+      budgetM_P = 0
+    ENDIF
+    IF budgetE_P < 0
+      budgetE_P = 0
+    ENDIF
+    IF budgetM_P > CvX(m_lenI)
+      budgetM_P = CvX(m_lenI)
+    ENDIF
+    IF budgetE_P > CvX(e_lenI)
+      budgetE_P = CvX(e_lenI)
+    ENDIF
+
+    ; ===== Stopptak för antalet under planeringskroppen =====
+    slackTargetP = needP + CAP_SLACK_P
+    IF slackTargetP > 96
+      slackTargetP = 96
+    ENDIF
+DIAG_PLAN_STEP = 45
+  ; 5.5 Globalseed - billigast först
+    UpLoop rI From 0 To 95
+      found = 0
+      UpLoop kp From 0 To 95
+        IF RANK_W[kp] = CvX(rI)
+          rP = kp
+          found = 1
+        ENDIF
+      EndLoop
+      IF found
+        IF pickedP < needP
+          IF EX_HH[rP] = 0
+            VV_PLAN[rP] = 1
+            pickedP = pickedP + 1
+          ENDIF
+        ENDIF
+      ENDIF
+    EndLoop
+
+    ; Fallback om inget valts
+    IF pickedP = 0
+      bestRank = 999
+      bestP = -1
+      UpLoop LPLN_SEED_K From 0 To 95
+        IF EX_HH[LPLN_SEED_K] = 0
+          IF RANK_W[LPLN_SEED_K] < bestRank
+            bestRank = RANK_W[LPLN_SEED_K]
+            bestP = CvX(LPLN_SEED_K)
+          ENDIF
+        ENDIF
+      EndLoop
+      IF bestP >= 0
+        QX = CvI(bestP)
+        VV_PLAN[QX] = 1
+        pickedP = 1
+      ENDIF
+    ENDIF
+DIAG_PLAN_STEP = 50
+  ; 5.6-5.8 ANCHOR M/E (räkna, top-up i fönster)
+    haveM_P = 0
+    haveE_P = 0
+    UpLoop kp From 0 To 95
+      inM = 0
+      inE = 0
+
+      IF m_lenI > 0
+        IF kp >= m_startI
+          IF kp <= (m_startI + m_lenI - 1)
+            inM = 1
+          ENDIF
+        ENDIF
+        IF (m_startI + m_lenI - 1) > 95
+          IF kp <= (m_startI + m_lenI - 1 - 96)
+            inM = 1
+          ENDIF
+        ENDIF
+      ENDIF
+
+    DIAG_PLAN_STEP = 51
+
+      IF e_lenI > 0
+        IF kp >= e_startI
+          IF kp <= (e_startI + e_lenI - 1)
+            inE = 1
+          ENDIF
+        ENDIF
+        IF (e_startI + e_lenI - 1) > 95
+          IF kp <= (e_startI + e_lenI - 1 - 96)
+            inE = 1
+          ENDIF
+        ENDIF
+      ENDIF
+
+    DIAG_PLAN_STEP = 52
+
+      IF VV_PLAN[kp] <> 0
+        IF inM <> 0
+          haveM_P = haveM_P + 1
+        ENDIF
+        IF inE <> 0
+          haveE_P = haveE_P + 1
+        ENDIF
+      ENDIF
+    EndLoop
+
+   VVP_HAVEM    = haveM_P
+   VVP_BUDGETM  = budgetM_P
+   VVP_HAVEE    = haveE_P
+   VVP_BUDGETE  = budgetE_P
+
+
+
+
+    DIAG_PLAN_STEP = 55
+
+; =====================================================================
+; 5.7 Top-up M (billigast först i fönster) - budget styr, optimerad
+; =====================================================================
+IF VVP_EN_ANCHOR_M <> 0
+  IF m_lenI > 0
+    IF haveM_P < budgetM_P
+      UpLoop rI From 0 To 95
+        found = 0
+        UpLoop kp From 0 To 95
+          IF CmpI(RANK_W[kp] = CvX(rI))
+            rP = kp
+            found = 1
+          ENDIF
+        EndLoop
+
+        IF found
+          inM_ok = 0
+
+          IF rP >= m_startI
+            IF rP <= (m_startI + m_lenI - 1)
+              inM_ok = 1
+            ENDIF
+          ENDIF
+
+          IF (m_startI + m_lenI - 1) > 95
+            IF rP <= (m_startI + m_lenI - 1 - 96)
+              inM_ok = 1
+            ENDIF
+          ENDIF
+
+          IF inM_ok <> 0
+            IF VV_PLAN[rP] = 0
+              IF EX_HH[rP] = 0
+                VV_PLAN[rP] = 1
+                pickedP     = pickedP + 1
+                haveM_P     = haveM_P + 1
+              ENDIF
+            ENDIF
+          ENDIF
+        ENDIF
+
+        ; bryt båda loopar när budget uppnådd
+        IF haveM_P >= budgetM_P
+          kp = 96
+          rI = 96
+        ENDIF
+      EndLoop
+    ENDIF
+  ENDIF
+ENDIF
+
+
+DIAG_PLAN_STEP = 60
+
+; =====================================================================
+; 5.8 Top-up E (billigast först i fönster) - budget styr, optimerad
+; =====================================================================
+IF VVP_EN_ANCHOR_E <> 0
+  IF e_lenI > 0
+    IF haveE_P < budgetE_P
+      UpLoop rI From 0 To 95
+        found = 0
+        UpLoop kp From 0 To 95
+          IF CmpI(RANK_W[kp] = CvX(rI))
+            rP = kp
+            found = 1
+          ENDIF
+        EndLoop
+
+        IF found
+          inE_ok = 0
+
+          IF rP >= e_startI
+            IF rP <= (e_startI + e_lenI - 1)
+              inE_ok = 1
+            ENDIF
+          ENDIF
+
+          IF (e_startI + e_lenI - 1) > 95
+            IF rP <= (e_startI + e_lenI - 1 - 96)
+              inE_ok = 1
+            ENDIF
+          ENDIF
+
+          IF inE_ok <> 0
+            IF VV_PLAN[rP] = 0
+              IF EX_HH[rP] = 0
+                VV_PLAN[rP] = 1
+                pickedP     = pickedP + 1
+                haveE_P     = haveE_P + 1
+              ENDIF
+            ENDIF
+          ENDIF
+        ENDIF
+
+        ; bryt båda loopar när budget uppnådd
+        IF haveE_P >= budgetE_P
+          kp = 96
+          rI = 96
+        ENDIF
+      EndLoop
+    ENDIF
+  ENDIF
+ENDIF
+
+
+DIAG_PLAN_STEP = 65
+
+; =====================================================================
+; 5.9 GAP-fill (EXOL: källtyp-casts, inga nya variabler)
+;  - Fyll luckor > MAX_GAP_P
+;  - Vid lika pris: välj period närmast mitten av gapet
+;  - Lägg in högst EN period per varv
+;  - Hanterar även wrap-gap (sista -> första)
+; =====================================================================
+
+IF VVP_EN_GAP <> 0
+  IF MAX_GAP_P > 0
+    addedGap = 0
+    UpLoop riI From 0 To 95
+      addedGap = 0
+
+      ; Stoppa gap-fill när vi nått needP + slack (enligt kommentaren ovan)
+      IF pickedP >= slackTargetP
+        riI = 96
+      ELSE
+
+    ; --- räkna första/sista vald ---
+    firstSel = 999
+    lastSel  = -1
+    selCnt   = 0
+    UpLoop kp From 0 To 95
+      IF VV_PLAN[kp] <> 0
+        selCnt = selCnt + 1
+        T_I = CvX(kp)
+        IF T_I < firstSel
+          firstSel = T_I
+        ENDIF
+        IF T_I > lastSel
+          lastSel = T_I
+        ENDIF
+      ENDIF
+    EndLoop
+
+    IF selCnt > 0
+      IF selCnt > 1
+      ; =====================  A) ICKE-WRAP  =====================
+      lastP_I = -1
+      UpLoop kp From 0 To 95
+        IF VV_PLAN[kp] <> 0
+          IF lastP_I >= 0
+            T_I    = CvX(kp)
+            gapLen = T_I - lastP_I - 1
+            IF gapLen < 0
+              gapLen = gapLen + 96
+            ENDIF
+
+            IF gapLen > MAX_GAP_P
+              bestP    = -1
+              bestRank = 999
+
+              ; gränser för gap (Index kräver I->X cast via mellan-I)
+              TMP2   = lastP_I + 1
+              gStart = CvI(TMP2)
+              TMP2   = T_I - 1
+              gEnd   = CvI(TMP2)
+
+              ; mittpunkt (Index -> Integer per operand)
+              TMP = (CvX(gStart) + CvX(gEnd)) / 2
+
+              ; billigast i gapet, tie-break: närmast mitten
+              UpLoop rI From 0 To 95
+                found = 0
+                UpLoop gP From gStart To gEnd
+                  IF RANK_W[gP] = CvX(rI)
+                    found = 1
+                    IF (VV_PLAN[gP] = 0) AND (EX_HH[gP] = 0)
+                      okIR = 1
+                      IF VVP_GAP_OVER_INROW = 0
+                        IF MAX_INROW_P > 0
+                          ; svitlängd runt gP (Index->Integer när vi räknar)
+                          runL = 0
+                          TMP2 = CvX(gP) - 1
+                          While TMP2 >= 0
+                            QX = CvI(TMP2)
+                            IF VV_PLAN[QX] <> 0
+                              runL = runL + 1
+                              TMP2 = TMP2 - 1
+                            ELSE
+                              TMP2 = -1
+                            ENDIF
+                          EndWhile
+
+                          runR = 0
+                          TMP2 = CvX(gP) + 1
+                          While TMP2 <= 95
+                            QX = CvI(TMP2)
+                            IF VV_PLAN[QX] <> 0
+                              runR = runR + 1
+                              TMP2 = TMP2 + 1
+                            ELSE
+                              TMP2 = 96
+                            ENDIF
+                          EndWhile
+
+                          IF (runL + 1 + runR) > MAX_INROW_P
+                            okIR = 0
+                          ENDIF
+                        ENDIF
+                      ENDIF
+
+                      IF okIR <> 0
+                        IF RANK_W[gP] < bestRank
+                          bestRank = RANK_W[gP]
+                          bestP    = CvX(gP)     ; källan är Index
+                        ELSE
+                          IF RANK_W[gP] = bestRank
+                            ; avstånd till mitten utan ABS()
+                            runL = CvX(gP) - TMP
+                            IF runL < 0
+                              runL = 0 - runL
+                            ENDIF
+                            runR = bestP - TMP
+                            IF runR < 0
+                              runR = 0 - runR
+                            ENDIF
+                            IF runL < runR
+                              bestP = CvX(gP)
+                            ENDIF
+                          ENDIF
+                        ENDIF
+                      ENDIF
+                    ENDIF
+                  ENDIF
+                EndLoop
+              EndLoop
+
+              IF bestP >= 0
+                IF pickedP < slackTargetP
+                  QX = CvI(bestP)        ; I -> X för arrayindex
+                  VV_PLAN[QX] = 1
+                  pickedP     = pickedP + 1
+                  addedGap    = 1
+                ENDIF
+              ENDIF
+            ENDIF
+          ENDIF
+
+          ; bryt denna genomgång om en period lades in
+          IF addedGap <> 0
+            kp = 96
+          ENDIF
+
+          lastP_I = CvX(kp)
+        ENDIF
+      EndLoop
+
+      ENDIF
+
+      ; =====================  B) WRAP-GAP  =====================
+      IF addedGap = 0
+        gapLen = firstSel - lastSel - 1
+        IF gapLen < 0
+          gapLen = gapLen + 96
+        ENDIF
+
+        IF gapLen > MAX_GAP_P
+          bestP    = -1
+          bestRank = 999
+
+            ; del 1: [lastSel+1 .. 95]
+            TMP2   = lastSel + 1
+            gStart = CvI(TMP2)
+            TMP2   = 95
+            gEnd   = CvI(TMP2)
+            TMP    = (CvX(gStart) + CvX(gEnd)) / 2
+
+            UpLoop rI From 0 To 95
+              found = 0
+              UpLoop gP From gStart To gEnd
+                IF RANK_W[gP] = CvX(rI)
+                  found = 1
+                  IF (VV_PLAN[gP] = 0) AND (EX_HH[gP] = 0)
+                    IF RANK_W[gP] < bestRank
+                      bestRank = RANK_W[gP]
+                      bestP    = CvX(gP)
+                    ELSE
+                      IF RANK_W[gP] = bestRank
+                        runL = CvX(gP) - TMP
+                        IF runL < 0
+                          runL = 0 - runL
+                        ENDIF
+                        runR = bestP - TMP
+                        IF runR < 0
+                          runR = 0 - runR
+                        ENDIF
+                        IF runL < runR
+                          bestP = CvX(gP)
+                        ENDIF
+                      ENDIF
+                    ENDIF
+                  ENDIF
+                ENDIF
+              EndLoop
+            EndLoop
+
+            ; del 2: [0 .. firstSel-1] om inget valt
+            IF bestP < 0
+              TMP2   = 0
+              gStart = CvI(TMP2)
+              TMP2   = firstSel - 1
+              gEnd   = CvI(TMP2)
+              TMP    = (CvX(gStart) + CvX(gEnd)) / 2
+
+              UpLoop rI From 0 To 95
+                found = 0
+                UpLoop gP From gStart To gEnd
+                  IF RANK_W[gP] = CvX(rI)
+                    found = 1
+                    IF (VV_PLAN[gP] = 0) AND (EX_HH[gP] = 0)
+                      IF RANK_W[gP] < bestRank
+                        bestRank = RANK_W[gP]
+                        bestP    = CvX(gP)
+                      ELSE
+                        IF RANK_W[gP] = bestRank
+                          runL = CvX(gP) - TMP
+                          IF runL < 0
+                            runL = 0 - runL
+                          ENDIF
+                          runR = bestP - TMP
+                          IF runR < 0
+                            runR = 0 - runR
+                          ENDIF
+                          IF runL < runR
+                            bestP = CvX(gP)
+                          ENDIF
+                        ENDIF
+                      ENDIF
+                    ENDIF
+                  ENDIF
+                EndLoop
+              EndLoop
+            ENDIF
+
+          IF bestP >= 0
+            IF pickedP < slackTargetP
+              QX = CvI(bestP)
+              VV_PLAN[QX] = 1
+              pickedP     = pickedP + 1
+              addedGap    = 1
+            ENDIF
+          ENDIF
+        ENDIF
+      ENDIF
+    ENDIF
+
+    ; --- avsluta yttre loopen när inget mer kan fyllas ---
+   IF addedGap = 0
+          riI = 96
+        ENDIF
+      ENDIF
+      EndLoop
+  ENDIF
+ENDIF
+DIAG_PLAN_STEP = 70
+; =====================================================================
+; 5.10 TRIM (ta bort dyraste utanför M/E tills <= needP+slack)
+; =====================================================================
+IF VVP_EN_TRIM <> 0
+  DIAG_PLAN_STEP = 75
+  targetP = slackTargetP
+
+  IF pickedP > targetP
+    DIAG_PLAN_STEP = 80
+    DownLoop rI From 95 To 0
+      DIAG_PLAN_STEP = 85
+
+      ; --- avbryt direkt om målet redan nåtts ---
+      IF pickedP <= targetP
+        rI = 0          ; enligt EXOL Reference: avslutar DownLoop
+      ELSE
+        UpLoop kp From 0 To 95
+          IF CmpI(RANK_W[kp] = CvX(rI))
+            IF (VV_PLAN[kp] <> 0) AND (EX_HH[kp] = 0)
+              inM = 0
+              inE = 0
+
+              ; --- kontroll om inom M-fönster ---
+              IF m_lenI > 0
+                IF (kp >= m_startI) AND (kp <= (m_startI + m_lenI - 1))
+                  inM = 1
+                ENDIF
+                IF (m_startI + m_lenI - 1) > 95
+                  IF kp <= (m_startI + m_lenI - 1 - 96)
+                    inM = 1
+                  ENDIF
+                ENDIF
+              ENDIF
+
+              ; --- kontroll om inom E-fönster ---
+              IF e_lenI > 0
+                IF (kp >= e_startI) AND (kp <= (e_startI + e_lenI - 1))
+                  inE = 1
+                ENDIF
+                IF (e_startI + e_lenI - 1) > 95
+                  IF kp <= (e_startI + e_lenI - 1 - 96)
+                    inE = 1
+                  ENDIF
+                ENDIF
+              ENDIF
+
+              ; --- ta bort dyraste endast om utanför båda fönster ---
+              IF (inM = 0) AND (inE = 0)
+                VV_PLAN[kp] = 0
+                pickedP = pickedP - 1
+              ENDIF
+            ENDIF
+          ENDIF
+        EndLoop
+      ENDIF
+    EndLoop
+  ENDIF
+ENDIF
+DIAG_PLAN_STEP = 90
+
+; =====================================================================
+; 5.10a INROW-TRIM (tvinga max svitlängd = MAX_INROW_P)
+;  - Går igenom planen, hittar längsta svit av VV_PLAN=1 (med wrap-hantering)
+;  - Om sviten > MAX_INROW_P: ta bort EN period:
+;       * välj högsta RANK_W (dyrast),
+;       * vid lika rank: ta den som ligger närmast mitten av sviten
+;  - Upprepa tills alla sviter är <= MAX_INROW_P
+;  - OBS: påverkar inte M/E-fönsterlogiken (detta steg är fristående)
+; =====================================================================
+
+IF MAX_INROW_P > 0
+  UpLoop OUT_I From 0 To 95          ; säkerhetsvakt: max 96 ingrepp / dygn
+    IR_AnyFix    = 0
+    IR_LongLen   = 0
+    IR_LongStart = -1
+
+    ; ---- A) Skanna 0..95 för icke-wrap-sviter + spara ev. första/ sista ----
+    IR_FirstLen     = 0
+    IR_FirstExists  = 0
+    IR_LastLen      = 0
+    IR_LastStart    = -1
+
+    IR_kp = 0
+    While IR_kp <= 95
+      ; hoppa över nollor
+      While (IR_kp <= 95) AND (VV_PLAN[IR_kp] = 0)
+        IR_kp = IR_kp + 1
+      EndWhile
+
+      IF IR_kp <= 95
+        ; start på en svit = IR_kp
+        IR_RunStart = IR_kp
+        IR_RunLen   = 0
+
+        While (IR_kp <= 95) AND (VV_PLAN[IR_kp] <> 0)
+          IR_RunLen = IR_RunLen + 1
+          IR_kp     = IR_kp + 1
+        EndWhile
+        ; svit är [IR_RunStart .. IR_kp-1] med längd IR_RunLen
+
+        ; spara "första sviten" om den börjar i 0
+        IF IR_RunStart = 0
+          IR_FirstLen    = IR_RunLen
+          IR_FirstExists = 1
+        ENDIF
+
+        ; spara "sista sviten" om den slutar i 95
+        IR_Tmp = IR_kp - 1
+        IF IR_Tmp = 95
+          IR_LastLen   = IR_RunLen
+          IR_LastStart = IR_RunStart
+        ENDIF
+
+        ; uppdatera längsta (icke-wrap) direkt
+        IF IR_RunLen > IR_LongLen
+          IR_LongLen   = IR_RunLen
+          IR_LongStart = IR_RunStart
+        ENDIF
+      ENDIF
+    EndWhile
+
+    ; ---- B) Wrap-merge: om första börjar i 0 och sista slutar i 95, slå ihop ----
+    IF (IR_FirstExists <> 0) AND (IR_LastLen > 0)
+      IR_Tmp = IR_LastLen + IR_FirstLen
+      IF IR_Tmp > IR_LongLen
+        IR_LongLen   = IR_Tmp
+        IR_LongStart = IR_LastStart   ; wrap-svitens start
+      ENDIF
+    ENDIF
+
+    ; ---- C) Om längsta sviten överskrider MAX_INROW_P -> plocka bort 1 period ----
+    IF CmpI(IR_LongLen > MAX_INROW_P)
+      ; mittpunkt i sviten (offset 0..IR_LongLen-1)
+      IR_Mid      = IR_LongLen / 2
+
+      ; välj bort kandidat:
+      IR_BestRank = -1
+      IR_BestDist = 999
+      IR_BestP    = -1
+
+      UpLoop IR_Offset From 0 To 95
+        IF IR_Offset < IR_LongLen
+          ; beräkna index i 0..95, med wrap
+          IR_idx = IR_LongStart + IR_Offset
+          While IR_idx > 95
+            IR_idx = IR_idx - 96
+          EndWhile
+          IR_Wkp = IR_idx
+
+          IF (VV_PLAN[IR_Wkp] <> 0) AND (EX_HH[IR_Wkp] = 0)
+            ; rank som heltal
+            IR_Tmp = RANK_W[IR_Wkp]
+            IR_BestRank = IR_BestRank   ; no-op för klarhet
+            ; Sätt "Br = CvI(RANK_W[IR_Wkp])" utan att använda "r" (Real)
+            IR_Tmp = IR_Tmp           ; IR_Tmp = rank (I)
+            ; distans till mitten (absolutvärde)
+            IR_Dist = IR_Offset - IR_Mid
+            IF IR_Dist < 0
+              IR_Dist = 0 - IR_Dist
+            ENDIF
+
+            ; dyrast först
+            IF CmpI(IR_Tmp > IR_BestRank)
+              IR_BestRank = IR_Tmp
+              IR_BestDist = IR_Dist
+              IR_BestP    = IR_Wkp
+            ELSE
+              IF CmpI(IR_Tmp = IR_BestRank)
+                IF IR_Dist < IR_BestDist
+                  IR_BestDist = IR_Dist
+                  IR_BestP    = IR_Wkp
+                ENDIF
+              ENDIF
+            ENDIF
+          ENDIF
+        ELSE
+          IR_Offset = 96   ; Avsluta UpLoop
+        ENDIF
+      EndLoop
+
+      ; utför borttagning
+      IF IR_BestP >= 0
+        IR_Wkp = IR_BestP
+        VV_PLAN[IR_Wkp] = 0
+        pickedP = pickedP - 1
+        IR_AnyFix = 1
+      ENDIF
+    ENDIF
+
+    ; ---- D) Om inget mer att göra: bryt yttre loopen ----
+    IF IR_AnyFix = 0
+      OUT_I = 96        ; Avsluta UpLoop OUT_I
+    ENDIF
+  EndLoop
+ENDIF
+
+
+
+  ; =====================================================================
+  ; 5.10b Budget recheck efter trim/inrow-trim
+  ;  - INROW-trim kan ta bort perioder inne i ankare-fönster
+  ;  - Här försöker vi återställa budgetM/budgetE om det går
+  ; =====================================================================
+
+  IF (VVP_EN_ANCHOR_M <> 0) OR (VVP_EN_ANCHOR_E <> 0)
+    haveM_P = 0
+    haveE_P = 0
+    UpLoop kp From 0 To 95
+      inM = 0
+      inE = 0
+
+      IF m_lenI > 0
+        IF kp >= m_startI
+          IF kp <= (m_startI + m_lenI - 1)
+            inM = 1
+          ENDIF
+        ENDIF
+        IF (m_startI + m_lenI - 1) > 95
+          IF kp <= (m_startI + m_lenI - 1 - 96)
+            inM = 1
+          ENDIF
+        ENDIF
+      ENDIF
+
+      IF e_lenI > 0
+        IF kp >= e_startI
+          IF kp <= (e_startI + e_lenI - 1)
+            inE = 1
+          ENDIF
+        ENDIF
+        IF (e_startI + e_lenI - 1) > 95
+          IF kp <= (e_startI + e_lenI - 1 - 96)
+            inE = 1
+          ENDIF
+        ENDIF
+      ENDIF
+
+      IF VV_PLAN[kp] <> 0
+        IF inM <> 0
+          haveM_P = haveM_P + 1
+        ENDIF
+        IF inE <> 0
+          haveE_P = haveE_P + 1
+        ENDIF
+      ENDIF
+    EndLoop
+
+    VVP_HAVEM    = haveM_P
+    VVP_BUDGETM  = budgetM_P
+    VVP_HAVEE    = haveE_P
+    VVP_BUDGETE  = budgetE_P
+
+    ; --- Återställ morgonbudget ---
+    IF VVP_EN_ANCHOR_M <> 0
+      IF m_lenI > 0
+        IF haveM_P < budgetM_P
+          UpLoop rI From 0 To 95
+            found = 0
+            UpLoop kp From 0 To 95
+              IF CmpI(RANK_W[kp] = CvX(rI))
+                rP = kp
+                found = 1
+              ENDIF
+            EndLoop
+
+            IF found
+              inM_ok = 0
+
+              IF rP >= m_startI
+                IF rP <= (m_startI + m_lenI - 1)
+                  inM_ok = 1
+                ENDIF
+              ENDIF
+
+              IF (m_startI + m_lenI - 1) > 95
+                IF rP <= (m_startI + m_lenI - 1 - 96)
+                  inM_ok = 1
+                ENDIF
+              ENDIF
+
+              IF inM_ok <> 0
+                IF VV_PLAN[rP] = 0
+                  IF EX_HH[rP] = 0
+                    VV_PLAN[rP] = 1
+                    pickedP     = pickedP + 1
+                    haveM_P     = haveM_P + 1
+                  ENDIF
+                ENDIF
+              ENDIF
+            ENDIF
+
+            IF haveM_P >= budgetM_P
+              kp = 96
+              rI = 96
+            ENDIF
+          EndLoop
+        ENDIF
+      ENDIF
+    ENDIF
+
+    ; --- Återställ kvällsbudget ---
+    IF VVP_EN_ANCHOR_E <> 0
+      IF e_lenI > 0
+        IF haveE_P < budgetE_P
+          UpLoop rI From 0 To 95
+            found = 0
+            UpLoop kp From 0 To 95
+              IF CmpI(RANK_W[kp] = CvX(rI))
+                rP = kp
+                found = 1
+              ENDIF
+            EndLoop
+
+            IF found
+              inE_ok = 0
+
+              IF rP >= e_startI
+                IF rP <= (e_startI + e_lenI - 1)
+                  inE_ok = 1
+                ENDIF
+              ENDIF
+
+              IF (e_startI + e_lenI - 1) > 95
+                IF rP <= (e_startI + e_lenI - 1 - 96)
+                  inE_ok = 1
+                ENDIF
+              ENDIF
+
+              IF inE_ok <> 0
+                IF VV_PLAN[rP] = 0
+                  IF EX_HH[rP] = 0
+                    VV_PLAN[rP] = 1
+                    pickedP     = pickedP + 1
+                    haveE_P     = haveE_P + 1
+                  ENDIF
+                ENDIF
+              ENDIF
+            ENDIF
+
+            IF haveE_P >= budgetE_P
+              kp = 96
+              rI = 96
+            ENDIF
+          EndLoop
+        ENDIF
+      ENDIF
+    ENDIF
+
+    VVP_HAVEM = haveM_P
+    VVP_HAVEE = haveE_P
+  ENDIF
+
+
+
+; =====================================================================
+; 5.11 SLACK-add (lägg tillbaka billigaste upp till CAP_SLACK_P)
+; =====================================================================
+IF CAP_SLACK_P > 0
+  slackAddP = CAP_SLACK_P
+  DIAG_PLAN_STEP = 95
+  If slackAddP > (slackTargetP - pickedP)
+    slackAddP = slackTargetP - pickedP
+  ENDIF
+DIAG_PLAN_STEP = 100
+  UpLoop rI From 0 To 95
+    IF slackAddP <= 0
+      rI = 96
+    ELSE
+      UpLoop kp From 0 To 95
+        IF CmpI(RANK_W[kp] = CvX(rI))
+          IF (VV_PLAN[kp] = 0) AND (EX_HH[kp] = 0)
+            okIR = 1
+            IF VVP_GAP_OVER_INROW = 0
+              IF MAX_INROW_P > 0
+                runL = 0
+                TMP  = CvX(kp) - 1
+                While TMP >= 0
+                  QX = CvI(TMP)
+                  IF VV_PLAN[QX] <> 0
+                    runL = runL + 1
+                    TMP  = TMP - 1
+                  ELSE
+                    TMP = -1
+                  ENDIF
+                EndWhile
+                runR = 0
+                TMP  = CvX(kp) + 1
+                While TMP <= 95
+                  QX = CvI(TMP)
+                  IF VV_PLAN[QX] <> 0
+                    runR = runR + 1
+                    TMP  = TMP + 1
+                  ELSE
+                    TMP = 96
+                  ENDIF
+                EndWhile
+                IF (runL + 1 + runR) > MAX_INROW_P
+                  okIR = 0
+                ENDIF
+              ENDIF
+            ENDIF
+            DIAG_PLAN_STEP = 105
+            If okIR <> 0
+              VV_PLAN[kp] = 1
+              pickedP     = pickedP + 1
+              slackAddP   = slackAddP - 1
+              IF pickedP >= slackTargetP
+                rI = 96
+              ENDIF
+            ENDIF
+          ENDIF
+        ENDIF
+      EndLoop
+    ENDIF
+  EndLoop
+ENDIF
+
+; VV plan sync: signalera att ny VV-plan är committad och klar för readback
+IF VV_PLAN_CHANGED = 0
+  VV_PLAN_CHANGED = 1
+ENDIF
+
+; -------------------------------------------------------
+; Nollställ engångstriggar när planeringen är klar
+; -------------------------------------------------------
+VVP_PLAN_NOW        = 0
+VVP_UI_CHANGE_FLAG  = 0
+VVP_PRICE_TRIG      = 0
+
+
+EndIf ; VVP_PLAN_TRIG
+EndIf ; VVP_PLAN_BUSY
+
+DIAG_PLAN_STEP = 110
+; =======================================================
+; === FIX 2025-10-29: frigör alltid låset ===============
+; =======================================================
+IF VVP_PLAN_BUSY <> 0
+  VVP_PLAN_BUSY = 0
+ENDIF
+; =======================================================
+
+
+; -------------------------------------------------------
+; 6) Snapshot av aktiva runtime-värden (för dirty-check)
+; -------------------------------------------------------
+VVP_LAST_PROFILE      = VVP_PROFILE
+VVP_LAST_H_BASE       = VVP_H_BASE_R
+VVP_LAST_WEEKEND_F    = VVP_WEEKEND_F_R
+VVP_LAST_SHARE_M_PCT  = VVP_SHARE_M_PCT_R
+VVP_LAST_ANCHOR_M_H   = VVP_ANCHOR_M_H_R
+VVP_LAST_ANCHOR_E_H   = VVP_ANCHOR_E_H_R
+VVP_LAST_ANCHOR_M_LEN = VVP_ANCHOR_M_LEN_R
+VVP_LAST_ANCHOR_E_LEN = VVP_ANCHOR_E_LEN_R
+VVP_LAST_MAX_INROW    = VVP_MAX_INROW_R
+VVP_LAST_MAX_GAP_H    = VVP_MAX_GAP_H_R
+VVP_LAST_CAP_SLACK_H  = VVP_CAP_SLACK_H_R
+VVP_LAST_BUDGET_M_MIN = VVP_BUDGET_M_MIN_R
+VVP_LAST_BUDGET_E_MIN = VVP_BUDGET_E_MIN_R
+VVP_LAST_TOPO         = VVP_TOPO_R
+VVP_LAST_DEG_EC_START = VVP_DEG_EC_START_R
+VVP_LAST_DEG_EC_STOP  = VVP_DEG_EC_STOP_R
+VVP_LAST_DEG_EX_START = VVP_DEG_EX_START_R
+VVP_LAST_DEG_EX_STOP  = VVP_DEG_EX_STOP_R
+; ============================ SLUT ============================

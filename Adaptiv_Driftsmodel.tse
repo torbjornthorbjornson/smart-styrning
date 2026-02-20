@@ -1,0 +1,1185 @@
+; Adaptiv_driftsmodell.tse - STEG 1+2 (bas + mognad + GM-lärning)
+; ASCII-kommentarer, en sats per rad
+; Byggd för EXOL (ingen THEN/FROM, inga lokala deklarationer i koden)
+
+; ----------------------------------------------------------------------
+; Nya antagna variabler (ska finnas i projektet):
+;   ADM_OAT_MEAN_SUM     (Real)   - ackumulerad OAT-summa för idag
+;   ADM_OAT_MEAN_COUNT   (Real)   - antal prov för idag
+;   ADM_OAT_MEAN_FALLB   (Real)   - fallback-medeltemp idag (SUM/COUNT)
+;   ADM_PLAN_SRC         (Integer)- debug: 3=OAT_mean_tomorrow, 2=OAT_mean,
+;                                   1=ADM_OAT_MEAN_FALLB, 0=OAT
+; ----------------------------------------------------------------------
+
+; ======================================================================
+; 0) PROFIL-ALIAS (kompileras bara om C0_PROFILE finns)
+; ======================================================================
+CompileIf ValidVariable( C0_PROFILE )
+  IF ADM_PROFILE <> C0_PROFILE
+    ADM_PROFILE = C0_PROFILE
+  ENDIF
+EndIf
+
+; ======================================================================
+; Hjälpsektion: ENHETLIG PLANERINGS-TEMP + DEBUGKÄLLA
+;   Sätt alltid ADM_dT_PLAN via prioritet:
+;   3: OAT_mean_tomorrow  -> ADM_PLAN_SRC=3
+;   2: OAT_mean           -> ADM_PLAN_SRC=2
+;   1: ADM_OAT_MEAN_FALLB -> ADM_PLAN_SRC=1
+;   0: OAT                -> ADM_PLAN_SRC=0
+;   Därefter clamp till [ADM_DT_MIN..ADM_DT_MAX] och beräkna ADM_IDX.
+;   (Koden nedan klistras in där vi tidigare valde planerings-temp.)
+; ======================================================================
+; --- Makroliknande kommentar (ingen EXOL-makro) ---
+; Använd följande block när planerings-temp behövs:
+;   ADM_dT_PLAN = OAT_mean_tomorrow
+;   ADM_PLAN_SRC = 3
+;   IF ADM_dT_PLAN = 0.0
+;     ADM_dT_PLAN = OAT_mean
+;     ADM_PLAN_SRC = 2
+;     IF ADM_dT_PLAN = 0.0
+;       ADM_dT_PLAN = ADM_OAT_MEAN_FALLB
+;       ADM_PLAN_SRC = 1
+;       IF ADM_dT_PLAN = 0.0
+;         ADM_dT_PLAN = OAT
+;         ADM_PLAN_SRC = 0
+;       ENDIF
+;     ENDIF
+;   ENDIF
+;   IF ADM_dT_PLAN < ADM_DT_MIN
+;     ADM_dT_PLAN = ADM_DT_MIN
+;   ENDIF
+;   IF ADM_dT_PLAN > ADM_DT_MAX
+;     ADM_dT_PLAN = ADM_DT_MAX
+;   ENDIF
+;   ADM_IDX = CvR(ADM_dT_PLAN - ADM_DT_MIN)
+
+; ======================================================================
+; 1) ÄNDRINGSDETEKTERING + OMEDELBAR PLANERING (utan att vänta på PUSH)
+; ======================================================================
+
+; --- Byte av kurvtyp (0=linjär, 1=segment)
+IF ADM_CURVE_MODE <> ADM_CURVE_MODE_LAST
+  ADM_CURVE_MODE_LAST = ADM_CURVE_MODE
+  IF ADM_CURVE_MODE = 0
+    ADM_C0_SLOPE = (ADM_C0_WARM_H - ADM_C0_COLD_H) / CvI(ADM_IDX_MAX - ADM_IDX_MIN)
+  ENDIF
+  adm_idx_fill = ADM_IDX_MIN
+  ADM_INIT_LOOP = 1
+
+  ; Omedelbar beräkning av ADM_H_REQ (indexera på OAT)
+  ADM_dT_PLAN = OAT_mean_tomorrow
+  ADM_PLAN_SRC = 3
+  IF ADM_dT_PLAN = 0.0
+    ADM_dT_PLAN = OAT_mean
+    ADM_PLAN_SRC = 2
+    IF ADM_dT_PLAN = 0.0
+      ADM_dT_PLAN = ADM_OAT_MEAN_FALLB
+      ADM_PLAN_SRC = 1
+      IF ADM_dT_PLAN = 0.0
+        ADM_dT_PLAN = OAT
+        ADM_PLAN_SRC = 0
+      ENDIF
+    ENDIF
+  ENDIF
+  IF ADM_dT_PLAN < ADM_DT_MIN
+    ADM_dT_PLAN = ADM_DT_MIN
+  ENDIF
+  IF ADM_dT_PLAN > ADM_DT_MAX
+    ADM_dT_PLAN = ADM_DT_MAX
+  ENDIF
+  ADM_IDX = CvR(ADM_dT_PLAN - ADM_DT_MIN)
+
+  IF ADM_CURVE_MODE = 0
+    ADM_H_PRED_D = ADM_C0_COLD_H + CvI(ADM_IDX - ADM_IDX_MIN) * ADM_C0_SLOPE
+  ELSE
+    IF ADM_IDX <= 6
+      ADM_H_PRED_D = ADM_SEG_PT0_H + CvI(ADM_IDX - 0)  * ((ADM_SEG_PT1_H - ADM_SEG_PT0_H) / 6.0)
+    ENDIF
+    IF ADM_IDX > 6
+      IF ADM_IDX <= 12
+        ADM_H_PRED_D = ADM_SEG_PT1_H + CvI(ADM_IDX - 6)  * ((ADM_SEG_PT2_H - ADM_SEG_PT1_H) / 6.0)
+      ENDIF
+    ENDIF
+    IF ADM_IDX > 12
+      IF ADM_IDX <= 18
+        ADM_H_PRED_D = ADM_SEG_PT2_H + CvI(ADM_IDX - 12) * ((ADM_SEG_PT3_H - ADM_SEG_PT2_H) / 6.0)
+      ENDIF
+    ENDIF
+    IF ADM_IDX > 18
+      IF ADM_IDX <= 24
+        ADM_H_PRED_D = ADM_SEG_PT3_H + CvI(ADM_IDX - 18) * ((ADM_SEG_PT4_H - ADM_SEG_PT3_H) / 6.0)
+      ENDIF
+    ENDIF
+    IF ADM_IDX > 24
+      IF ADM_IDX <= 30
+        ADM_H_PRED_D = ADM_SEG_PT4_H + CvI(ADM_IDX - 24) * ((ADM_SEG_PT5_H - ADM_SEG_PT4_H) / 6.0)
+      ENDIF
+    ENDIF
+    IF ADM_IDX > 30
+      ADM_H_PRED_D = ADM_SEG_PT5_H + CvI(ADM_IDX - 30) * ((ADM_SEG_PT6_H - ADM_SEG_PT5_H) / 5.0)
+    ENDIF
+  ENDIF
+
+  ADM_H_PRED_D = ADM_H_PRED_D + ADM_C1[ADM_IDX]
+  IF ADM_H_PRED_D < 0.0
+    ADM_H_PRED_D = 0.0
+  ENDIF
+  IF ADM_H_PRED_D > 24.0
+    ADM_H_PRED_D = 24.0
+  ENDIF
+  ADM_H_REQ_R = ADM_H_PRED_D + 0.5
+  ADM_H_REQ   = ADM_H_REQ_R
+  IF ADM_H_REQ < 0.0
+    ADM_H_REQ = 0.0
+  ENDIF
+  IF ADM_H_REQ > 24.0
+    ADM_H_REQ = 24.0
+  ENDIF
+ENDIF
+
+; --- Tvåpunktskurva (linjär): ändring kall/varm
+IF ADM_C0_COLD_H <> ADM_C0_COLD_LAST
+  ADM_C0_COLD_LAST = ADM_C0_COLD_H
+  IF ADM_CURVE_MODE = 0
+    ADM_C0_SLOPE = (ADM_C0_WARM_H - ADM_C0_COLD_H) / CvI(ADM_IDX_MAX - ADM_IDX_MIN)
+  ENDIF
+  adm_idx_fill = ADM_IDX_MIN
+  ADM_INIT_LOOP = 1
+
+  ; Omedelbar beräkning
+  ADM_dT_PLAN = OAT_mean_tomorrow
+  ADM_PLAN_SRC = 3
+  IF ADM_dT_PLAN = 0.0
+    ADM_dT_PLAN = OAT_mean
+    ADM_PLAN_SRC = 2
+    IF ADM_dT_PLAN = 0.0
+      ADM_dT_PLAN = ADM_OAT_MEAN_FALLB
+      ADM_PLAN_SRC = 1
+      IF ADM_dT_PLAN = 0.0
+        ADM_dT_PLAN = OAT
+        ADM_PLAN_SRC = 0
+      ENDIF
+    ENDIF
+  ENDIF
+  IF ADM_dT_PLAN < ADM_DT_MIN
+    ADM_dT_PLAN = ADM_DT_MIN
+  ENDIF
+  IF ADM_dT_PLAN > ADM_DT_MAX
+    ADM_dT_PLAN = ADM_DT_MAX
+  ENDIF
+  ADM_IDX = CvR(ADM_dT_PLAN - ADM_DT_MIN)
+
+  IF ADM_CURVE_MODE = 0
+    ADM_H_PRED_D = ADM_C0_COLD_H + CvI(ADM_IDX - ADM_IDX_MIN) * ADM_C0_SLOPE
+  ELSE
+    IF ADM_IDX <= 6
+      ADM_H_PRED_D = ADM_SEG_PT0_H + CvI(ADM_IDX - 0)  * ((ADM_SEG_PT1_H - ADM_SEG_PT0_H) / 6.0)
+    ENDIF
+    IF ADM_IDX > 6
+      IF ADM_IDX <= 12
+        ADM_H_PRED_D = ADM_SEG_PT1_H + CvI(ADM_IDX - 6)  * ((ADM_SEG_PT2_H - ADM_SEG_PT1_H) / 6.0)
+      ENDIF
+    ENDIF
+    IF ADM_IDX > 12
+      IF ADM_IDX <= 18
+        ADM_H_PRED_D = ADM_SEG_PT2_H + CvI(ADM_IDX - 12) * ((ADM_SEG_PT3_H - ADM_SEG_PT2_H) / 6.0)
+      ENDIF
+    ENDIF
+    IF ADM_IDX > 18
+      IF ADM_IDX <= 24
+        ADM_H_PRED_D = ADM_SEG_PT3_H + CvI(ADM_IDX - 18) * ((ADM_SEG_PT4_H - ADM_SEG_PT3_H) / 6.0)
+      ENDIF
+    ENDIF
+    IF ADM_IDX > 24
+      IF ADM_IDX <= 30
+        ADM_H_PRED_D = ADM_SEG_PT4_H + CvI(ADM_IDX - 24) * ((ADM_SEG_PT5_H - ADM_SEG_PT4_H) / 6.0)
+      ENDIF
+    ENDIF
+    IF ADM_IDX > 30
+      ADM_H_PRED_D = ADM_SEG_PT5_H + CvI(ADM_IDX - 30) * ((ADM_SEG_PT6_H - ADM_SEG_PT5_H) / 5.0)
+    ENDIF
+  ENDIF
+
+  ADM_H_PRED_D = ADM_H_PRED_D + ADM_C1[ADM_IDX]
+  IF ADM_H_PRED_D < 0.0
+    ADM_H_PRED_D = 0.0
+  ENDIF
+  IF ADM_H_PRED_D > 24.0
+    ADM_H_PRED_D = 24.0
+  ENDIF
+  ADM_H_REQ_R = ADM_H_PRED_D + 0.5
+  ADM_H_REQ   = ADM_H_REQ_R
+  IF ADM_H_REQ < 0.0
+    ADM_H_REQ = 0.0
+  ENDIF
+  IF ADM_H_REQ > 24.0
+    ADM_H_REQ = 24.0
+  ENDIF
+ENDIF
+
+IF ADM_C0_WARM_H <> ADM_C0_WARM_LAST
+  ADM_C0_WARM_LAST = ADM_C0_WARM_H
+  IF ADM_CURVE_MODE = 0
+    ADM_C0_SLOPE = (ADM_C0_WARM_H - ADM_C0_COLD_H) / CvI(ADM_IDX_MAX - ADM_IDX_MIN)
+  ENDIF
+  adm_idx_fill = ADM_IDX_MIN
+  ADM_INIT_LOOP = 1
+
+  ; Omedelbar beräkning (samma som ovan)
+  ADM_dT_PLAN = OAT_mean_tomorrow
+  ADM_PLAN_SRC = 3
+  IF ADM_dT_PLAN = 0.0
+    ADM_dT_PLAN = OAT_mean
+    ADM_PLAN_SRC = 2
+    IF ADM_dT_PLAN = 0.0
+      ADM_dT_PLAN = ADM_OAT_MEAN_FALLB
+      ADM_PLAN_SRC = 1
+      IF ADM_dT_PLAN = 0.0
+        ADM_dT_PLAN = OAT
+        ADM_PLAN_SRC = 0
+      ENDIF
+    ENDIF
+  ENDIF
+  IF ADM_dT_PLAN < ADM_DT_MIN
+    ADM_dT_PLAN = ADM_DT_MIN
+  ENDIF
+  IF ADM_dT_PLAN > ADM_DT_MAX
+    ADM_dT_PLAN = ADM_DT_MAX
+  ENDIF
+  ADM_IDX = CvR(ADM_dT_PLAN - ADM_DT_MIN)
+
+  IF ADM_CURVE_MODE = 0
+    ADM_H_PRED_D = ADM_C0_COLD_H + CvI(ADM_IDX - ADM_IDX_MIN) * ADM_C0_SLOPE
+  ELSE
+    IF ADM_IDX <= 6
+      ADM_H_PRED_D = ADM_SEG_PT0_H + CvI(ADM_IDX - 0)  * ((ADM_SEG_PT1_H - ADM_SEG_PT0_H) / 6.0)
+    ENDIF
+    IF ADM_IDX > 6
+      IF ADM_IDX <= 12
+        ADM_H_PRED_D = ADM_SEG_PT1_H + CvI(ADM_IDX - 6)  * ((ADM_SEG_PT2_H - ADM_SEG_PT1_H) / 6.0)
+      ENDIF
+    ENDIF
+    IF ADM_IDX > 12
+      IF ADM_IDX <= 18
+        ADM_H_PRED_D = ADM_SEG_PT2_H + CvI(ADM_IDX - 12) * ((ADM_SEG_PT3_H - ADM_SEG_PT2_H) / 6.0)
+      ENDIF
+    ENDIF
+    IF ADM_IDX > 18
+      IF ADM_IDX <= 24
+        ADM_H_PRED_D = ADM_SEG_PT3_H + CvI(ADM_IDX - 18) * ((ADM_SEG_PT4_H - ADM_SEG_PT3_H) / 6.0)
+      ENDIF
+    ENDIF
+    IF ADM_IDX > 24
+      IF ADM_IDX <= 30
+        ADM_H_PRED_D = ADM_SEG_PT4_H + CvI(ADM_IDX - 24) * ((ADM_SEG_PT5_H - ADM_SEG_PT4_H) / 6.0)
+      ENDIF
+    ENDIF
+    IF ADM_IDX > 30
+      ADM_H_PRED_D = ADM_SEG_PT5_H + CvI(ADM_IDX - 30) * ((ADM_SEG_PT6_H - ADM_SEG_PT5_H) / 5.0)
+    ENDIF
+  ENDIF
+
+  ADM_H_PRED_D = ADM_H_PRED_D + ADM_C1[ADM_IDX]
+  IF ADM_H_PRED_D < 0.0
+    ADM_H_PRED_D = 0.0
+  ENDIF
+  IF ADM_H_PRED_D > 24.0
+    ADM_H_PRED_D = 24.0
+  ENDIF
+  ADM_H_REQ_R = ADM_H_PRED_D + 0.5
+  ADM_H_REQ   = ADM_H_REQ_R
+  IF ADM_H_REQ < 0.0
+    ADM_H_REQ = 0.0
+  ENDIF
+  IF ADM_H_REQ > 24.0
+    ADM_H_REQ = 24.0
+  ENDIF
+ENDIF
+
+; --- Direkt-editering av segmentpunkter (7p)
+IF ADM_SEG_PT0_H <> ADM_SEG_PT0_LAST
+  ADM_SEG_PT0_LAST = ADM_SEG_PT0_H
+  adm_idx_fill = ADM_IDX_MIN
+  ADM_INIT_LOOP = 1
+
+  ADM_dT_PLAN = OAT_mean_tomorrow
+  ADM_PLAN_SRC = 3
+  IF ADM_dT_PLAN = 0.0
+    ADM_dT_PLAN = OAT_mean
+    ADM_PLAN_SRC = 2
+    IF ADM_dT_PLAN = 0.0
+      ADM_dT_PLAN = ADM_OAT_MEAN_FALLB
+      ADM_PLAN_SRC = 1
+      IF ADM_dT_PLAN = 0.0
+        ADM_dT_PLAN = OAT
+        ADM_PLAN_SRC = 0
+      ENDIF
+    ENDIF
+  ENDIF
+  IF ADM_dT_PLAN < ADM_DT_MIN
+    ADM_dT_PLAN = ADM_DT_MIN
+  ENDIF
+  IF ADM_dT_PLAN > ADM_DT_MAX
+    ADM_dT_PLAN = ADM_DT_MAX
+  ENDIF
+  ADM_IDX = CvR(ADM_dT_PLAN - ADM_DT_MIN)
+
+  IF ADM_IDX <= 6
+    ADM_H_PRED_D = ADM_SEG_PT0_H + CvI(ADM_IDX - 0) * ((ADM_SEG_PT1_H - ADM_SEG_PT0_H) / 6.0)
+  ENDIF
+
+  ADM_H_PRED_D = ADM_H_PRED_D + ADM_C1[ADM_IDX]
+  IF ADM_H_PRED_D < 0.0
+    ADM_H_PRED_D = 0.0
+  ENDIF
+  IF ADM_H_PRED_D > 24.0
+    ADM_H_PRED_D = 24.0
+  ENDIF
+  ADM_H_REQ_R = ADM_H_PRED_D + 0.5
+  ADM_H_REQ   = ADM_H_REQ_R
+  IF ADM_H_REQ < 0.0
+    ADM_H_REQ = 0.0
+  ENDIF
+  IF ADM_H_REQ > 24.0
+    ADM_H_REQ = 24.0
+  ENDIF
+ENDIF
+
+IF ADM_SEG_PT1_H <> ADM_SEG_PT1_LAST
+  ADM_SEG_PT1_LAST = ADM_SEG_PT1_H
+  adm_idx_fill = ADM_IDX_MIN
+  ADM_INIT_LOOP = 1
+
+  ADM_dT_PLAN = OAT_mean_tomorrow
+  ADM_PLAN_SRC = 3
+  IF ADM_dT_PLAN = 0.0
+    ADM_dT_PLAN = OAT_mean
+    ADM_PLAN_SRC = 2
+    IF ADM_dT_PLAN = 0.0
+      ADM_dT_PLAN = ADM_OAT_MEAN_FALLB
+      ADM_PLAN_SRC = 1
+      IF ADM_dT_PLAN = 0.0
+        ADM_dT_PLAN = OAT
+        ADM_PLAN_SRC = 0
+      ENDIF
+    ENDIF
+  ENDIF
+  IF ADM_dT_PLAN < ADM_DT_MIN
+    ADM_dT_PLAN = ADM_DT_MIN
+  ENDIF
+  IF ADM_dT_PLAN > ADM_DT_MAX
+    ADM_dT_PLAN = ADM_DT_MAX
+  ENDIF
+  ADM_IDX = CvR(ADM_dT_PLAN - ADM_DT_MIN)
+
+  IF ADM_IDX <= 6
+    ADM_H_PRED_D = ADM_SEG_PT0_H + CvI(ADM_IDX - 0) * ((ADM_SEG_PT1_H - ADM_SEG_PT0_H) / 6.0)
+  ENDIF
+  IF ADM_IDX > 6
+    IF ADM_IDX <= 12
+      ADM_H_PRED_D = ADM_SEG_PT1_H + CvI(ADM_IDX - 6) * ((ADM_SEG_PT2_H - ADM_SEG_PT1_H) / 6.0)
+    ENDIF
+  ENDIF
+
+  ADM_H_PRED_D = ADM_H_PRED_D + ADM_C1[ADM_IDX]
+  IF ADM_H_PRED_D < 0.0
+    ADM_H_PRED_D = 0.0
+  ENDIF
+  IF ADM_H_PRED_D > 24.0
+    ADM_H_PRED_D = 24.0
+  ENDIF
+  ADM_H_REQ_R = ADM_H_PRED_D + 0.5
+  ADM_H_REQ   = ADM_H_REQ_R
+  IF ADM_H_REQ < 0.0
+    ADM_H_REQ = 0.0
+  ENDIF
+  IF ADM_H_REQ > 24.0
+    ADM_H_REQ = 24.0
+  ENDIF
+ENDIF
+
+IF ADM_SEG_PT2_H <> ADM_SEG_PT2_LAST
+  ADM_SEG_PT2_LAST = ADM_SEG_PT2_H
+  adm_idx_fill = ADM_IDX_MIN
+  ADM_INIT_LOOP = 1
+
+  ADM_dT_PLAN = OAT_mean_tomorrow
+  ADM_PLAN_SRC = 3
+  IF ADM_dT_PLAN = 0.0
+    ADM_dT_PLAN = OAT_mean
+    ADM_PLAN_SRC = 2
+    IF ADM_dT_PLAN = 0.0
+      ADM_dT_PLAN = ADM_OAT_MEAN_FALLB
+      ADM_PLAN_SRC = 1
+      IF ADM_dT_PLAN = 0.0
+        ADM_dT_PLAN = OAT
+        ADM_PLAN_SRC = 0
+      ENDIF
+    ENDIF
+  ENDIF
+  IF ADM_dT_PLAN < ADM_DT_MIN
+    ADM_dT_PLAN = ADM_DT_MIN
+  ENDIF
+  IF ADM_dT_PLAN > ADM_DT_MAX
+    ADM_dT_PLAN = ADM_DT_MAX
+  ENDIF
+  ADM_IDX = CvR(ADM_dT_PLAN - ADM_DT_MIN)
+
+  IF ADM_IDX <= 12
+    IF ADM_IDX > 6
+      ADM_H_PRED_D = ADM_SEG_PT1_H + CvI(ADM_IDX - 6) * ((ADM_SEG_PT2_H - ADM_SEG_PT1_H) / 6.0)
+    ENDIF
+  ENDIF
+  IF ADM_IDX > 12
+    IF ADM_IDX <= 18
+      ADM_H_PRED_D = ADM_SEG_PT2_H + CvI(ADM_IDX - 12) * ((ADM_SEG_PT3_H - ADM_SEG_PT2_H) / 6.0)
+    ENDIF
+  ENDIF
+
+  ADM_H_PRED_D = ADM_H_PRED_D + ADM_C1[ADM_IDX]
+  IF ADM_H_PRED_D < 0.0
+    ADM_H_PRED_D = 0.0
+  ENDIF
+  IF ADM_H_PRED_D > 24.0
+    ADM_H_PRED_D = 24.0
+  ENDIF
+  ADM_H_REQ_R = ADM_H_PRED_D + 0.5
+  ADM_H_REQ   = ADM_H_REQ_R
+  IF ADM_H_REQ < 0.0
+    ADM_H_REQ = 0.0
+  ENDIF
+  IF ADM_H_REQ > 24.0
+    ADM_H_REQ = 24.0
+  ENDIF
+ENDIF
+
+IF ADM_SEG_PT3_H <> ADM_SEG_PT3_LAST
+  ADM_SEG_PT3_LAST = ADM_SEG_PT3_H
+  adm_idx_fill = ADM_IDX_MIN
+  ADM_INIT_LOOP = 1
+
+  ADM_dT_PLAN = OAT_mean_tomorrow
+  ADM_PLAN_SRC = 3
+  IF ADM_dT_PLAN = 0.0
+    ADM_dT_PLAN = OAT_mean
+    ADM_PLAN_SRC = 2
+    IF ADM_dT_PLAN = 0.0
+      ADM_dT_PLAN = ADM_OAT_MEAN_FALLB
+      ADM_PLAN_SRC = 1
+      IF ADM_dT_PLAN = 0.0
+        ADM_dT_PLAN = OAT
+        ADM_PLAN_SRC = 0
+      ENDIF
+    ENDIF
+  ENDIF
+  IF ADM_dT_PLAN < ADM_DT_MIN
+    ADM_dT_PLAN = ADM_DT_MIN
+  ENDIF
+  IF ADM_dT_PLAN > ADM_DT_MAX
+    ADM_dT_PLAN = ADM_DT_MAX
+  ENDIF
+  ADM_IDX = CvR(ADM_dT_PLAN - ADM_DT_MIN)
+
+  IF ADM_IDX <= 18
+    IF ADM_IDX > 12
+      ADM_H_PRED_D = ADM_SEG_PT2_H + CvI(ADM_IDX - 12) * ((ADM_SEG_PT3_H - ADM_SEG_PT2_H) / 6.0)
+    ENDIF
+  ENDIF
+  IF ADM_IDX > 18
+    IF ADM_IDX <= 24
+      ADM_H_PRED_D = ADM_SEG_PT3_H + CvI(ADM_IDX - 18) * ((ADM_SEG_PT4_H - ADM_SEG_PT3_H) / 6.0)
+    ENDIF
+  ENDIF
+
+  ADM_H_PRED_D = ADM_H_PRED_D + ADM_C1[ADM_IDX]
+  IF ADM_H_PRED_D < 0.0
+    ADM_H_PRED_D = 0.0
+  ENDIF
+  IF ADM_H_PRED_D > 24.0
+    ADM_H_PRED_D = 24.0
+  ENDIF
+  ADM_H_REQ_R = ADM_H_PRED_D + 0.5
+  ADM_H_REQ   = ADM_H_REQ_R
+  IF ADM_H_REQ < 0.0
+    ADM_H_REQ = 0.0
+  ENDIF
+  IF ADM_H_REQ > 24.0
+    ADM_H_REQ = 24.0
+  ENDIF
+ENDIF
+
+IF ADM_SEG_PT4_H <> ADM_SEG_PT4_LAST
+  ADM_SEG_PT4_LAST = ADM_SEG_PT4_H
+  adm_idx_fill = ADM_IDX_MIN
+  ADM_INIT_LOOP = 1
+
+  ADM_dT_PLAN = OAT_mean_tomorrow
+  ADM_PLAN_SRC = 3
+  IF ADM_dT_PLAN = 0.0
+    ADM_dT_PLAN = OAT_mean
+    ADM_PLAN_SRC = 2
+    IF ADM_dT_PLAN = 0.0
+      ADM_dT_PLAN = ADM_OAT_MEAN_FALLB
+      ADM_PLAN_SRC = 1
+      IF ADM_dT_PLAN = 0.0
+        ADM_dT_PLAN = OAT
+        ADM_PLAN_SRC = 0
+      ENDIF
+    ENDIF
+  ENDIF
+  IF ADM_dT_PLAN < ADM_DT_MIN
+    ADM_dT_PLAN = ADM_DT_MIN
+  ENDIF
+  IF ADM_dT_PLAN > ADM_DT_MAX
+    ADM_dT_PLAN = ADM_DT_MAX
+  ENDIF
+  ADM_IDX = CvR(ADM_dT_PLAN - ADM_DT_MIN)
+
+  IF ADM_IDX <= 24
+    IF ADM_IDX > 18
+      ADM_H_PRED_D = ADM_SEG_PT3_H + CvI(ADM_IDX - 18) * ((ADM_SEG_PT4_H - ADM_SEG_PT3_H) / 6.0)
+    ENDIF
+  ENDIF
+  IF ADM_IDX > 24
+    IF ADM_IDX <= 30
+      ADM_H_PRED_D = ADM_SEG_PT4_H + CvI(ADM_IDX - 24) * ((ADM_SEG_PT5_H - ADM_SEG_PT4_H) / 6.0)
+    ENDIF
+  ENDIF
+
+  ADM_H_PRED_D = ADM_H_PRED_D + ADM_C1[ADM_IDX]
+  IF ADM_H_PRED_D < 0.0
+    ADM_H_PRED_D = 0.0
+  ENDIF
+  IF ADM_H_PRED_D > 24.0
+    ADM_H_PRED_D = 24.0
+  ENDIF
+  ADM_H_REQ_R = ADM_H_PRED_D + 0.5
+  ADM_H_REQ   = ADM_H_REQ_R
+  IF ADM_H_REQ < 0.0
+    ADM_H_REQ = 0.0
+  ENDIF
+  IF ADM_H_REQ > 24.0
+    ADM_H_REQ = 24.0
+  ENDIF
+ENDIF
+
+IF ADM_SEG_PT5_H <> ADM_SEG_PT5_LAST
+  ADM_SEG_PT5_LAST = ADM_SEG_PT5_H
+  adm_idx_fill = ADM_IDX_MIN
+  ADM_INIT_LOOP = 1
+
+  ADM_dT_PLAN = OAT_mean_tomorrow
+  ADM_PLAN_SRC = 3
+  IF ADM_dT_PLAN = 0.0
+    ADM_dT_PLAN = OAT_mean
+    ADM_PLAN_SRC = 2
+    IF ADM_dT_PLAN = 0.0
+      ADM_dT_PLAN = ADM_OAT_MEAN_FALLB
+      ADM_PLAN_SRC = 1
+      IF ADM_dT_PLAN = 0.0
+        ADM_dT_PLAN = OAT
+        ADM_PLAN_SRC = 0
+      ENDIF
+    ENDIF
+  ENDIF
+  IF ADM_dT_PLAN < ADM_DT_MIN
+    ADM_dT_PLAN = ADM_DT_MIN
+  ENDIF
+  IF ADM_dT_PLAN > ADM_DT_MAX
+    ADM_dT_PLAN = ADM_DT_MAX
+  ENDIF
+  ADM_IDX = CvR(ADM_dT_PLAN - ADM_DT_MIN)
+
+  IF ADM_IDX <= 30
+    IF ADM_IDX > 24
+      ADM_H_PRED_D = ADM_SEG_PT4_H + CvI(ADM_IDX - 24) * ((ADM_SEG_PT5_H - ADM_SEG_PT4_H) / 6.0)
+    ENDIF
+  ENDIF
+  IF ADM_IDX > 30
+    ADM_H_PRED_D = ADM_SEG_PT5_H + CvI(ADM_IDX - 30) * ((ADM_SEG_PT6_H - ADM_SEG_PT5_H) / 5.0)
+  ENDIF
+
+  ADM_H_PRED_D = ADM_H_PRED_D + ADM_C1[ADM_IDX]
+  IF ADM_H_PRED_D < 0.0
+    ADM_H_PRED_D = 0.0
+  ENDIF
+  IF ADM_H_PRED_D > 24.0
+    ADM_H_PRED_D = 24.0
+  ENDIF
+  ADM_H_REQ_R = ADM_H_PRED_D + 0.5
+  ADM_H_REQ   = ADM_H_REQ_R
+  IF ADM_H_REQ < 0.0
+    ADM_H_REQ = 0.0
+  ENDIF
+  IF ADM_H_REQ > 24.0
+    ADM_H_REQ = 24.0
+  ENDIF
+ENDIF
+
+IF ADM_SEG_PT6_H <> ADM_SEG_PT6_LAST
+  ADM_SEG_PT6_LAST = ADM_SEG_PT6_H
+  adm_idx_fill = ADM_IDX_MIN
+  ADM_INIT_LOOP = 1
+
+  ADM_dT_PLAN = OAT_mean_tomorrow
+  ADM_PLAN_SRC = 3
+  IF ADM_dT_PLAN = 0.0
+    ADM_dT_PLAN = OAT_mean
+    ADM_PLAN_SRC = 2
+    IF ADM_dT_PLAN = 0.0
+      ADM_dT_PLAN = ADM_OAT_MEAN_FALLB
+      ADM_PLAN_SRC = 1
+      IF ADM_dT_PLAN = 0.0
+        ADM_dT_PLAN = OAT
+        ADM_PLAN_SRC = 0
+      ENDIF
+    ENDIF
+  ENDIF
+  IF ADM_dT_PLAN < ADM_DT_MIN
+    ADM_dT_PLAN = ADM_DT_MIN
+  ENDIF
+  IF ADM_dT_PLAN > ADM_DT_MAX
+    ADM_dT_PLAN = ADM_DT_MAX
+  ENDIF
+  ADM_IDX = CvR(ADM_dT_PLAN - ADM_DT_MIN)
+
+  ADM_H_PRED_D = ADM_SEG_PT5_H + CvI(ADM_IDX - 30) * ((ADM_SEG_PT6_H - ADM_SEG_PT5_H) / 5.0)
+
+  ADM_H_PRED_D = ADM_H_PRED_D + ADM_C1[ADM_IDX]
+  IF ADM_H_PRED_D < 0.0
+    ADM_H_PRED_D = 0.0
+  ENDIF
+  IF ADM_H_PRED_D > 24.0
+    ADM_H_PRED_D = 24.0
+  ENDIF
+  ADM_H_REQ_R = ADM_H_PRED_D + 0.5
+  ADM_H_REQ   = ADM_H_REQ_R
+  IF ADM_H_REQ < 0.0
+    ADM_H_REQ = 0.0
+  ENDIF
+  IF ADM_H_REQ > 24.0
+    ADM_H_REQ = 24.0
+  ENDIF
+ENDIF
+
+; --- Profilbyte: kopiera förinställda punkter om PROF-variabler finns
+CompileIf ValidVariable( ADM_PROF1_PT0_H )
+  IF ADM_PROFILE <> ADM_PROFILE_LAST
+    ADM_PROFILE_LAST = ADM_PROFILE
+
+    ; 7-segments: kopiera förinställda punkter vid segmentläge
+    IF ADM_CURVE_MODE = 1
+      IF ADM_PROFILE = 1
+        ADM_SEG_PT0_H = ADM_PROF1_PT0_H
+        ADM_SEG_PT1_H = ADM_PROF1_PT1_H
+        ADM_SEG_PT2_H = ADM_PROF1_PT2_H
+        ADM_SEG_PT3_H = ADM_PROF1_PT3_H
+        ADM_SEG_PT4_H = ADM_PROF1_PT4_H
+        ADM_SEG_PT5_H = ADM_PROF1_PT5_H
+        ADM_SEG_PT6_H = ADM_PROF1_PT6_H
+      ENDIF
+      IF ADM_PROFILE = 2
+        ADM_SEG_PT0_H = ADM_PROF2_PT0_H
+        ADM_SEG_PT1_H = ADM_PROF2_PT1_H
+        ADM_SEG_PT2_H = ADM_PROF2_PT2_H
+        ADM_SEG_PT3_H = ADM_PROF2_PT3_H
+        ADM_SEG_PT4_H = ADM_PROF2_PT4_H
+        ADM_SEG_PT5_H = ADM_PROF2_PT5_H
+        ADM_SEG_PT6_H = ADM_PROF2_PT6_H
+      ENDIF
+      IF ADM_PROFILE = 3
+        ADM_SEG_PT0_H = ADM_PROF3_PT0_H
+        ADM_SEG_PT1_H = ADM_PROF3_PT1_H
+        ADM_SEG_PT2_H = ADM_PROF3_PT2_H
+        ADM_SEG_PT3_H = ADM_PROF3_PT3_H
+        ADM_SEG_PT4_H = ADM_PROF3_PT4_H
+        ADM_SEG_PT5_H = ADM_PROF3_PT5_H
+        ADM_SEG_PT6_H = ADM_PROF3_PT6_H
+      ENDIF
+    ENDIF
+
+    ; 2-punkts linjär: ladda profilens kall/varm vid linjärt läge
+    CompileIf ValidVariable( ADM_PROF1_COLD_H )
+      IF ADM_CURVE_MODE = 0
+        IF ADM_PROFILE = 1
+          ADM_C0_COLD_H = ADM_PROF1_COLD_H
+          ADM_C0_WARM_H = ADM_PROF1_WARM_H
+        ENDIF
+        IF ADM_PROFILE = 2
+          ADM_C0_COLD_H = ADM_PROF2_COLD_H
+          ADM_C0_WARM_H = ADM_PROF2_WARM_H
+        ENDIF
+        IF ADM_PROFILE = 3
+          ADM_C0_COLD_H = ADM_PROF3_COLD_H
+          ADM_C0_WARM_H = ADM_PROF3_WARM_H
+        ENDIF
+        ADM_C0_SLOPE = (ADM_C0_WARM_H - ADM_C0_COLD_H) / CvI(ADM_IDX_MAX - ADM_IDX_MIN)
+      ENDIF
+    EndIf
+
+    ; Trigga omfyllning + omedelbar planering (samma mönster)
+    adm_idx_fill = ADM_IDX_MIN
+    ADM_INIT_LOOP = 1
+
+    ADM_dT_PLAN = OAT_mean_tomorrow
+    ADM_PLAN_SRC = 3
+    IF ADM_dT_PLAN = 0.0
+      ADM_dT_PLAN = OAT_mean
+      ADM_PLAN_SRC = 2
+      IF ADM_dT_PLAN = 0.0
+        ADM_dT_PLAN = ADM_OAT_MEAN_FALLB
+        ADM_PLAN_SRC = 1
+        IF ADM_dT_PLAN = 0.0
+          ADM_dT_PLAN = OAT
+          ADM_PLAN_SRC = 0
+        ENDIF
+      ENDIF
+    ENDIF
+    IF ADM_dT_PLAN < ADM_DT_MIN
+      ADM_dT_PLAN = ADM_DT_MIN
+    ENDIF
+    IF ADM_dT_PLAN > ADM_DT_MAX
+      ADM_dT_PLAN = ADM_DT_MAX
+    ENDIF
+    ADM_IDX = CvR(ADM_dT_PLAN - ADM_DT_MIN)
+
+    IF ADM_CURVE_MODE = 0
+      ADM_H_PRED_D = ADM_C0_COLD_H + CvI(ADM_IDX - ADM_IDX_MIN) * ADM_C0_SLOPE
+    ELSE
+      IF ADM_IDX <= 6
+        ADM_H_PRED_D = ADM_SEG_PT0_H + CvI(ADM_IDX - 0)  * ((ADM_SEG_PT1_H - ADM_SEG_PT0_H) / 6.0)
+      ENDIF
+      IF ADM_IDX > 6
+        IF ADM_IDX <= 12
+          ADM_H_PRED_D = ADM_SEG_PT1_H + CvI(ADM_IDX - 6)  * ((ADM_SEG_PT2_H - ADM_SEG_PT1_H) / 6.0)
+        ENDIF
+      ENDIF
+      IF ADM_IDX > 12
+        IF ADM_IDX <= 18
+          ADM_H_PRED_D = ADM_SEG_PT2_H + CvI(ADM_IDX - 12) * ((ADM_SEG_PT3_H - ADM_SEG_PT2_H) / 6.0)
+        ENDIF
+      ENDIF
+      IF ADM_IDX > 18
+        IF ADM_IDX <= 24
+          ADM_H_PRED_D = ADM_SEG_PT3_H + CvI(ADM_IDX - 18) * ((ADM_SEG_PT4_H - ADM_SEG_PT3_H) / 6.0)
+        ENDIF
+      ENDIF
+      IF ADM_IDX > 24
+        IF ADM_IDX <= 30
+          ADM_H_PRED_D = ADM_SEG_PT4_H + CvI(ADM_IDX - 24) * ((ADM_SEG_PT5_H - ADM_SEG_PT4_H) / 6.0)
+        ENDIF
+      ENDIF
+      IF ADM_IDX > 30
+        ADM_H_PRED_D = ADM_SEG_PT5_H + CvI(ADM_IDX - 30) * ((ADM_SEG_PT6_H - ADM_SEG_PT5_H) / 5.0)
+      ENDIF
+    ENDIF
+
+    ADM_H_PRED_D = ADM_H_PRED_D + ADM_C1[ADM_IDX]
+    IF ADM_H_PRED_D < 0.0
+      ADM_H_PRED_D = 0.0
+    ENDIF
+    IF ADM_H_PRED_D > 24.0
+      ADM_H_PRED_D = 24.0
+    ENDIF
+    ADM_H_REQ_R = ADM_H_PRED_D + 0.5
+    ADM_H_REQ   = ADM_H_REQ_R
+    IF ADM_H_REQ < 0.0
+      ADM_H_REQ = 0.0
+    ENDIF
+    IF ADM_H_REQ > 24.0
+      ADM_H_REQ = 24.0
+    ENDIF
+  ENDIF
+EndIf
+
+; ----------------------------------------------------------------------
+; 1B) AUTOSAVE AV PROFILÄNDRINGAR
+; ----------------------------------------------------------------------
+
+; --- 7-SEGMENT autosave till aktiv profil 1..3
+CompileIf ValidVariable( ADM_PROF1_PT0_H )
+  IF ADM_CURVE_MODE = 1
+    IF ADM_PROFILE = 1
+      IF ADM_SEG_PT0_H <> ADM_PROF1_PT0_H
+        ADM_PROF1_PT0_H = ADM_SEG_PT0_H
+      ENDIF
+      IF ADM_SEG_PT1_H <> ADM_PROF1_PT1_H
+        ADM_PROF1_PT1_H = ADM_SEG_PT1_H
+      ENDIF
+      IF ADM_SEG_PT2_H <> ADM_PROF1_PT2_H
+        ADM_PROF1_PT2_H = ADM_SEG_PT2_H
+      ENDIF
+      IF ADM_SEG_PT3_H <> ADM_PROF1_PT3_H
+        ADM_PROF1_PT3_H = ADM_SEG_PT3_H
+      ENDIF
+      IF ADM_SEG_PT4_H <> ADM_PROF1_PT4_H
+        ADM_PROF1_PT4_H = ADM_SEG_PT4_H
+      ENDIF
+      IF ADM_SEG_PT5_H <> ADM_PROF1_PT5_H
+        ADM_PROF1_PT5_H = ADM_SEG_PT5_H
+      ENDIF
+      IF ADM_SEG_PT6_H <> ADM_PROF1_PT6_H
+        ADM_PROF1_PT6_H = ADM_SEG_PT6_H
+      ENDIF
+    ENDIF
+
+    IF ADM_PROFILE = 2
+      IF ADM_SEG_PT0_H <> ADM_PROF2_PT0_H
+        ADM_PROF2_PT0_H = ADM_SEG_PT0_H
+      ENDIF
+      IF ADM_SEG_PT1_H <> ADM_PROF2_PT1_H
+        ADM_PROF2_PT1_H = ADM_SEG_PT1_H
+      ENDIF
+      IF ADM_SEG_PT2_H <> ADM_PROF2_PT2_H
+        ADM_PROF2_PT2_H = ADM_SEG_PT2_H
+      ENDIF
+      IF ADM_SEG_PT3_H <> ADM_PROF2_PT3_H
+        ADM_PROF2_PT3_H = ADM_SEG_PT3_H
+      ENDIF
+      IF ADM_SEG_PT4_H <> ADM_PROF2_PT4_H
+        ADM_PROF2_PT4_H = ADM_SEG_PT4_H
+      ENDIF
+      IF ADM_SEG_PT5_H <> ADM_PROF2_PT5_H
+        ADM_PROF2_PT5_H = ADM_SEG_PT5_H
+      ENDIF
+      IF ADM_SEG_PT6_H <> ADM_PROF2_PT6_H
+        ADM_PROF2_PT6_H = ADM_SEG_PT6_H
+      ENDIF
+    ENDIF
+
+    IF ADM_PROFILE = 3
+      IF ADM_SEG_PT0_H <> ADM_PROF3_PT0_H
+        ADM_PROF3_PT0_H = ADM_SEG_PT0_H
+      ENDIF
+      IF ADM_SEG_PT1_H <> ADM_PROF3_PT1_H
+        ADM_PROF3_PT1_H = ADM_SEG_PT1_H
+      ENDIF
+      IF ADM_SEG_PT2_H <> ADM_PROF3_PT2_H
+        ADM_PROF3_PT2_H = ADM_SEG_PT2_H
+      ENDIF
+      IF ADM_SEG_PT3_H <> ADM_PROF3_PT3_H
+        ADM_PROF3_PT3_H = ADM_SEG_PT3_H
+      ENDIF
+      IF ADM_SEG_PT4_H <> ADM_PROF3_PT4_H
+        ADM_PROF3_PT4_H = ADM_SEG_PT4_H
+      ENDIF
+      IF ADM_SEG_PT5_H <> ADM_PROF3_PT5_H
+        ADM_PROF3_PT5_H = ADM_SEG_PT5_H
+      ENDIF
+      IF ADM_SEG_PT6_H <> ADM_PROF3_PT6_H
+        ADM_PROF3_PT6_H = ADM_SEG_PT6_H
+      ENDIF
+    ENDIF
+  ENDIF
+EndIf
+
+; --- 2-PUNKTS LINJÄR autosave till aktiv profil 1..3
+CompileIf ValidVariable( ADM_PROF1_COLD_H )
+  IF ADM_CURVE_MODE = 0
+    IF ADM_PROFILE = 1
+      IF ADM_C0_COLD_H <> ADM_PROF1_COLD_H
+        ADM_PROF1_COLD_H = ADM_C0_COLD_H
+      ENDIF
+      IF ADM_C0_WARM_H <> ADM_PROF1_WARM_H
+        ADM_PROF1_WARM_H = ADM_C0_WARM_H
+      ENDIF
+    ENDIF
+    IF ADM_PROFILE = 2
+      IF ADM_C0_COLD_H <> ADM_PROF2_COLD_H
+        ADM_PROF2_COLD_H = ADM_C0_COLD_H
+      ENDIF
+      IF ADM_C0_WARM_H <> ADM_PROF2_WARM_H
+        ADM_PROF2_WARM_H = ADM_C0_WARM_H
+      ENDIF
+    ENDIF
+    IF ADM_PROFILE = 3
+      IF ADM_C0_COLD_H <> ADM_PROF3_COLD_H
+        ADM_PROF3_COLD_H = ADM_C0_COLD_H
+      ENDIF
+      IF ADM_C0_WARM_H <> ADM_PROF3_WARM_H
+        ADM_PROF3_WARM_H = ADM_C0_WARM_H
+      ENDIF
+    ENDIF
+  ENDIF
+EndIf
+
+; ======================================================================
+; 2) INIT-FYLLNING AV KURVA (spridd över cykler som tidigare)
+; ======================================================================
+IF ADM_INIT_LOOP = 1
+  IF ADM_CURVE_MODE = 0
+    ADM_C0[adm_idx_fill] = ADM_C0_COLD_H + CvI(adm_idx_fill - ADM_IDX_MIN) * ADM_C0_SLOPE
+  ELSE
+    IF adm_idx_fill = 0
+      ADM_C0[adm_idx_fill] = ADM_SEG_PT0_H
+    ENDIF
+    IF adm_idx_fill = 6
+      ADM_C0[adm_idx_fill] = ADM_SEG_PT1_H
+    ENDIF
+    IF adm_idx_fill = 12
+      ADM_C0[adm_idx_fill] = ADM_SEG_PT2_H
+    ENDIF
+    IF adm_idx_fill = 18
+      ADM_C0[adm_idx_fill] = ADM_SEG_PT3_H
+    ENDIF
+    IF adm_idx_fill = 24
+      ADM_C0[adm_idx_fill] = ADM_SEG_PT4_H
+    ENDIF
+    IF adm_idx_fill = 30
+      ADM_C0[adm_idx_fill] = ADM_SEG_PT5_H
+    ENDIF
+    IF adm_idx_fill = 35
+      ADM_C0[adm_idx_fill] = ADM_SEG_PT6_H
+    ENDIF
+  ENDIF
+
+  ADM_C1[adm_idx_fill] = 0.0
+  adm_idx_fill = adm_idx_fill + 1
+
+  IF adm_idx_fill > ADM_IDX_MAX
+    ADM_INIT_LOOP = 0
+  ENDIF
+ENDIF
+
+; ======================================================================
+; 3) FÖRSTA PLANERINGEN NÄR PUSH ÄR KLAR (oförändrat flöde)
+; ======================================================================
+IF ADM_INIT_LOOP = 0
+  IF PI_PUSH_ACK = 1
+    IF ADM_FIRST_PLAN_DONE = 0
+      ADM_dT_PLAN = OAT_mean_tomorrow
+      ADM_PLAN_SRC = 3
+      IF ADM_dT_PLAN = 0.0
+        ADM_dT_PLAN = OAT_mean
+        ADM_PLAN_SRC = 2
+        IF ADM_dT_PLAN = 0.0
+          ADM_dT_PLAN = ADM_OAT_MEAN_FALLB
+          ADM_PLAN_SRC = 1
+          IF ADM_dT_PLAN = 0.0
+            ADM_dT_PLAN = OAT
+            ADM_PLAN_SRC = 0
+          ENDIF
+        ENDIF
+      ENDIF
+      IF ADM_dT_PLAN < ADM_DT_MIN
+        ADM_dT_PLAN = ADM_DT_MIN
+      ENDIF
+      IF ADM_dT_PLAN > ADM_DT_MAX
+        ADM_dT_PLAN = ADM_DT_MAX
+      ENDIF
+
+      ADM_IDX = CvR(ADM_dT_PLAN - ADM_DT_MIN)
+
+      ADM_HOURS_CURVE[ADM_IDX] = ADM_C0[ADM_IDX] + ADM_C1[ADM_IDX]
+      IF ADM_HOURS_CURVE[ADM_IDX] < 0.0
+        ADM_HOURS_CURVE[ADM_IDX] = 0.0
+      ENDIF
+      IF ADM_HOURS_CURVE[ADM_IDX] > 24.0
+        ADM_HOURS_CURVE[ADM_IDX] = 24.0
+      ENDIF
+
+      ADM_H_PRED_D = ADM_HOURS_CURVE[ADM_IDX]
+      ADM_H_REQ_R  = ADM_H_PRED_D + 0.5
+      ADM_H_REQ    = ADM_H_REQ_R
+      IF ADM_H_REQ < 0.0
+        ADM_H_REQ = 0.0
+      ENDIF
+      IF ADM_H_REQ > 24.0
+        ADM_H_REQ = 24.0
+      ENDIF
+
+      ADM_H_REQ_PREV = ADM_H_REQ
+      ADM_FIRST_PLAN_DONE = 1
+    ENDIF
+  ENDIF
+ENDIF
+
+; ======================================================================
+; 4) DRIFTIDSRÄKNARE (1-min trigger) + GM-statistik + OAT-mean fallback
+; ======================================================================
+IF Minute <> ADM_last_minute
+  IF HEAT_DEMAND = 1
+    ADM_H_USED = ADM_H_USED + 0.0167
+  ENDIF
+
+  ; Ackumulera fallback-medeltemp för idag
+  ADM_OAT_MEAN_SUM   = ADM_OAT_MEAN_SUM + OAT
+  ADM_OAT_MEAN_COUNT = ADM_OAT_MEAN_COUNT + 1.0
+  IF ADM_OAT_MEAN_COUNT > 0.0
+    ADM_OAT_MEAN_FALLB = ADM_OAT_MEAN_SUM / ADM_OAT_MEAN_COUNT
+  ENDIF
+
+  ADM_dT_NOW = OAT
+  IF ADM_dT_NOW < ADM_DT_MIN
+    ADM_dT_NOW = ADM_DT_MIN
+  ENDIF
+  IF ADM_dT_NOW > ADM_DT_MAX
+    ADM_dT_NOW = ADM_DT_MAX
+  ENDIF
+  ADM_IDX_NOW = CvR(ADM_dT_NOW - ADM_DT_MIN)
+
+  IF ADM_GM_COUNT_TODAY = 0.0
+    ADM_GM_MIN_TODAY = GM_true
+    ADM_GM_MAX_TODAY = GM_true
+  ENDIF
+  ADM_GM_SUM_TODAY   = ADM_GM_SUM_TODAY + GM_true
+  ADM_GM_COUNT_TODAY = ADM_GM_COUNT_TODAY + 1.0
+  IF GM_true < ADM_GM_MIN_TODAY
+    ADM_GM_MIN_TODAY = GM_true
+  ENDIF
+  IF GM_true > ADM_GM_MAX_TODAY
+    ADM_GM_MAX_TODAY = GM_true
+  ENDIF
+
+  ADM_last_minute = Minute
+ENDIF
+
+; ======================================================================
+; 5) DAGLIG PLANERING (t.ex. 13:05) - oförändrat flöde med ny tempkäll-logik
+; ======================================================================
+IF Hour = ADM_PLAN_H
+  IF Minute = ADM_PLAN_M
+    IF PI_PUSH_ACK = 1
+      ADM_dT_PLAN = OAT_mean_tomorrow
+      ADM_PLAN_SRC = 3
+      IF ADM_dT_PLAN = 0.0
+        ADM_dT_PLAN = OAT_mean
+        ADM_PLAN_SRC = 2
+        IF ADM_dT_PLAN = 0.0
+          ADM_dT_PLAN = ADM_OAT_MEAN_FALLB
+          ADM_PLAN_SRC = 1
+          IF ADM_dT_PLAN = 0.0
+            ADM_dT_PLAN = OAT
+            ADM_PLAN_SRC = 0
+          ENDIF
+        ENDIF
+      ENDIF
+      IF ADM_dT_PLAN < ADM_DT_MIN
+        ADM_dT_PLAN = ADM_DT_MIN
+      ENDIF
+      IF ADM_dT_PLAN > ADM_DT_MAX
+        ADM_dT_PLAN = ADM_DT_MAX
+      ENDIF
+
+      ADM_IDX = CvR(ADM_dT_PLAN - ADM_DT_MIN)
+
+      ADM_HOURS_CURVE[ADM_IDX] = ADM_C0[ADM_IDX] + ADM_C1[ADM_IDX]
+      IF ADM_HOURS_CURVE[ADM_IDX] < 0.0
+        ADM_HOURS_CURVE[ADM_IDX] = 0.0
+      ENDIF
+      IF ADM_HOURS_CURVE[ADM_IDX] > 24.0
+        ADM_HOURS_CURVE[ADM_IDX] = 24.0
+      ENDIF
+
+      ADM_H_PRED_D = ADM_HOURS_CURVE[ADM_IDX]
+      ADM_H_REQ_R  = ADM_H_PRED_D + 0.5
+      ADM_H_REQ    = ADM_H_REQ_R
+      IF ADM_H_REQ < 0.0
+        ADM_H_REQ = 0.0
+      ENDIF
+      IF ADM_H_REQ > 24.0
+        ADM_H_REQ = 24.0
+      ENDIF
+
+      ADM_H_REQ_PREV = ADM_H_REQ
+    EndIf
+  ENDIF
+ENDIF
+
+; ======================================================================
+; 6) DYGNSSKIFTE / LÄRNING (00:00) - samt nollställ fallback-mean
+; ======================================================================
+IF Hour = ADM_TRAIN_H
+  IF Minute = ADM_TRAIN_M
+    ADM_LEARN_COUNT = ADM_LEARN_COUNT + 1
+    IF ADM_LEARN_COUNT >= ADM_MIN_LEARN_DAYS
+      ADM_READY = 1
+    ENDIF
+
+    ADM_dT_USED = OAT_mean_yday
+    IF ADM_dT_USED < ADM_DT_MIN
+      ADM_dT_USED = ADM_DT_MIN
+    ENDIF
+    IF ADM_dT_USED > ADM_DT_MAX
+      ADM_dT_USED = ADM_DT_MAX
+    ENDIF
+    ADM_IDX = CvR(ADM_dT_USED - ADM_DT_MIN)
+
+    IF ADM_GM_COUNT_TODAY > 0.0
+      ADM_GM_AVG = ADM_GM_SUM_TODAY / ADM_GM_COUNT_TODAY
+    ELSE
+      ADM_GM_AVG = 0.0
+    ENDIF
+
+    ADM_ERR_H = ADM_H_REQ_PREV - ADM_H_USED
+    IF GM_EMERG > 0.0
+      ADM_ERR_GM = ADM_GM_AVG / (0.0 - GM_EMERG)
+    ELSE
+      ADM_ERR_GM = 0.0
+    ENDIF
+
+    IF ADM_ERR_H > -ADM_DB_HOURS
+      IF ADM_ERR_H < ADM_DB_HOURS
+        ADM_ERR_H = 0.0
+      ENDIF
+    ENDIF
+    IF ADM_ERR_GM > -ADM_DB_GM
+      IF ADM_ERR_GM < ADM_DB_GM
+        ADM_ERR_GM = 0.0
+      ENDIF
+    ENDIF
+
+    ADM_ERR_COMB = ADM_W_HOURS * ADM_ERR_H + ADM_W_GM * ADM_ERR_GM * 24.0
+
+    ADM_C1_DELTA = ADM_ALPHA * ADM_ERR_COMB
+    IF ADM_C1_DELTA > ADM_C1_STEP_MAX
+      ADM_C1_DELTA = ADM_C1_STEP_MAX
+    ENDIF
+    IF ADM_C1_DELTA < 0.0 - ADM_C1_STEP_MAX
+      ADM_C1_DELTA = 0.0 - ADM_C1_STEP_MAX
+    ENDIF
+
+    ADM_LEARN_FREEZE = 0
+    IF ADM_GM_MIN_TODAY <= 0.0 - GM_EMERG + 5.0
+      ADM_LEARN_FREEZE = 1
+    ENDIF
+    IF VV_LEGIO_ACTIVE = 1
+      ADM_LEARN_FREEZE = 1
+    ENDIF
+    IF EMERG = 1
+      ADM_LEARN_FREEZE = 1
+    ENDIF
+    IF ADM_LEARN_FREEZE = 1
+      ADM_C1_DELTA = 0.0
+    ENDIF
+
+    ADM_C1[ADM_IDX] = ADM_C1[ADM_IDX] + ADM_C1_DELTA
+
+    IF ADM_IDX > ADM_IDX_MIN
+      ADM_C1[ADM_IDX - 1] = ADM_C1[ADM_IDX - 1] + ADM_C1_DELTA * ADM_C1_SMOOTH
+    ENDIF
+    IF ADM_IDX < ADM_IDX_MAX
+      ADM_C1[ADM_IDX + 1] = ADM_C1[ADM_IDX + 1] + ADM_C1_DELTA * ADM_C1_SMOOTH
+    ENDIF
+
+    IF ADM_C0[ADM_IDX] + ADM_C1[ADM_IDX] < ADM_C1_TOTAL_MIN
+      ADM_C1[ADM_IDX] = ADM_C1_TOTAL_MIN - ADM_C0[ADM_IDX]
+    ENDIF
+    IF ADM_C0[ADM_IDX] + ADM_C1[ADM_IDX] > ADM_C1_TOTAL_MAX
+      ADM_C1[ADM_IDX] = ADM_C1_TOTAL_MAX - ADM_C0[ADM_IDX]
+    ENDIF
+
+    ADM_GM_SUM_TODAY   = 0.0
+    ADM_GM_COUNT_TODAY = 0.0
+    ADM_GM_MIN_TODAY   = 0.0
+    ADM_GM_MAX_TODAY   = 0.0
+
+    ADM_H_USED = 0.0
+
+    ; Nollställ fallback-mean för ny dag
+    ADM_OAT_MEAN_SUM   = 0.0
+    ADM_OAT_MEAN_COUNT = 0.0
+    ADM_OAT_MEAN_FALLB = 0.0
+  ENDIF
+ENDIF

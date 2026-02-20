@@ -1,5 +1,5 @@
 ; =========================================================
-; PUSH_EXTENDED — today / tomorrow
+; PUSH_EXTENDED - today / tomorrow
 ; EXOL = MASTER | Pi = SLAV | Arrigo = transport
 ; =========================================================
 
@@ -124,7 +124,7 @@ EX_MASK32_3_USE = EX_MASK32_3_TD
 
 
 ; =========================================================
-; D) MIDNATT — ROLL TM TD + BEGÄR NY TM
+; D) MIDNATT - ROLL TM TD + BEGÄR NY TM
 ; =========================================================
 ; Reset av midnattsvakt: annars fastnar ROLL_LAST_MIN=0 efter första midnatten
 ; och rotationen körs aldrig igen kommande dygn.
@@ -190,7 +190,7 @@ P_NOW   = P_NOW_I
 
 
 ; =========================================================
-; F) DIAG_PUSH – KLARTEXT
+; F) DIAG_PUSH - KLARTEXT
 ; =========================================================
 IF PI_PUSH_REQ = 1
   IF PI_PUSH_DAY = 0
@@ -215,7 +215,7 @@ ENDIF
 
 
 ; =========================================================
-; G) PRICE-STAMP TRIGGERS — HEAT + VV
+; G) PRICE-STAMP TRIGGERS - HEAT + VV
 ; =========================================================
 HEAT_PLAN_TRIG = 0
 VVP_PRICE_TRIG = 0

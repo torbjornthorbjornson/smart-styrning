@@ -1,0 +1,167 @@
+; ===== VVP_Control 96p (EXOL with proper Cv* casts) =====
+
+; --- period index 0..95 ---
+P_NOW_Q = Minute / 15
+P_NOW_I = Hour*4 + P_NOW_Q
+P_NOW   = P_NOW_I
+
+; --- base setpoints (already clampade) ---
+min_sp  = VV_MIN_CLAMP
+tgtM_sp = VV_TARGET_M_CL
+tgtE_sp = VV_TARGET_E_CL
+
+; --- optional per-period adjustment ---
+IF ValidVariable(VV_T_ADJ[0])
+  min_sp  = min_sp  + VV_T_ADJ[P_NOW]
+  tgtM_sp = tgtM_sp + VV_T_ADJ[P_NOW]
+  tgtE_sp = tgtE_sp + VV_T_ADJ[P_NOW]
+ENDIF
+
+; --- EC/EX price impact ---
+IF EC_HH[P_NOW] <> 0
+  min_sp  = min_sp  + VVP_DEG_EC_START_R
+  tgtM_sp = tgtM_sp + VVP_DEG_EC_STOP_R
+  tgtE_sp = tgtE_sp + VVP_DEG_EC_STOP_R
+ENDIF
+IF EX_HH[P_NOW] <> 0
+  min_sp  = min_sp  + VVP_DEG_EX_START_R
+  tgtM_sp = tgtM_sp + VVP_DEG_EX_STOP_R
+  tgtE_sp = tgtE_sp + VVP_DEG_EX_STOP_R
+ENDIF
+
+; --- anchors now? (hours -> periods) ---
+m_startI = VVP_ANCHOR_M_H_R * 4
+m_lenI   = VVP_ANCHOR_M_LEN_R * 4
+e_startI = VVP_ANCHOR_E_H_R * 4
+e_lenI   = VVP_ANCHOR_E_LEN_R * 4
+
+inM_now = 0
+IF m_lenI > 0
+  IF (m_startI + m_lenI - 1) <= 95
+    IF (P_NOW_I >= m_startI) AND (P_NOW_I <= m_startI + m_lenI - 1)
+      inM_now = 1
+    ENDIF
+  ELSE
+    IF (P_NOW_I >= m_startI) OR (P_NOW_I <= (m_startI + m_lenI - 1 - 96))
+      inM_now = 1
+    ENDIF
+  ENDIF
+ENDIF
+
+inE_now = 0
+IF e_lenI > 0
+  IF (e_startI + e_lenI - 1) <= 95
+    IF (P_NOW_I >= e_startI) AND (P_NOW_I <= e_startI + e_lenI - 1)
+      inE_now = 1
+    ENDIF
+  ELSE
+    IF (P_NOW_I >= e_startI) OR (P_NOW_I <= (e_startI + e_lenI - 1 - 96))
+      inE_now = 1
+    ENDIF
+  ENDIF
+ENDIF
+
+; --- stop target: in M/E use respective target else average ---
+stop_sp = tgtM_sp
+IF inE_now <> 0
+  stop_sp = tgtE_sp
+ENDIF
+IF (inM_now = 0) AND (inE_now = 0)
+  stop_sp = (tgtM_sp + tgtE_sp) / 2.0
+ENDIF
+
+; --- Min-safe emergency mode: only recover to VV_MIN_SAFE + diff ---
+IF VV_EMERG_MINSAFE_ACTIVE <> 0
+  min_sp = VV_MIN_SAFE
+  stop_sp = VV_MIN_SAFE + VV_MINSAFE_DIFF_CL
+  IF stop_sp < VV_MIN_SAFE
+    stop_sp = VV_MIN_SAFE
+  ENDIF
+ENDIF
+
+; --- start/stop with plan gate + hysteresis ---
+DO_NEXT = DO_VV
+If DO_VV = 0
+  IF VV_ALLOWED <> 0
+    IF T_top <= min_sp
+      DO_NEXT = 1
+    ENDIF
+  ENDIF
+ELSE
+  IF (VV_ALLOWED = 0) OR (T_top >= stop_sp)
+    DO_NEXT = 0
+  ENDIF
+ENDIF
+
+;; --- update output and counters ---
+IF (VV_DO_PREV = 0) AND (DO_NEXT <> 0)
+  VV_CYCLES_TODAY = VV_CYCLES_TODAY + 1
+ENDIF
+IF DO_NEXT <> 0
+  VV_RUN_MIN_TODAY = VV_RUN_MIN_TODAY + 1
+
+  ; ny rad: räkna minuter som tvingats utanför planen
+  IF (VV_ALLOWED = 0) AND ((VV_LEGIO_ACTIVE <> 0) OR (EMERG <> 0))
+    VV_OVR_MIN_TODAY = VV_OVR_MIN_TODAY + 1
+  ENDIF
+ENDIF
+
+
+DO_VV = DO_NEXT
+VV_DO_PREV = DO_NEXT
+
+; --- Self-learning daily correction 23:59 ---
+IF Hour = 23
+  IF Minute = 59
+    IF VVP_LEARN_LAST_MIN <> Minute
+      VVP_LEARN_LAST_MIN = Minute
+
+      err_h = (CvI(VV_RUN_MIN_TODAY) - CvI(VV_OVR_MIN_TODAY) - CvI(VVP_PLAN_MIN_PREV)) / 60.0
+
+      alpha_h = 0.10
+
+      IF VVP_PROFILE = 0
+        VVP_P0_H_BASE = VVP_P0_H_BASE + alpha_h * err_h
+        IF VVP_P0_H_BASE < VVP_H_MIN
+          VVP_P0_H_BASE = VVP_H_MIN
+        ENDIF
+        IF VVP_P0_H_BASE > VVP_H_MAX
+          VVP_P0_H_BASE = VVP_H_MAX
+        ENDIF
+      ENDIF
+      IF VVP_PROFILE = 1
+        VVP_P1_H_BASE = VVP_P1_H_BASE + alpha_h * err_h
+        IF VVP_P1_H_BASE < VVP_H_MIN
+          VVP_P1_H_BASE = VVP_H_MIN
+        ENDIF
+        IF VVP_P1_H_BASE > VVP_H_MAX
+          VVP_P1_H_BASE = VVP_H_MAX
+        ENDIF
+      ENDIF
+      IF VVP_PROFILE = 2
+        VVP_P2_H_BASE = VVP_P2_H_BASE + alpha_h * err_h
+        IF VVP_P2_H_BASE < VVP_H_MIN
+          VVP_P2_H_BASE = VVP_H_MIN
+        ENDIF
+        IF VVP_P2_H_BASE > VVP_H_MAX
+          VVP_P2_H_BASE = VVP_H_MAX
+        ENDIF
+      ENDIF
+      IF VVP_PROFILE = 3
+        VVP_P3_H_BASE = VVP_P3_H_BASE + alpha_h * err_h
+        IF VVP_P3_H_BASE < VVP_H_MIN
+          VVP_P3_H_BASE = VVP_H_MIN
+        ENDIF
+        IF VVP_P3_H_BASE > VVP_H_MAX
+          VVP_P3_H_BASE = VVP_H_MAX
+        ENDIF
+      ENDIF
+
+      VV_RUN_MIN_TODAY = 0
+      VV_OVR_MIN_TODAY = 0
+      VVP_PLAN_NOW  = 1   ; replan efter learning (detta är det VV-planeraren triggas av)
+      VVP_PLAN_TRIG = 1   ; bakåtkompatibilitet om äldre planlogik används
+
+    ENDIF
+  ENDIF
+ENDIF

@@ -1,0 +1,16 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "EXOL: Auto-commit+push (5 min)",
+      "type": "shell",
+      "command": "bash",
+      "args": [
+        "${workspaceFolder}/tools/auto_git_commit.sh",
+        "300"
+      ],
+      "isBackground": true,
+      "problemMatcher": []
+    }
+  ]
+}
