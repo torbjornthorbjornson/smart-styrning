@@ -96,3 +96,33 @@ Where `MAX_INROW` is expected to apply in this project:
 
 Where it should NOT be applied (unless explicitly requested):
 - Anchor top-up / budget recheck anchor top-up
+
+## 7) IF formatting: keep it multi-line
+
+Some EXOL toolchains are sensitive to layout. Project rule:
+
+- Don’t write one-line IF statements.
+- Use separate lines for `IF`, the action(s), and `ENDIF`.
+
+Preferred:
+
+```text
+IF cond
+	Action = 1
+ENDIF
+```
+
+Avoid:
+
+```text
+IF cond Action = 1 ENDIF
+```
+
+## 8) Variable declarations live in EXOL_Variabels.tse
+
+Project rule:
+
+- Do not declare variables inside runtime code files.
+- Add new variables (temps, flags, diagnostics) in `EXOL_Variabels.tse`.
+
+Reason: the Windows VeryFast conversion and/or EXOL compiler may fail when variables are introduced ad-hoc in code blocks.
