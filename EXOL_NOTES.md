@@ -43,6 +43,48 @@ Avoid smart quotes, long dashes, special symbols in comments/strings.
 
 Use plain ASCII: `-` instead of `–`, `"` instead of smart quotes.
 
+### 5a) “ASCII-only” policy (recommended)
+
+Treat all `.tse` files as **ASCII-only**.
+
+Avoid characters like:
+- arrows: `→`, `⇒`, `<=` written as `≤`
+- degree symbol: `°`
+- smart quotes: `“”`, `‘’`
+- long dashes: `–`, `—`
+- other typography: `…`
+
+Safe replacements:
+- `→` / `⇒` / `≤` / `≥`  → use plain ASCII: `->`, `=>`, `<=`, `>=`
+- `°` → write `deg` (e.g. `54 deg`) or just omit
+- `“text”` → `"text"` or `"` depending on editor
+- `–` / `—` → `-`
+- `…` → `...`
+
+### 5b) Quick check: find non-ASCII in EXOL files
+
+Run from `EXOL_Filer`:
+
+```bash
+python - <<'PY'
+from pathlib import Path
+bad = []
+for p in Path('.').glob('*.tse'):
+	text = p.read_text(errors='replace')
+	for i, line in enumerate(text.splitlines(), 1):
+		if any(ord(ch) > 127 for ch in line):
+			bad.append((str(p), i, line))
+
+for p, i, line in bad[:200]:
+	print(f"{p}:{i}: {line}")
+
+if not bad:
+	print("OK: no non-ASCII found")
+else:
+	print(f"Found {len(bad)} lines with non-ASCII")
+PY
+```
+
 ## 6) Planner behavior: keep “price choice” logic simple
 
 Be careful adding constraints (like `MAX_INROW`) inside *anchor top-up* steps.
